@@ -9,6 +9,23 @@ if (!supabaseUrl || !supabaseKey) {
     console.error("⚠️ Faltan credenciales de Supabase en el archivo .env");
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+let options = {
+    auth: {
+        persistSession: false
+    }
+};
+
+if (typeof window === 'undefined') {
+    // Estamos en el backend (Node.js)
+    options.global = {};
+    try {
+        const WebSocket = require('ws');
+        options.global.WebSocket = WebSocket;
+    } catch (e) {
+        console.warn("Módulo ws no encontrado");
+    }
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey, options);
 
 module.exports = supabase;
