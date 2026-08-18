@@ -40,6 +40,7 @@ async function uploadFileToR2(buffer, filename, folder) {
 // Middlewares
 app.use(cors()); // Permite peticiones desde React
 app.use(express.json()); // Permite leer datos en formato JSON
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Servir archivos subidos localmente
 
 // --- RUTAS DEL MVP ---
 
@@ -354,12 +355,22 @@ app.post('/api/v1/onboarding', upload.any(), async (req, res) => {
             .eq('token_asociado', token)
             .single();
 
-        // Subir archivos a R2 (Semaforización amarilla por defecto para nuevos/revisión)
+        // Subir archivos a R2 (o local)
         const archivosSubidos = {};
-        if (req.files && req.files.length > 0 && process.env.R2_ACCOUNT_ID) {
+        if (req.files && req.files.length > 0) {
             for (const file of req.files) {
-                const url = await uploadFileToR2(file.buffer, file.originalname, 'amarillos');
-                archivosSubidos[file.fieldname] = url;
+                if (process.env.R2_ACCOUNT_ID) {
+                    const url = await uploadFileToR2(file.buffer, file.originalname, `recepcion/${nit}`);
+                    archivosSubidos[file.fieldname] = url;
+                } else {
+                    // Fallback a guardado local
+                    const uploadDir = path.join(__dirname, 'uploads', 'recepcion', nit);
+                    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+                    const safeName = Date.now() + '_' + file.originalname.replace(/[^a-zA-Z0-9.]/g, '_');
+                    const localPath = path.join(uploadDir, safeName);
+                    fs.writeFileSync(localPath, file.buffer);
+                    archivosSubidos[file.fieldname] = `/uploads/recepcion/${nit}/${safeName}`;
+                }
             }
         }
 

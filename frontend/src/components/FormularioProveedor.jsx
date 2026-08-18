@@ -31,8 +31,9 @@ export default function FormularioProveedor() {
     const token = searchParams.get('token');
 
     const [paso, setPaso] = useState(1);
-    const [cargando, setCargando] = useState(false);
-    const [resultadoApi, setResultadoApi] = useState(null);
+    const [cargando, setCargando] = React.useState(false);
+    const [resultadoApi, setResultadoApi] = React.useState(null);
+    const [archivosFisicos, setArchivosFisicos] = React.useState({});
     const [codigoOTP, setCodigoOTP] = useState('');
     const [otpEnviado, setOtpEnviado] = useState(false);
     const [terminosAceptados, setTerminosAceptados] = useState(false);
@@ -142,26 +143,45 @@ export default function FormularioProveedor() {
         archivos_cargados: {}
     });
 
-    // Efecto para recuperar datos si el formulario fue devuelto (Ping-Pong)
+    // Efecto para verificar token y recuperar datos si el formulario fue devuelto (Ping-Pong)
     useEffect(() => {
-        if (token) {
-            setFormData(prev => ({ ...prev, token }));
-            const cargarDatosAnteriores = async () => {
-                try {
-                    const sol = await sagrilaftService.obtenerSolicitudPorToken(token);
-                    if (sol && sol.datos_formulario) {
-                        setFormData(prev => ({ ...prev, ...sol.datos_formulario, token }));
-                    }
-                    if (sol && sol.estado_actual === 'DEVUELTO_CORRECCION') {
-                        setEsCorreccion(true);
-                        setCamposACorregir(sol.campos_a_corregir || {});
-                    }
-                } catch (error) {
-                    console.log("No hay solicitud previa o error al cargarla.");
+        if (!token) return;
+
+        const inicializarFormulario = async () => {
+            try {
+                // 1. Validar el token y obtener datos de la invitación
+                const validacion = await sagrilaftService.validarInvitacion(token);
+                if (validacion && validacion.valido) {
+                    setFormData(prev => ({ 
+                        ...prev, 
+                        token,
+                        clase_vinculacion: validacion.datos.tipo_vinculacion?.toLowerCase() || '',
+                        correo_electronico: validacion.datos.correo || '',
+                        // Si es empleado, forzar a natural
+                        tipo_persona: ['empleado', 'contratista', 'accionista'].includes(validacion.datos.tipo_vinculacion?.toLowerCase()) ? 'natural' : prev.tipo_persona
+                    }));
                 }
-            };
-            cargarDatosAnteriores();
-        }
+            } catch (error) {
+                showToast("El enlace de invitación es inválido o ha expirado.");
+                return;
+            }
+
+            try {
+                // 2. Revisar si hay una solicitud guardada (caso ping-pong correcciones)
+                const sol = await sagrilaftService.obtenerSolicitudPorToken(token);
+                if (sol && sol.datos_formulario) {
+                    setFormData(prev => ({ ...prev, ...sol.datos_formulario, token }));
+                }
+                if (sol && sol.estado_actual === 'DEVUELTO_CORRECCION') {
+                    setEsCorreccion(true);
+                    setCamposACorregir(sol.campos_a_corregir || {});
+                }
+            } catch (error) {
+                // Es la primera vez que entra, no hay solicitud en BD
+            }
+        };
+        
+        inicializarFormulario();
     }, [token]);
 
     // Estados temporales para listas dinámicas y fechas de documentos
@@ -473,7 +493,20 @@ export default function FormularioProveedor() {
         setCargando(true);
         try {
             const dataToSubmit = { ...formData, audit_hash: auditHash };
-            const response = await sagrilaftService.enviarOnboarding(dataToSubmit);
+            
+            // Si hay archivos físicos, usamos FormData
+            const hayArchivos = Object.keys(archivosFisicos).length > 0;
+            let payload = dataToSubmit;
+            
+            if (hayArchivos) {
+                payload = new FormData();
+                payload.append('datos', JSON.stringify(dataToSubmit));
+                Object.entries(archivosFisicos).forEach(([key, file]) => {
+                    payload.append(key, file);
+                });
+            }
+
+            const response = await sagrilaftService.enviarOnboarding(payload);
             setResultadoApi(response.resultado);
             setPaso(11);
         } catch (error) {
@@ -591,16 +624,10 @@ export default function FormularioProveedor() {
                                 </div>
                                 <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
                                     {renderSelect("Tipo de Solicitud", "tipo_solicitud", [{value: 'vinculacion', label: 'Vinculación Nueva'}, {value: 'actualizacion', label: 'Actualización de Datos'}])}
-                                    {renderSelect("Clase de Vinculación", "clase_vinculacion", [
-                                        {value: 'proveedor', label: 'Proveedor'}, 
-                                        {value: 'cliente_selecta', label: 'Cliente (Selecta)'},
-                                        {value: 'franquiciado', label: 'Franquiciado'},
-                                        {value: 'posible_franquiciado', label: 'Posible Franquiciado'},
-                                        {value: 'empleado', label: 'Empleado'},
-                                        {value: 'prestacion_servicios', label: 'Prestación de Servicios'},
-                                        {value: 'contratista', label: 'Contratista'},
-                                        {value: 'accionista', label: 'Accionista'}
-                                    ])}
+                                    <div>
+                                        <label className="label required">Clase de Vinculación</label>
+                                        <input type="text" className="input-field" value={formData.clase_vinculacion.toUpperCase() || 'PROVEEDOR'} readOnly style={{opacity: 0.7, cursor: 'not-allowed'}} />
+                                    </div>
                                     {isInternalRole ? (
                                         <div style={{ flex: "1fr" }}>
                                             <label className="label">Identificación de la Persona</label>
@@ -1303,11 +1330,17 @@ export default function FormularioProveedor() {
                                             }
                                         }
 
-                                        const handleUpload = () => {
+                                        const handleUpload = (e) => {
+                                            const file = e.target.files[0];
+                                            if (!file) return;
+
                                             if (doc.requiereFecha) {
                                                 if (!fechasDocumentos[doc.id]) return showToast(`Por favor ingresa la fecha de expedición de ${doc.label}`);
                                                 if (isExpired) return showToast(`El documento ${doc.label} es inválido: ${doc.errorMsg || 'vencido'}.`);
                                             }
+                                            
+                                            // Guardar el archivo físico en el nuevo estado temporal
+                                            setArchivosFisicos(prev => ({...prev, [doc.id]: file}));
                                             setFormData({...formData, archivos_cargados: {...formData.archivos_cargados, [doc.id]: true}});
                                         };
 
@@ -1319,7 +1352,15 @@ export default function FormularioProveedor() {
                                                 display: 'flex', flexDirection: 'column', gap: '1rem', justifyContent: 'center'
                                             }}>
                                                 {formData.archivos_cargados[doc.id] ? (
-                                                    <><CheckCircle size={32} color="var(--success-text)" style={{ margin: '0 auto' }}/><div style={{color:'var(--success-text)', fontWeight:600}}>{doc.label} Cargado</div></>
+                                                    <>
+                                                        <CheckCircle size={32} color="var(--success-text)" style={{ margin: '0 auto' }}/>
+                                                        <div style={{color:'var(--success-text)', fontWeight:600}}>{doc.label} Cargado</div>
+                                                        <div style={{fontSize: '0.8rem', color: 'var(--success-text)'}}>{archivosFisicos[doc.id]?.name}</div>
+                                                        <button className="btn-outline" style={{ marginTop: '0.5rem', padding: '0.3rem 0.5rem', fontSize: '0.8rem' }} onClick={() => {
+                                                            const n = {...archivosFisicos}; delete n[doc.id]; setArchivosFisicos(n);
+                                                            const m = {...formData.archivos_cargados}; delete m[doc.id]; setFormData({...formData, archivos_cargados: m});
+                                                        }}>Eliminar</button>
+                                                    </>
                                                 ) : (
                                                     <>
                                                         <UploadCloud size={32} color={isExpired ? 'var(--danger)' : 'var(--text-muted)'} style={{ margin: '0 auto' }}/>
@@ -1334,7 +1375,10 @@ export default function FormularioProveedor() {
                                                                 {isExpired && <span style={{ color: 'var(--danger)', fontSize: '0.75rem' }}>{doc.errorMsg || 'Documento vencido'}</span>}
                                                             </div>
                                                         )}
-                                                        <button className="btn-outline" style={{ marginTop: '0.5rem' }} onClick={handleUpload}>Simular Carga</button>
+                                                        <label className="btn-outline" style={{ marginTop: '0.5rem', cursor: 'pointer', display: 'inline-block' }}>
+                                                            Seleccionar Archivo (PDF/Img)
+                                                            <input type="file" style={{ display: 'none' }} accept=".pdf,.png,.jpg,.jpeg" onChange={handleUpload} />
+                                                        </label>
                                                     </>
                                                 )}
                                             </div>
