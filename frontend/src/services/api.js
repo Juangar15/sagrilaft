@@ -1,9 +1,13 @@
 // src/services/api.js
 import axios from 'axios';
 
-// Configuramos la URL base apuntando a tu backend local
+// Configuramos la URL base apuntando al backend desde las variables de entorno
+const baseURL = import.meta.env.VITE_API_URL 
+    ? `${import.meta.env.VITE_API_URL}/api/v1` 
+    : 'http://localhost:3001/api/v1';
+
 const api = axios.create({
-    baseURL: 'http://192.168.30.143:3001/api/v1',
+    baseURL: baseURL,
     headers: {
         'Content-Type': 'application/json'
     }
