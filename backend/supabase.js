@@ -20,7 +20,7 @@ if (typeof window === 'undefined') {
     options.global = {};
     try {
         const WebSocket = require('ws');
-        options.global.WebSocket = WebSocket;
+        options.realtime = { transport: WebSocket };
     } catch (e) {
         console.warn("Módulo ws no encontrado");
     }
