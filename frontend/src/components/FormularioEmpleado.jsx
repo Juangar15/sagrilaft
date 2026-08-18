@@ -7,7 +7,7 @@ import {
   User, Briefcase, FileText, ArrowRight, ArrowLeft, CheckCircle, UploadCloud, ShieldCheck, CreditCard, Lock, Smartphone 
 } from 'lucide-react';
 
-const CurrencyInput = ({ label, name, value, onChange, width="1fr", required = false }) => {
+const CurrencyInput = ({ label, name, value, onChange, width="1fr", required = true }) => {
     const handleChange = (e) => {
         let rawValue = e.target.value.replace(/\D/g, '');
         onChange({ target: { name, value: rawValue }});
@@ -174,7 +174,7 @@ export default function FormularioEmpleado() {
         </div>
     );
 
-    const renderSelect = (label, name, options, width = "1fr", required = false) => {
+    const renderSelect = (label, name, options, width = "1fr", required = true) => {
         return (
         <div>
             <label className={required ? "label required" : "label"}>{label}</label>
@@ -235,7 +235,7 @@ export default function FormularioEmpleado() {
                                 <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
                                     {renderInput("Nombres", "nombres", "text", "1fr", false, true)}
                                     {renderInput("Primer Apellido", "primer_apellido", "text", "1fr", false, true)}
-                                    {renderInput("Segundo Apellido", "segundo_apellido")}
+                                    {renderInput("Segundo Apellido", "segundo_apellido", "text", "1fr", false, false)}
                                 </div>
                                 <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
                                     {renderSelect("Tipo ID", "tipo_identificacion", [{value:'cc', label:'Cédula de Ciudadanía'}, {value:'ce', label:'Cédula de Extranjería'}, {value:'pasaporte', label:'Pasaporte'}])}
@@ -328,7 +328,7 @@ export default function FormularioEmpleado() {
                                     {renderSelect("¿Goza de reconocimiento público?", "goza_reconocimiento_publico", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                 </div>
                                 <div style={{ marginTop: '1.5rem' }}>
-                                    {renderInput("Detalles (Si respondió afirmativamente)", "pep_detalles")}
+                                    {renderInput("Detalles (Si respondió afirmativamente)", "pep_detalles", "text", "1fr", false, false)}
                                 </div>
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>

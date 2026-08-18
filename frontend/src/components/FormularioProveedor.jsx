@@ -12,7 +12,7 @@ import {
 import ciiuData from '../data/CIIU.json';
 
 // --- COMPONENTE AUXILIAR PARA MONEDA ---
-const CurrencyInput = ({ label, name, value, onChange, width="1fr", required = false }) => {
+const CurrencyInput = ({ label, name, value, onChange, width="1fr", required = true }) => {
     const handleChange = (e) => {
         let rawValue = e.target.value.replace(/\D/g, '');
         onChange({ target: { name, value: rawValue }});
@@ -477,7 +477,7 @@ export default function FormularioProveedor() {
         exit: { opacity: 0, y: -15, transition: { duration: 0.2 } }
     };
 
-    const renderInput = (label, name, type = "text", width = "1fr", readOnly = false, required = false) => {
+    const renderInput = (label, name, type = "text", width = "1fr", readOnly = false, required = true) => {
         return (
         <div>
             <label className={required ? "label required" : "label"}>{label}</label>
@@ -492,7 +492,7 @@ export default function FormularioProveedor() {
         </div>
     );
 
-    const renderSelect = (label, name, options, width = "1fr", required = false) => {
+    const renderSelect = (label, name, options, width = "1fr", required = true) => {
         return (
         <div>
             <label className={required ? "label required" : "label"}>{label}</label>
@@ -630,7 +630,7 @@ export default function FormularioProveedor() {
                                         <div className="form-grid form-grid-3">
                                             {renderInput("Nombres", "nombres", "text", "1fr", false, true)}
                                             {renderInput("Primer Apellido", "primer_apellido", "text", "1fr", false, true)}
-                                            {renderInput("Segundo Apellido", "segundo_apellido")}
+                                            {renderInput("Segundo Apellido", "segundo_apellido", "text", "1fr", false, false)}
                                         </div>
                                         <div className="form-grid form-grid-3">
                                             {renderSelect("Tipo ID", "tipo_identificacion", [{value:'cc', label:'CC'}, {value:'ce', label:'CE'}, {value:'pasaporte', label:'Pasaporte'}, {value:'otro', label:'Otro'}], "0.5fr")}
@@ -663,7 +663,7 @@ export default function FormularioProveedor() {
                                         {!isInternalRole && (
                                             <div className="form-grid form-grid-3">
                                                 {renderSelect("Sector Económico", "sector", [{value:'Agrícola', label:'Agrícola'}, {value:'Comercial', label:'Comercial'}, {value:'Manufactura', label:'Manufactura'}, {value:'Minería', label:'Minería'}, {value:'Servicios', label:'Servicios'}, {value:'Tecnología', label:'Tecnología'}, {value:'Construcción', label:'Construcción'}, {value:'Otro', label:'Otro'}])}
-                                                {formData.sector === 'Otro' && renderInput("¿Cuál sector?", "sector_otro")}
+                                                {formData.sector === 'Otro' && renderInput("¿Cuál sector?", "sector_otro", "text", "1fr", false, false)}
                                                 {renderInput("Actividad Económica", "actividad_economica_principal", "text", "1fr", false, true)}
                                                 {renderCiiuInput("Código CIIU", "codigo_ciiu")}
                                             </div>
@@ -707,7 +707,7 @@ export default function FormularioProveedor() {
                                         </div>
                                         <div className="form-grid form-grid-3">
                                             {renderSelect("Sector Económico", "sector_juridica", [{value:'Agrícola', label:'Agrícola'}, {value:'Comercial', label:'Comercial'}, {value:'Manufactura', label:'Manufactura'}, {value:'Minería', label:'Minería'}, {value:'Servicios', label:'Servicios'}, {value:'Tecnología', label:'Tecnología'}, {value:'Construcción', label:'Construcción'}, {value:'Otro', label:'Otro'}])}
-                                            {formData.sector_juridica === 'Otro' && renderInput("¿Cuál sector?", "sector_otro_juridica")}
+                                            {formData.sector_juridica === 'Otro' && renderInput("¿Cuál sector?", "sector_otro_juridica", "text", "1fr", false, false)}
                                             
                                             {renderInput("Actividad Económica Principal", "actividad_economica_principal_juridica")}
                                             {renderCiiuInput("Código CIIU", "codigo_ciiu_juridica")}
@@ -717,7 +717,7 @@ export default function FormularioProveedor() {
                                         <div className="form-grid form-grid-3">
                                             {renderInput("Nombres Rep. Legal", "rep_legal_nombres", "text", "1fr", false, true)}
                                             {renderInput("Primer Apellido", "rep_legal_primer_apellido", "text", "1fr", false, true)}
-                                            {renderInput("Segundo Apellido", "rep_legal_segundo_apellido")}
+                                            {renderInput("Segundo Apellido", "rep_legal_segundo_apellido", "text", "1fr", false, false)}
                                         </div>
                                         <div className="form-grid form-grid-3">
                                             {renderSelect("Tipo ID", "rep_legal_tipo_id", [{value:'cc', label:'CC'}, {value:'ce', label:'CE'}, {value:'pasaporte', label:'Pasaporte'}])}
@@ -761,7 +761,7 @@ export default function FormularioProveedor() {
                                     {renderSelect("¿Declara bajo juramento ser PEP?", "declara_ser_pep", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                 </div>
                                 <div style={{ marginTop: '1.5rem' }}>
-                                    {renderInput("Si respondió afirmativamente alguna, proporcione nombres, cargos, vínculo y entidad", "pep_detalles")}
+                                    {renderInput("Si respondió afirmativamente alguna, proporcione nombres, cargos, vínculo y entidad", "pep_detalles", "text", "1fr", false, false)}
                                 </div>
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
@@ -801,7 +801,7 @@ export default function FormularioProveedor() {
 
                                     <div className="form-grid form-grid-3">
                                         <CurrencyInput label="Otros Ingresos Mensuales" name="otros_ingresos_mensuales" value={formData.otros_ingresos_mensuales} onChange={handleChange} />
-                                        {renderInput("Concepto Otros Ingresos", "concepto_otros_ingresos")}
+                                        {renderInput("Concepto Otros Ingresos", "concepto_otros_ingresos", "text", "1fr", false, false)}
                                     </div>
                                 </div>
 
@@ -1065,7 +1065,7 @@ export default function FormularioProveedor() {
                                     {renderSelect("¿Declara bajo juramento ser PEP?", "declara_ser_pep", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                 </div>
                                 <div style={{ marginTop: '1.5rem' }}>
-                                    {renderInput("Si respondió afirmativamente alguna, proporcione nombres, cargos, vínculo y entidad", "pep_detalles")}
+                                    {renderInput("Si respondió afirmativamente alguna, proporcione nombres, cargos, vínculo y entidad", "pep_detalles", "text", "1fr", false, false)}
                                 </div>
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
