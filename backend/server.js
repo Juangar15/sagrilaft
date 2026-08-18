@@ -50,24 +50,38 @@ if (!fs.existsSync(invitacionesPath)) fs.writeFileSync(invitacionesPath, JSON.st
 
 const JWT_SECRET = process.env.JWT_SECRET || 'sagrilaft-super-secret-key';
 
-// Transportador de correos (Mock para el MVP, generar cuenta dinámicamente)
+// Transportador de correos
 let transporter;
-nodemailer.createTestAccount((err, account) => {
-    if (err) {
-        console.error('Error creando cuenta Ethereal:', err);
-        return;
-    }
+
+if (process.env.SMTP_SERVER) {
     transporter = nodemailer.createTransport({
-        host: account.smtp.host,
-        port: account.smtp.port,
-        secure: account.smtp.secure,
+        host: process.env.SMTP_SERVER,
+        port: parseInt(process.env.SMTP_PORT) || 587,
+        secure: parseInt(process.env.SMTP_PORT) === 465, // true para 465, false para otros puertos
         auth: {
-            user: account.user,
-            pass: account.pass
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS
         }
     });
-    console.log('✉️  Nodemailer listo usando Ethereal Mail');
-});
+    console.log('✉️  Nodemailer listo usando servidor SMTP de producción');
+} else {
+    nodemailer.createTestAccount((err, account) => {
+        if (err) {
+            console.error('Error creando cuenta Ethereal:', err);
+            return;
+        }
+        transporter = nodemailer.createTransport({
+            host: account.smtp.host,
+            port: account.smtp.port,
+            secure: account.smtp.secure,
+            auth: {
+                user: account.user,
+                pass: account.pass
+            }
+        });
+        console.log('✉️  Nodemailer listo usando Ethereal Mail');
+    });
+}
 
 // Endpoint para generar invitaciones (Gatekeeper)
 app.post('/api/v1/invitaciones', async (req, res) => {
@@ -119,7 +133,7 @@ app.post('/api/v1/invitaciones', async (req, res) => {
 
         // Enviar correo electrónico
         const mailOptions = {
-            from: '"Cosechas y Selecta - SAGRILAFT" <no-reply@cosechas.com>',
+            from: `"Cosechas y Selecta - SAGRILAFT" <${process.env.SMTP_USER || 'no-reply@cosechas.com'}>`,
             to: correo,
             subject: 'Invitación a Registro de Contrapartes - SAGRILAFT',
             html: `
