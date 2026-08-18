@@ -7,15 +7,15 @@ import {
   User, Briefcase, FileText, ArrowRight, ArrowLeft, CheckCircle, UploadCloud, ShieldCheck, CreditCard, Lock, Smartphone 
 } from 'lucide-react';
 
-const CurrencyInput = ({ label, name, value, onChange, width="1fr" }) => {
+const CurrencyInput = ({ label, name, value, onChange, width="1fr", required = false }) => {
     const handleChange = (e) => {
         let rawValue = e.target.value.replace(/\D/g, '');
         onChange({ target: { name, value: rawValue }});
     }
     const formatted = value ? `$ ${parseInt(value, 10).toLocaleString('es-CO')}` : '';
     return (
-        <div style={{ flex: width }}>
-            <label className="label">{label}</label>
+        <div>
+            <label className={required ? "label required" : "label"}>{label}</label>
             <input type="text" value={formatted} onChange={handleChange} className="input-field" placeholder="$ 0" />
         </div>
     )
@@ -168,20 +168,21 @@ export default function FormularioEmpleado() {
     };
 
     const renderInput = (label, name, type = "text", width = "1fr") => (
-        <div style={{ flex: width }}>
-            <label className="label">{label}</label>
+        <div>
+            <label className={required ? "label required" : "label"}>{label}</label>
             <input type={type} name={name} value={formData[name]} onChange={handleChange} className="input-field" />
         </div>
     );
 
-    const renderSelect = (label, name, options, width = "1fr") => (
-        <div style={{ flex: width }}>
-            <label className="label">{label}</label>
+    const renderSelect = (label, name, options, width = "1fr", required = false) => {
+        return (
+        <div>
+            <label className={required ? "label required" : "label"}>{label}</label>
             <select name={name} value={formData[name]} onChange={handleChange} className="input-field">
                 {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
             </select>
         </div>
-    );
+    )};
 
     const formVariants = {
         hidden: { opacity: 0, x: 20 },
@@ -231,22 +232,22 @@ export default function FormularioEmpleado() {
                             <motion.div key="p1" variants={formVariants} initial="hidden" animate="visible" exit="exit">
                                 <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><User size={20}/> 1. Datos Personales y Tributarios</h3>
                                 
-                                <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem' }}>
-                                    {renderInput("Nombres", "nombres")}
-                                    {renderInput("Primer Apellido", "primer_apellido")}
+                                <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
+                                    {renderInput("Nombres", "nombres", "text", "1fr", false, true)}
+                                    {renderInput("Primer Apellido", "primer_apellido", "text", "1fr", false, true)}
                                     {renderInput("Segundo Apellido", "segundo_apellido")}
                                 </div>
-                                <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                                <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
                                     {renderSelect("Tipo ID", "tipo_identificacion", [{value:'cc', label:'Cédula de Ciudadanía'}, {value:'ce', label:'Cédula de Extranjería'}, {value:'pasaporte', label:'Pasaporte'}])}
-                                    {renderInput("No. Identificación", "numero_identificacion")}
+                                    {renderInput("No. Identificación", "numero_identificacion", "text", "1fr", false, true)}
                                     {renderInput("Lugar Nacimiento", "lugar_nacimiento")}
                                 </div>
-                                <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem' }}>
-                                    {renderInput("Correo Electrónico", "correo_electronico", "email")}
-                                    {renderInput("Teléfono / Celular", "telefono_celular")}
-                                    {renderInput("Dirección", "direccion_residencial")}
+                                <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
+                                    {renderInput("Correo Electrónico", "correo_electronico", "email", "1fr", false, true)}
+                                    {renderInput("Teléfono / Celular", "telefono_celular", "text", "1fr", false, true)}
+                                    {renderInput("Dirección", "direccion_residencial", "text", "1fr", false, true)}
                                 </div>
-                                <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                                <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
                                     {renderInput("Ciudad", "ciudad")}
                                     {renderInput("Ocupación / Oficio", "ocupacion_profesion")}
                                     {renderSelect("¿Declara Renta?", "declara_renta", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
@@ -271,17 +272,17 @@ export default function FormularioEmpleado() {
                             <motion.div key="p2" variants={formVariants} initial="hidden" animate="visible" exit="exit">
                                 <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CreditCard size={20}/> 2. Perfil Financiero Personal</h3>
                                 
-                                <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem' }}>
-                                    <CurrencyInput label="Total Activos" name="activos" value={formData.activos} onChange={handleChange} />
-                                    <CurrencyInput label="Total Pasivos" name="pasivos" value={formData.pasivos} onChange={handleChange} />
+                                <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
+                                    <CurrencyInput label="Total Activos" name="activos" value={formData.activos} onChange={handleChange} required={true} />
+                                    <CurrencyInput label="Total Pasivos" name="pasivos" value={formData.pasivos} onChange={handleChange} required={true} />
                                     <div style={{ flex: "1fr" }}>
                                         <label className="label">Patrimonio Líquido</label>
                                         <input type="text" value={`$ ${formData.patrimonio.toLocaleString('es-CO')}`} disabled className="input-field" style={{ fontWeight: 'bold' }} />
                                     </div>
                                 </div>
-                                <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem' }}>
-                                    <CurrencyInput label="Ingresos Mensuales" name="ingresos_mensuales" value={formData.ingresos_mensuales} onChange={handleChange} />
-                                    <CurrencyInput label="Egresos Mensuales" name="egresos_mensuales" value={formData.egresos_mensuales} onChange={handleChange} />
+                                <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
+                                    <CurrencyInput label="Ingresos Mensuales" name="ingresos_mensuales" value={formData.ingresos_mensuales} onChange={handleChange} required={true} />
+                                    <CurrencyInput label="Egresos Mensuales" name="egresos_mensuales" value={formData.egresos_mensuales} onChange={handleChange} required={true} />
                                 </div>
                                 
                                 <div style={{ marginTop: '2rem' }}>
@@ -322,7 +323,7 @@ export default function FormularioEmpleado() {
                                 </div>
 
                                 <h4 style={{ margin: '0 0 1rem 0' }}>Cuestionario PEP del Empleado</h4>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                                <div className="form-grid form-grid-2">
                                     {renderSelect("¿Es o fue funcionario público?", "es_funcionario_publico", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                     {renderSelect("¿Goza de reconocimiento público?", "goza_reconocimiento_publico", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                 </div>

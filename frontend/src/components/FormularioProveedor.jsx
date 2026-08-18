@@ -12,15 +12,15 @@ import {
 import ciiuData from '../data/CIIU.json';
 
 // --- COMPONENTE AUXILIAR PARA MONEDA ---
-const CurrencyInput = ({ label, name, value, onChange, width="1fr" }) => {
+const CurrencyInput = ({ label, name, value, onChange, width="1fr", required = false }) => {
     const handleChange = (e) => {
         let rawValue = e.target.value.replace(/\D/g, '');
         onChange({ target: { name, value: rawValue }});
     }
     const formatted = value ? `$ ${parseInt(value, 10).toLocaleString('es-CO')}` : '';
     return (
-        <div style={{ flex: width }}>
-            <label className="label">{label}</label>
+        <div>
+            <label className={required ? "label required" : "label"}>{label}</label>
             <input type="text" value={formatted} onChange={handleChange} className="input-field" placeholder="$ 0" />
         </div>
     )
@@ -190,7 +190,7 @@ export default function FormularioProveedor() {
         return (
             <div style={{ marginBottom: '1rem', width: '100%' }}>
                 <label className="label">{label}</label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                <div className="form-grid form-grid-2">
                     {options.map(opt => (
                         <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', cursor: 'pointer' }}>
                             <input 
@@ -477,28 +477,30 @@ export default function FormularioProveedor() {
         exit: { opacity: 0, y: -15, transition: { duration: 0.2 } }
     };
 
-    const renderInput = (label, name, type = "text", width = "1fr", readOnly = false) => (
-        <div style={{ flex: width }}>
-            <label className="label">{label}</label>
-            <input type={type} name={name} value={formData[name]} onChange={handleChange} className="input-field" readOnly={readOnly} style={readOnly ? {opacity: 0.7, cursor: 'not-allowed'} : {}} />
+    const renderInput = (label, name, type = "text", width = "1fr", readOnly = false, required = false) => {
+        return (
+        <div>
+            <label className={required ? "label required" : "label"}>{label}</label>
+            <input type={type} name={name} value={formData[name]} onChange={(e) => { handleChange(e); if(required && !e.target.value) e.target.classList.add('error'); else e.target.classList.remove('error'); }} className="input-field" readOnly={readOnly} style={readOnly ? {opacity: 0.7, cursor: 'not-allowed'} : {}} />
         </div>
-    );
+    )};
 
     const renderCiiuInput = (label, name, width = "1fr") => (
-        <div style={{ flex: width }}>
-            <label className="label">{label}</label>
+        <div>
+            <label className={required ? "label required" : "label"}>{label}</label>
             <input type="text" name={name} list="ciiu-list" value={formData[name]} onChange={handleChange} className="input-field" placeholder="Ej: 1102" />
         </div>
     );
 
-    const renderSelect = (label, name, options, width = "1fr") => (
-        <div style={{ flex: width }}>
-            <label className="label">{label}</label>
+    const renderSelect = (label, name, options, width = "1fr", required = false) => {
+        return (
+        <div>
+            <label className={required ? "label required" : "label"}>{label}</label>
             <select name={name} value={formData[name]} onChange={handleChange} className="input-field">
                 {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
             </select>
         </div>
-    );
+    )};
 
     return (
         <div style={{ minHeight: '100vh', background: 'var(--bg-body)', padding: '2rem 1rem', fontFamily: 'Inter, sans-serif' }}>
@@ -570,12 +572,12 @@ export default function FormularioProveedor() {
                         {paso === 1 && (
                             <motion.div key="p1" variants={formVariants} initial="hidden" animate="visible" exit="exit">
                                 <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Briefcase size={20}/> 1. Naturaleza de la Solicitud</h3>
-                                <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                                <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
                                     {renderInput("Fecha Diligenciamiento", "fecha_diligenciamiento", "date", "1fr", true)}
                                     {renderSelect("Ámbito de Operación", "ambito_operacion", [{value: 'nacional', label: 'Nacional'}, {value: 'internacional', label: 'Internacional'}])}
                                     {renderSelect("Empresa Destino", "empresa_destino", [{value: 'selecta', label: 'Selecta'}, {value: 'cosechas', label: 'Cosechas'}])}
                                 </div>
-                                <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                                <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
                                     {renderSelect("Tipo de Solicitud", "tipo_solicitud", [{value: 'vinculacion', label: 'Vinculación Nueva'}, {value: 'actualizacion', label: 'Actualización de Datos'}])}
                                     {renderSelect("Clase de Vinculación", "clase_vinculacion", [
                                         {value: 'proveedor', label: 'Proveedor'}, 
@@ -597,7 +599,7 @@ export default function FormularioProveedor() {
                                     )}
                                 </div>
                                 {formData.clase_vinculacion === 'proveedor' && (
-                                    <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                                    <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
                                         {renderInput("Tipo de Proveeduría (¿Qué vende/suministra?)", "tipo_proveeduria", "text", "1fr")}
                                     </div>
                                 )}
@@ -625,53 +627,53 @@ export default function FormularioProveedor() {
 
                                 {formData.tipo_persona === 'natural' ? (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                        <div style={{ display: 'flex', gap: '1.5rem' }}>
-                                            {renderInput("Nombres", "nombres")}
-                                            {renderInput("Primer Apellido", "primer_apellido")}
+                                        <div className="form-grid form-grid-3">
+                                            {renderInput("Nombres", "nombres", "text", "1fr", false, true)}
+                                            {renderInput("Primer Apellido", "primer_apellido", "text", "1fr", false, true)}
                                             {renderInput("Segundo Apellido", "segundo_apellido")}
                                         </div>
-                                        <div style={{ display: 'flex', gap: '1.5rem' }}>
+                                        <div className="form-grid form-grid-3">
                                             {renderSelect("Tipo ID", "tipo_identificacion", [{value:'cc', label:'CC'}, {value:'ce', label:'CE'}, {value:'pasaporte', label:'Pasaporte'}, {value:'otro', label:'Otro'}], "0.5fr")}
                                             {formData.tipo_identificacion === 'otro' && renderInput("Especifique", "otro_tipo_identificacion", "text", "0.5fr")}
-                                            {renderInput("No. Identificación", "numero_identificacion")}
+                                            {renderInput("No. Identificación", "numero_identificacion", "text", "1fr", false, true)}
                                             {renderInput("Lugar de Expedición", "lugar_expedicion")}
-                                            {renderInput("Fecha de Expedición", "fecha_expedicion", "date")}
+                                            {renderInput("Fecha de Expedición", "fecha_expedicion", "date", "1fr", false, true)}
                                         </div>
-                                        <div style={{ display: 'flex', gap: '1.5rem' }}>
+                                        <div className="form-grid form-grid-3">
                                             {renderInput("Fecha Nacimiento", "fecha_nacimiento", "date")}
                                             {renderInput("Lugar Nacimiento", "lugar_nacimiento")}
                                             {renderInput("Nacionalidad", "nacionalidad")}
                                         </div>
-                                        <div style={{ display: 'flex', gap: '1.5rem' }}>
-                                            {renderInput("Correo Electrónico", "correo_electronico", "email")}
+                                        <div className="form-grid form-grid-3">
+                                            {renderInput("Correo Electrónico", "correo_electronico", "email", "1fr", false, true)}
                                             {renderInput("Estado Civil", "estado_civil")}
-                                            {renderInput("Dirección/Barrio", "direccion_residencial")}
+                                            {renderInput("Dirección/Barrio", "direccion_residencial", "text", "1fr", false, true)}
                                         </div>
-                                        <div style={{ display: 'flex', gap: '1.5rem' }}>
-                                            {renderInput("Celular/Teléfono", "telefono_celular")}
+                                        <div className="form-grid form-grid-3">
+                                            {renderInput("Celular/Teléfono", "telefono_celular", "text", "1fr", false, true)}
                                             {renderInput("Ciudad", "ciudad")}
                                             {renderInput("Departamento", "departamento")}
                                             {renderInput("País", "pais")}
                                         </div>
                                         <h4 style={{ margin: '1rem 0 0', color: 'var(--text-main)', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Ocupación y Laboral</h4>
-                                        <div style={{ display: 'flex', gap: '1.5rem' }}>
+                                        <div className="form-grid form-grid-3">
                                             {renderSelect("Ocupación Principal", "ocupacion_profesion", [{value:'independiente', label:'Independiente'}, {value:'asalariado', label:'Asalariado'}, {value:'pensionado', label:'Pensionado'}, {value:'rentista', label:'Rentista'}])}
                                             {renderSelect("¿Declara Renta?", "declara_renta", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                         </div>
                                         {!isInternalRole && (
-                                            <div style={{ display: 'flex', gap: '1.5rem' }}>
+                                            <div className="form-grid form-grid-3">
                                                 {renderSelect("Sector Económico", "sector", [{value:'Agrícola', label:'Agrícola'}, {value:'Comercial', label:'Comercial'}, {value:'Manufactura', label:'Manufactura'}, {value:'Minería', label:'Minería'}, {value:'Servicios', label:'Servicios'}, {value:'Tecnología', label:'Tecnología'}, {value:'Construcción', label:'Construcción'}, {value:'Otro', label:'Otro'}])}
                                                 {formData.sector === 'Otro' && renderInput("¿Cuál sector?", "sector_otro")}
-                                                {renderInput("Actividad Económica", "actividad_economica_principal")}
+                                                {renderInput("Actividad Económica", "actividad_economica_principal", "text", "1fr", false, true)}
                                                 {renderCiiuInput("Código CIIU", "codigo_ciiu")}
                                             </div>
                                         )}
-                                        <div style={{ display: 'flex', gap: '1.5rem' }}>
+                                        <div className="form-grid form-grid-3">
                                             {renderInput("Empresa donde labora", "empresa_labora")}
                                             {renderInput("Cargo", "cargo")}
                                             {renderInput("Área", "area")}
                                         </div>
-                                        <div style={{ display: 'flex', gap: '1.5rem' }}>
+                                        <div className="form-grid form-grid-3">
                                             {renderInput("Dirección Corporativa", "direccion_corporativa")}
                                             {renderInput("Teléfono Corp.", "telefono_corporativo")}
                                             {renderInput("Ciudad Empresa", "ciudad_empresa_labora")}
@@ -681,29 +683,29 @@ export default function FormularioProveedor() {
                                     </div>
                                 ) : (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                        <div style={{ display: 'flex', gap: '1.5rem' }}>
+                                        <div className="form-grid form-grid-3">
                                             {renderInput("Razón Social", "razon_social", "text", "2fr")}
                                             {renderSelect("Tipo Empresa", "tipo_empresa", [{value:'privada', label:'Privada'}, {value:'publica', label:'Pública'}, {value:'mixta', label:'Mixta'}, {value:'extranjera', label:'Inversión Extranjera'}])}
                                         </div>
-                                        <div style={{ display: 'flex', gap: '1.5rem' }}>
-                                            {renderInput("NIT (Sin dígito verif.)", "numero_identificacion")}
+                                        <div className="form-grid form-grid-3">
+                                            {renderInput("NIT (Sin dígito verif.)", "numero_identificacion", "text", "1fr", false, true)}
                                             {renderInput("Dirección Oficina Principal", "direccion_oficina_principal", "text", "2fr")}
                                         </div>
-                                        <div style={{ display: 'flex', gap: '1.5rem' }}>
+                                        <div className="form-grid form-grid-3">
                                             {renderInput("Ciudad", "ciudad_juridica")}
                                             {renderInput("Departamento", "departamento_juridica")}
-                                            {renderInput("Teléfono", "telefono_juridica")}
+                                            {renderInput("Teléfono", "telefono_juridica", "text", "1fr", false, true)}
                                         </div>
-                                        <div style={{ display: 'flex', gap: '1.5rem' }}>
+                                        <div className="form-grid form-grid-3">
                                             {renderSelect("¿Tiene sucursales?", "tiene_sucursales", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                             {formData.tiene_sucursales === 'si' && renderInput("Ciudad/Depto/País de sucursales", "sucursales_info", "text", "2fr")}
                                         </div>
-                                        <div style={{ display: 'flex', gap: '1.5rem' }}>
+                                        <div className="form-grid form-grid-3">
                                             {renderInput("Correo Corporativo", "correo_corporativo_juridica", "email")}
                                             {renderInput("Teléfono Corp.", "telefono_corporativo_juridica")}
                                             {renderInput("Celular Corp.", "celular_corporativo_juridica")}
                                         </div>
-                                        <div style={{ display: 'flex', gap: '1.5rem' }}>
+                                        <div className="form-grid form-grid-3">
                                             {renderSelect("Sector Económico", "sector_juridica", [{value:'Agrícola', label:'Agrícola'}, {value:'Comercial', label:'Comercial'}, {value:'Manufactura', label:'Manufactura'}, {value:'Minería', label:'Minería'}, {value:'Servicios', label:'Servicios'}, {value:'Tecnología', label:'Tecnología'}, {value:'Construcción', label:'Construcción'}, {value:'Otro', label:'Otro'}])}
                                             {formData.sector_juridica === 'Otro' && renderInput("¿Cuál sector?", "sector_otro_juridica")}
                                             
@@ -712,23 +714,23 @@ export default function FormularioProveedor() {
                                         </div>
                                         
                                         <h4 style={{ margin: '1rem 0 0', color: 'var(--text-main)', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Datos del Representante Legal</h4>
-                                        <div style={{ display: 'flex', gap: '1.5rem' }}>
-                                            {renderInput("Nombres Rep. Legal", "rep_legal_nombres")}
-                                            {renderInput("Primer Apellido", "rep_legal_primer_apellido")}
+                                        <div className="form-grid form-grid-3">
+                                            {renderInput("Nombres Rep. Legal", "rep_legal_nombres", "text", "1fr", false, true)}
+                                            {renderInput("Primer Apellido", "rep_legal_primer_apellido", "text", "1fr", false, true)}
                                             {renderInput("Segundo Apellido", "rep_legal_segundo_apellido")}
                                         </div>
-                                        <div style={{ display: 'flex', gap: '1.5rem' }}>
+                                        <div className="form-grid form-grid-3">
                                             {renderSelect("Tipo ID", "rep_legal_tipo_id", [{value:'cc', label:'CC'}, {value:'ce', label:'CE'}, {value:'pasaporte', label:'Pasaporte'}])}
-                                            {renderInput("No. Identificación", "rep_legal_numero_id")}
+                                            {renderInput("No. Identificación", "rep_legal_numero_id", "text", "1fr", false, true)}
                                             {renderInput("Lugar Expedición", "rep_legal_lugar_expedicion")}
                                             {renderInput("Fecha Expedición", "rep_legal_fecha_expedicion", "date")}
                                         </div>
-                                        <div style={{ display: 'flex', gap: '1.5rem' }}>
+                                        <div className="form-grid form-grid-3">
                                             {renderInput("Fecha Nacimiento", "rep_legal_fecha_nacimiento", "date")}
                                             {renderInput("Lugar Nacimiento", "rep_legal_lugar_nacimiento")}
                                             {renderInput("Nacionalidad", "rep_legal_nacionalidad")}
                                         </div>
-                                        <div style={{ display: 'flex', gap: '1.5rem' }}>
+                                        <div className="form-grid form-grid-3">
                                             {renderInput("Dirección", "rep_legal_direccion", "text", "2fr")}
                                             {renderInput("Teléfono", "rep_legal_telefono")}
                                         </div>
@@ -750,7 +752,7 @@ export default function FormularioProveedor() {
                                     <strong>Definición PEP:</strong> Es aquella persona que desempeñó o ejerce actualmente un cargo o función pública relevante para un país. <br/><br/>
                                     <strong>Reconocimiento Público:</strong> Son aquellas que debido a su destreza especial o habilidad obtienen notoriedad entre el público.
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                                <div className="form-grid form-grid-2">
                                     {renderSelect("¿Es o fue funcionario entidad pública (Estado)?", "es_funcionario_publico", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                     {renderSelect("¿Vínculo familiar con persona PEP?", "vinculo_familiar_pep", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                     {renderSelect("¿Ejerce algún grado de poder público?", "ejerce_poder_publico", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
@@ -787,17 +789,17 @@ export default function FormularioProveedor() {
 
                                 <h4 style={{ margin: '0 0 1rem 0', color: 'var(--text-main)' }}>Perfil Financiero (Valores en COP)</h4>
                                 <div style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem', border: '1px solid var(--border)' }}>
-                                    <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem' }}>
-                                        <CurrencyInput label="Total Activos" name="activos" value={formData.activos} onChange={handleChange} />
-                                        <CurrencyInput label="Total Pasivos" name="pasivos" value={formData.pasivos} onChange={handleChange} />
-                                        <CurrencyInput label="Patrimonio Líquido" name="patrimonio" value={formData.patrimonio} onChange={handleChange} />
+                                    <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
+                                        <CurrencyInput label="Total Activos" name="activos" value={formData.activos} onChange={handleChange} required={true} />
+                                        <CurrencyInput label="Total Pasivos" name="pasivos" value={formData.pasivos} onChange={handleChange} required={true} />
+                                        <CurrencyInput label="Patrimonio Líquido" name="patrimonio" value={formData.patrimonio} onChange={handleChange} required={true} />
                                     </div>
-                                    <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem' }}>
-                                        <CurrencyInput label="Ingresos Mensuales" name="ingresos_mensuales" value={formData.ingresos_mensuales} onChange={handleChange} />
-                                        <CurrencyInput label="Egresos Mensuales" name="egresos_mensuales" value={formData.egresos_mensuales} onChange={handleChange} />
+                                    <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
+                                        <CurrencyInput label="Ingresos Mensuales" name="ingresos_mensuales" value={formData.ingresos_mensuales} onChange={handleChange} required={true} />
+                                        <CurrencyInput label="Egresos Mensuales" name="egresos_mensuales" value={formData.egresos_mensuales} onChange={handleChange} required={true} />
                                     </div>
 
-                                    <div style={{ display: 'flex', gap: '1.5rem' }}>
+                                    <div className="form-grid form-grid-3">
                                         <CurrencyInput label="Otros Ingresos Mensuales" name="otros_ingresos_mensuales" value={formData.otros_ingresos_mensuales} onChange={handleChange} />
                                         {renderInput("Concepto Otros Ingresos", "concepto_otros_ingresos")}
                                     </div>
@@ -806,7 +808,7 @@ export default function FormularioProveedor() {
                                 {!isInternalRole && (
                                     <React.Fragment>
                                         <h4 style={{ margin: '1rem 0 0', color: 'var(--text-main)', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Operaciones Internacionales y Activos Virtuales</h4>
-                                        <div style={{ display: 'flex', gap: '1.5rem' }}>
+                                        <div className="form-grid form-grid-3">
                                             {renderSelect("¿Realiza Operaciones con Activos Virtuales (Cripto)?", "activos_virtuales", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                             {formData.activos_virtuales === 'si' && renderInput("¿Cuáles activos virtuales?", "cuales_activos_virtuales")}
                                         </div>
@@ -821,7 +823,7 @@ export default function FormularioProveedor() {
                                                 {value: 'ninguno', label: 'Ninguno de los anteriores'}
                                             ])}
                                         </div>
-                                        <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem', marginTop: '1rem' }}>
+                                        <div className="form-grid form-grid-3" style={{ margin: "1rem 0" }}>
                                             {renderSelect("¿Posee Productos Financieros en Exterior?", "posee_productos_exterior", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                         </div>
                                     </React.Fragment>
@@ -956,7 +958,7 @@ export default function FormularioProveedor() {
                                     <Globe size={22} /> Operaciones Internacionales y Activos Virtuales
                                 </h3>
 
-                                <div style={{ display: 'flex', gap: '2rem', marginBottom: '1.5rem' }}>
+                                <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
                                     <div style={{ flex: 1 }}>
                                         <label className="label">¿Realiza operaciones internacionales?</label>
                                         <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
@@ -1054,7 +1056,7 @@ export default function FormularioProveedor() {
                                     <strong>Definición PEP:</strong> Es aquella persona que desempeñó o ejerce actualmente un cargo o función pública relevante para un país (ej: Jefes de Estado, altos funcionarios gubernamentales, militares, judiciales, directivos de empresas estatales). <br/><br/>
                                     <strong>Reconocimiento Público:</strong> Son aquellas que debido a su destreza especial o habilidad (artes, farándula, deporte, ciencias, youtubers, líderes religiosos) obtienen notoriedad entre el público.
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                                <div className="form-grid form-grid-2">
                                     {renderSelect("¿Es o fue funcionario entidad pública (Estado)?", "es_funcionario_publico", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                     {renderSelect("¿Vínculo familiar con persona PEP?", "vinculo_familiar_pep", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                     {renderSelect("¿Ejerce algún grado de poder público?", "ejerce_poder_publico", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
@@ -1125,7 +1127,7 @@ export default function FormularioProveedor() {
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                                     <div style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
                                         <h4 style={{ margin: '0 0 1rem 0' }}>Políticas y Comportamientos Éticos</h4>
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                                        <div className="form-grid form-grid-2" style={{ marginBottom: "1.5rem" }}>
                                             {renderSelect("¿Prevención de corrupción y soborno?", "politica_corrupcion", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                             {renderSelect("¿Tiene código de ética y/o conducta?", "codigo_etica_conducta", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                             {renderSelect("¿Tiene comité de ética y cumplimiento?", "tiene_comite_etica", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
@@ -1156,21 +1158,21 @@ export default function FormularioProveedor() {
                                             
                                             {renderCheckboxArray("2. ¿La empresa cuenta con políticas, procedimientos o lineamientos relacionados con?", "esg_politicas", [{value:'Sostenibilidad', label:'Sostenibilidad'}, {value:'Aspectos ambientales', label:'Aspectos ambientales'}, {value:'Sociales', label:'Sociales'}, {value:'Gobernanza', label:'Gobernanza'}, {value:'No', label:'No'}])}
                                             
-                                            <div style={{ display: 'flex', gap: '1.5rem' }}>
+                                            <div className="form-grid form-grid-3">
                                                 {renderSelect("3. ¿Utiliza materias primas o insumos con criterios de sostenibilidad?", "esg_materias_sostenibles", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                                 {renderSelect("4. ¿Evalúa a sus proveedores con criterios legales, éticos o ambientales?", "esg_evalua_proveedores", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                             </div>
                                             {formData.esg_evalua_proveedores === 'si' && (
-                                                <div style={{ display: 'flex', gap: '1.5rem' }}>
+                                                <div className="form-grid form-grid-3">
                                                     {renderInput("¿Cuáles criterios evalúa?", "esg_evalua_cuales", "text", "1fr")}
                                                 </div>
                                             )}
 
-                                            <div style={{ display: 'flex', gap: '1.5rem' }}>
+                                            <div className="form-grid form-grid-3">
                                                 {renderSelect("5. ¿En los últimos 5 años ha sido sancionada/investigada por asuntos ESG?", "esg_sancionada", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                             </div>
                                             {formData.esg_sancionada === 'si' && (
-                                                <div style={{ display: 'flex', gap: '1.5rem' }}>
+                                                <div className="form-grid form-grid-3">
                                                     {renderInput("Describa el motivo", "esg_sancionada_motivo", "text", "1fr")}
                                                 </div>
                                             )}
@@ -1189,22 +1191,22 @@ export default function FormularioProveedor() {
                                                 {value:'Otros', label:'Otros (especifique)'}
                                             ])}
                                             {formData.esg_practicas_ambientales.includes('Otros') && (
-                                                <div style={{ display: 'flex', gap: '1.5rem' }}>
+                                                <div className="form-grid form-grid-3">
                                                     {renderInput("¿Cuáles otras prácticas?", "esg_practicas_ambientales_otros", "text", "1fr")}
                                                 </div>
                                             )}
 
-                                            <div style={{ display: 'flex', gap: '1.5rem' }}>
+                                            <div className="form-grid form-grid-3">
                                                 {renderSelect("7. ¿Garantiza el cumplimiento de legislación laboral y seguridad social?", "esg_legislacion_laboral", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                                 {renderSelect("8. ¿Cuenta con un SG-SST implementado?", "esg_sgsst", [{value:'no', label:'No'}, {value:'si', label:'Sí'}, {value:'no_aplica', label:'No Aplica'}])}
                                             </div>
 
-                                            <div style={{ display: 'flex', gap: '1.5rem' }}>
+                                            <div className="form-grid form-grid-3">
                                                 {renderSelect("9. ¿Cuenta con políticas para respetar los derechos humanos?", "esg_derechos_humanos", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                                 {renderSelect("10. ¿Prohíbe y previene el trabajo infantil o forzoso?", "esg_prohibe_trabajo_infantil", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                             </div>
 
-                                            <div style={{ display: 'flex', gap: '1.5rem' }}>
+                                            <div className="form-grid form-grid-3">
                                                 {renderSelect("11. ¿Promueve un entorno libre de discriminación y acoso?", "esg_entorno_libre_discriminacion", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                             </div>
                                         </div>
@@ -1253,7 +1255,7 @@ export default function FormularioProveedor() {
                                 <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><UploadCloud size={20}/> 9. Soportes Documentales</h3>
                                 <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Adjunte los documentos exigidos. Tenga en cuenta las vigencias requeridas para Cámara de Comercio (30 días), Composición Accionaria (3 meses) y Balance (corte año anterior).</p>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                                <div className="form-grid form-grid-2" style={{ marginBottom: "1.5rem" }}>
                                     {(isInternalRole ? [
                                         { id: 'identificacion', label: 'Cédula de Ciudadanía' }
                                     ] : formData.tipo_persona === 'natural' ? [
