@@ -254,7 +254,7 @@ export default function FormularioEmpleado() {
                                 </div>
 
                                 <h4 style={{ margin: '2rem 0 1rem 0' }}>Perfil Tributario</h4>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
+                                <div className="form-grid form-grid-4">
                                     {renderSelect("Responsable IVA", "responsable_iva", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                     {renderSelect("Régimen Simple", "regimen_simple", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                     {renderSelect("Gran Contribuyente", "gran_contribuyente", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}

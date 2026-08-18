@@ -379,6 +379,18 @@ export default function FormularioProveedor() {
                 return false;
             }
         }
+        if (pasoActual === 9) {
+            const requiredDocs = isInternalRole ? ['identificacion'] : 
+                (d.tipo_persona === 'natural' ? ['rut', 'identificacion', 'certificado_naturales', 'formato_pep'] :
+                ['rut', 'cc_comercio', 'cedula_rep_legal', 'balance_empresa', 'composicion_accionaria']);
+            
+            for (const doc of requiredDocs) {
+                if (!d.archivos_cargados || !d.archivos_cargados[doc]) {
+                    showToast(`El documento de soporte es obligatorio. Por favor suba todos los archivos antes de continuar.`);
+                    return false;
+                }
+            }
+        }
         return true;
     };
 
@@ -777,7 +789,7 @@ export default function FormularioProveedor() {
                                 <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CreditCard size={20}/> 3. Información Tributaria y Financiera</h3>
                                 
                                 <h4 style={{ margin: '0 0 1rem 0', color: 'var(--text-main)' }}>Perfil Tributario</h4>
-                                <div style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: 'var(--radius-md)', marginBottom: '2rem', border: '1px solid var(--border)', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
+                                <div className="form-grid form-grid-4" style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: 'var(--radius-md)', marginBottom: '2rem', border: '1px solid var(--border)' }}>
                                     {renderSelect("Responsable IVA", "responsable_iva", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                     {renderSelect("Régimen Simple", "regimen_simple", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                     {renderSelect("Gran Contribuyente", "gran_contribuyente", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
