@@ -114,7 +114,8 @@ app.post('/api/v1/invitaciones', async (req, res) => {
         }
 
         // Link de acceso único
-        const linkAcceso = `http://localhost:5173/onboarding?token=${token}`;
+        const frontendUrl = process.env.FRONTEND_URL || req.headers.origin || 'https://sagrilaft.cosechasexpress.com';
+        const linkAcceso = `${frontendUrl}/onboarding?token=${token}`;
 
         // Enviar correo electrónico
         const mailOptions = {

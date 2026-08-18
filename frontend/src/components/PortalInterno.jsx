@@ -22,7 +22,7 @@ export default function PortalInterno() {
             setEstado({ 
                 cargando: false, 
                 exito: true, 
-                linkGenerado: `http://localhost:5173/onboarding?token=${respuesta.token}`,
+                linkGenerado: `${window.location.origin}/onboarding?token=${respuesta.token}`,
                 previewUrl: respuesta.previewUrl,
                 error: '' 
             });
@@ -47,7 +47,14 @@ export default function PortalInterno() {
                 className="card glass-panel" 
                 style={{ width: '100%', maxWidth: '600px', padding: '2.5rem', border: '1px solid var(--border)' }}
             >
-                <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                <div style={{ textAlign: 'center', marginBottom: '2rem', position: 'relative' }}>
+                    <button 
+                        onClick={() => window.location.href = '/dashboard'}
+                        className="btn-outline"
+                        style={{ position: 'absolute', left: 0, top: 0, padding: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', border: 'none' }}
+                    >
+                        ⬅️ Volver
+                    </button>
                     <div style={{ display: 'inline-flex', padding: '1rem', background: 'rgba(20, 80, 120, 0.1)', borderRadius: '50%', marginBottom: '1rem' }}>
                         <Shield size={40} color="var(--primary)" />
                     </div>

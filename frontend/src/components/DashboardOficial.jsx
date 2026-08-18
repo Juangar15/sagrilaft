@@ -405,7 +405,7 @@ export default function DashboardOficial() {
                     </h1>
                     <p style={{ margin: 0, color: 'var(--text-muted)' }}>Monitoreo de contrapartes en tiempo real</p>
                 </div>
-                <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                     <div style={{ position: 'relative', width: '300px' }}>
                         <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                         <input 
@@ -417,6 +417,13 @@ export default function DashboardOficial() {
                             style={{ paddingLeft: '2.5rem' }}
                         />
                     </div>
+                    <button 
+                        onClick={() => window.location.href = '/portal-interno'}
+                        className="btn-primary"
+                        style={{ padding: '0.75rem 1.5rem', whiteSpace: 'nowrap' }}
+                    >
+                        ➕ Generar Nueva Invitación
+                    </button>
                 </div>
               </header>
               <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--border)' }}>

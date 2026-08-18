@@ -10,8 +10,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Redirigir la raíz al gateway por defecto */}
-        <Route path="/" element={<Navigate to="/onboarding" replace />} />
+        {/* Redirigir la raíz al dashboard para los oficiales internos */}
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
         {/* Rutas principales del MVP */}
         <Route path="/onboarding" element={<GatewayOnboarding />} />
