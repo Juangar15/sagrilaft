@@ -130,34 +130,85 @@ p {
 
 .input-field {
   width: 100%;
-  padding: 0.75rem 1rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
+  padding: 0.85rem 1.25rem;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border);
   font-family: var(--font-family);
-  font-size: 1rem;
-  transition: all 0.2s;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
   background: var(--surface);
   color: var(--text-main);
   outline: none;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02) inset;
 }
 
 .input-field:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.15);
+  background: #fff;
+}
+
+.input-field.error {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
 }
 
 .input-field:disabled {
   background: var(--bg-color);
   color: var(--text-muted);
   cursor: not-allowed;
+  border-color: #f1f5f9;
 }
 
 .label {
   display: block;
   font-size: 0.875rem;
-  font-weight: 500;
-  margin-bottom: 0.5rem;
-  color: var(--text-main);
+  font-weight: 600;
+  margin-bottom: 0.6rem;
+  color: #334155;
+  letter-spacing: 0.01em;
+}
+
+.label.required::after {
+  content: " *";
+  color: var(--danger);
+  font-weight: bold;
+}
+
+/* Form Grid System */
+.form-section {
+  background: var(--surface);
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.form-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  color: var(--primary-dark);
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.form-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .form-grid-2 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 1024px) {
+  .form-grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .form-grid-4 { grid-template-columns: repeat(4, 1fr); }
 }
 
 /* Badges */
