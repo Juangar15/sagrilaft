@@ -132,9 +132,13 @@ export default function PortalInterno() {
                                         onChange={e => setFormData({...formData, tipo_vinculacion: e.target.value})}
                                     >
                                         <option value="proveedor">Proveedor</option>
-                                        <option value="cliente">Cliente</option>
+                                        <option value="cliente_selecta">Cliente (Selecta)</option>
+                                        <option value="franquiciado">Franquiciado</option>
+                                        <option value="posible_franquiciado">Posible Franquiciado</option>
                                         <option value="empleado">Empleado</option>
+                                        <option value="prestacion_servicios">Prestación de Servicios</option>
                                         <option value="contratista">Contratista</option>
+                                        <option value="accionista">Accionista</option>
                                     </select>
                                 </div>
                                 
