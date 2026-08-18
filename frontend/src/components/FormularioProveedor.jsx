@@ -536,14 +536,14 @@ export default function FormularioProveedor() {
 
             <div style={{ maxWidth: '800px', margin: '0 auto' }}>
             {/* Header / Barra de Progreso */}
-            <div style={{ background: 'var(--surface)', padding: '1rem 2rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <ShieldCheck size={28} color="var(--primary)" />
-                    <h2 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.2rem' }}>Portal de Vinculación y Debida Diligencia (SAGRILAFT)</h2>
+            <div style={{ background: 'var(--surface)', padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '1rem', position: 'sticky', top: 0, zIndex: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <ShieldCheck size={28} color="var(--primary)" style={{ flexShrink: 0 }} />
+                    <h2 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.1rem', lineHeight: '1.3' }}>Portal de Vinculación y Debida Diligencia (SAGRILAFT)</h2>
                 </div>
-                <div style={{ display: 'flex', gap: '0.2rem' }}>
+                <div style={{ display: 'flex', gap: '4px', width: '100%' }}>
                     {pasosDisponibles.map((p, i) => (
-                        <div key={p.id} title={p.label} style={{ width: '30px', height: '6px', borderRadius: '3px', background: currentStepIndex >= i ? 'var(--primary)' : 'var(--border)', transition: 'background 0.3s ease' }} />
+                        <div key={p.id} title={p.label} style={{ flex: 1, height: '6px', borderRadius: '3px', background: currentStepIndex >= i ? 'var(--primary)' : 'var(--border)', transition: 'background 0.3s ease' }} />
                     ))}
                 </div>
             </div>
