@@ -1,0 +1,1780 @@
+Gemini
+Exported on: 10/6/2026, 7:41:38 a. m.
+
+User [4 de jun de 2026 2:48 PM]
+
+Aqui en la empresa se quiere hacer un proyecto para el sagrilaft, actualmente es un proceso bastante engorroso, se maneja asi masomenos explicado superficialmente como para ir pensando y proyectandonos, 
+
+se tienen 3 tipos de personas que nos envian algunso documentos requeridos: proveedores, clientes, empleados
+
+Esos documentos llegan a una persona, la cual envia los documentos a otra persona, que revisa, si si los envia a otra persona que es como el oficial de cunplimiento y revisa y consulta e ciertas paginas como dian y asi, si si, lo vuelve a enviar a la primera persona y se genera como un certificado, una vez, hecho eso, el oficial de cumplimiento tiene como unas variables en una matriz de riesgo donde hay varios puntajes y le pone eso, y de acuero a eso mira el resultado y si si reunirnos si no pues no algo asi masomenos.
+
+actualmente todo eso es por envios de correo, la matriz en excel, todos los documentos estan alojados en un drive y asi, como una explicacion superficial
+
+==================================================
+
+Gemini [4 de jun de 2026 2:48 PM]
+
+¡Qué tal, ingeniero! Entiendo perfectamente la situación. El proceso de SAGRILAFT (Sistema de Autocontrol y Gestión del Riesgo Integral de Lavado de Activos) suele convertirse en un dolor de cabeza cuando escala, especialmente si depende de cadenas de correo, archivos de Excel y envíos manuales. Es el escenario clásico donde la información se pierde, los tiempos de respuesta se alargan y el riesgo de error humano es altísimo.
+
+Viendo el panorama superficial que me planteas, tienes una oportunidad excelente para estructurar un sistema transaccional que automatice el flujo de trabajo (workflow). Pasemos de ese modelo "artesanal" a una arquitectura de software más robusta.
+
+Aquí te presento una proyección de cómo podríamos estructurar y modularizar este proyecto para optimizarlo:
+
+### 1. Portal de Autogestión (Recepción de Documentos)
+* **El Problema:** La gente envía documentos por correo, muchas veces incompletos o en formatos incorrectos.
+* **La Solución:** Crear un portal web (por ejemplo, desarrollado en **React**) donde los proveedores, clientes y empleados tengan perfiles separados. 
+* **Flujo:** Ellos mismos suben sus RUTs, cédulas y formularios. El sistema valida que los campos y archivos obligatorios estén completos antes de permitir el envío. Esto elimina el trabajo de la "Persona 1" de estar persiguiendo documentos faltantes.
+
+### 2. Motor de Workflow (Dashboard de Revisión)
+* **El Problema:** Pasar la "pelota" por correo entre la Persona 1, la Persona 2 y el Oficial de Cumplimiento.
+* **La Solución:** Un panel de administración con un sistema de estados (ej. *Cargado*, *En Revisión*, *En Análisis de Cumplimiento*, *Aprobado*, *Rechazado*).
+* **Flujo:** * Cuando el usuario sube los documentos, la **Persona 1** y **Persona 2** ven el caso en su bandeja de entrada dentro de la app.
+    * Con un solo clic aprueban los documentos, y el caso pasa automáticamente a la bandeja del Oficial de Cumplimiento.
+
+### 3. Automatización de Consultas (Validación en Listas y DIAN)
+* **El Problema:** El Oficial de Cumplimiento tiene que entrar manualmente a la DIAN, Procuraduría, Contraloría, listas restrictivas (OFAC, ONU), etc.
+* **La Solución:** Aquí es donde se puede aprovechar **Python** para crear *scripts* de web scraping o consumir APIs de terceros (si existen servicios contratados) para consultar el número de identificación del cliente/proveedor/empleado.
+* **Flujo:** El sistema le puede pre-cargar un reporte al Oficial de Cumplimiento indicando si encontró alguna alerta roja en bases de datos públicas, ahorrándole el trabajo de digitación.
+
+### 4. Matriz de Riesgo Dinámica y Generación de Certificados
+* **El Problema:** Usar Excel para la matriz de riesgo es propenso a alteraciones y dificulta la trazabilidad y la reportería.
+* **La Solución:** Trasladar la matriz de riesgo a la base de datos.
+* **Flujo:**
+    * El Oficial de Cumplimiento llena un formulario interno dentro de la plataforma (asignando las variables).
+    * El sistema (el backend) calcula el *score* de riesgo automáticamente con base en las reglas de negocio.
+    * Si el resultado es favorable, la plataforma genera el **Certificado en PDF** de manera automática y se lo envía por correo al cliente/proveedor/empleado.
+    * Si el riesgo es alto, genera una alerta para programar la reunión que mencionas.
+
+### 5. Almacenamiento Centralizado
+* Dado que ya utilizan el ecosistema de Google y tienen los documentos en Drive, la aplicación puede integrarse directamente con la **API de Google Drive**. Así, cuando un usuario sube un archivo desde la plataforma web, el backend (por ejemplo en **Python** o **Node.js**) lo envía por detrás a una carpeta de Drive estructurada y organizada por número de cédula/NIT y fecha, manteniendo el repositorio limpio sin intervención humana.
+
+---
+
+Este enfoque no solo reduce los tiempos de aprobación drásticamente, sino que le deja una trazabilidad perfecta a la empresa en caso de una auditoría externa (se sabe quién aprobó qué, a qué hora, y cuál fue el puntaje de la matriz).
+
+Para empezar a aterrizar la arquitectura técnica y definir por dónde empezar, ¿qué parte de este proceso consideras que es el mayor cuello de botella actual: la recolección de los documentos con los usuarios, las validaciones manuales en páginas externas o el manejo de la matriz en Excel?
+
+==================================================
+
+User [4 de jun de 2026 2:56 PM]
+
+primero, no tenemos google sino microsoft, por otro lado como se haria esa automatizacion para las paginas del oficial de cumplimiento esas paginas que debe consultar, o no seria mejor poner los links para que vaya o como seria mejor?, normamlmente como manejan el sagrilaft otras empresas, quiero primero aprender bastante de eso para que quede perfecto
+
+==================================================
+
+Gemini [4 de jun de 2026 2:56 PM]
+
+¡Entendido! Cambio de chip entonces: si el ecosistema es Microsoft, la arquitectura cambia un poco, pero los principios son los mismos. En lugar de Drive, usaríamos **SharePoint** para el almacenamiento centralizado, y en lugar de Google Workspace, se puede orquestar mucho con **Azure**, **Power Automate** o desarrollando el backend para que se conecte directamente al Graph API de Microsoft.
+
+Entremos en materia con tus preguntas, ya que diseñar un buen sistema SAGRILAFT requiere entender cómo operan las empresas con un nivel de madurez alto en este aspecto.
+
+### 1. ¿Automatizar consultas, usar enlaces o hacer web scraping?
+
+El Oficial de Cumplimiento (OC) normalmente debe consultar bases como la Policía, Procuraduría, Contraloría, DIAN, OFAC (Lista Clinton), ONU, entre otras. Aquí tienes las tres opciones de cómo se aborda, desde la más básica hasta la más profesional:
+
+* **Opción A: Poner los links (El MVP o Producto Mínimo Viable)**
+    * **Cómo funciona:** En el panel del Oficial de Cumplimiento (tu app en React, por ejemplo), pones los datos de la persona a un lado y una lista de botones con los enlaces directos a las páginas de consulta al otro.
+    * **Pros:** Es facilísimo de programar y saca al proyecto del lado del correo electrónico rápidamente.
+    * **Contras:** El Oficial sigue haciendo el trabajo manual de digitar la cédula en 5 o 6 páginas distintas y tomar capturas de pantalla para la evidencia.
+
+* **Opción B: Web Scraping / Bots (Desarrollo interno)**
+    * **Cómo funciona:** Ya que tienes experiencia creando bots con Python, podrías programar un script (con Selenium o Playwright) que tome la cédula, navegue por las páginas del estado, haga la consulta, tome un *screenshot* y lo guarde.
+    * **Pros:** Automatización total sin pagar licencias externas.
+    * **Contras:** Es un dolor de cabeza mantenerlo. Las páginas del gobierno en Colombia cambian su estructura constantemente, se caen a menudo, y lo más crítico: **tienen Captchas**. Resolver captchas dinámicos por código es inestable y muchas veces bloquean la IP de tu servidor.
+
+* **Opción C: Consumo de APIs de terceros (El estándar de la industria)**
+    * **Cómo funciona:** Las empresas serias no consultan página por página. Contratan a un proveedor (como *TusDatos.co*, *Truora*, *DataCrédito* o *LexisNexis*) que ya tiene una API construida.
+    * **Pros:** Desde tu backend, envías un JSON con la cédula o NIT al endpoint del proveedor, y en segundos te devuelven una respuesta estructurada diciendo: "Sin antecedentes en Procuraduría, sin coincidencias en Lista Clinton, RUT activo en DIAN". Así, el sistema aprueba o levanta alertas automáticamente sin que el Oficial de Cumplimiento mueva un dedo.
+    * **Contras:** Tiene un costo por consulta (usualmente unos pocos cientos de pesos por petición).
+
+### 2. ¿Cómo manejan el SAGRILAFT otras empresas? (El flujo ideal)
+
+Para que el proyecto quede perfecto y te proyectes a nivel de ingeniería, así es como se diseña un sistema robusto de *Compliance* (Cumplimiento):
+
+1.  **Onboarding Digital (Cero correos):**
+    El cliente/empleado no envía correos. Entra a un portal web, llena un formulario y sube sus PDFs. El sistema lee el RUT (usando alguna librería de OCR en Python o JavaScript) y autocompleta los campos para evitar errores de digitación.
+2.  **Screening Automático (Filtro inicial):**
+    Apenas se guarda el registro, el sistema hace la petición a la API de antecedentes (Opción C). Si la API devuelve que la persona está en la Lista Clinton (OFAC), el sistema bloquea automáticamente la creación del tercero y le envía una alerta crítica al Oficial de Cumplimiento.
+3.  **Matriz de Riesgo Parametrizable:**
+    La matriz no es un Excel, es un motor de reglas en tu base de datos. Se evalúan variables como:
+    * *Jurisdicción:* ¿De dónde es el cliente? (Medellín tiene un riesgo X, una zona fronteriza tiene riesgo Y).
+    * *Canal:* ¿Venta presencial o web?
+    * *Producto:* ¿Qué tipo de servicio adquiere?
+    * El sistema suma los pesos de estas variables y da un *Score*. Si el score es bajo, aprueba automáticamente. Si es alto, lo manda a la bandeja del Oficial para "Debida Diligencia Intensificada".
+4.  **Trazabilidad y Auditoría (Logs):**
+    Todo movimiento queda registrado en la base de datos: quién consultó, a qué hora, qué IP tenía y cuál fue el resultado. Esto es vital porque si la Superintendencia de Sociedades hace una auditoría, pedirán estas bitácoras.
+5.  **Monitoreo Continuo:**
+    El riesgo no se mide solo el día que entra el empleado o cliente. Un buen sistema tiene un "Cron Job" (una tarea programada) que cada 6 meses toma toda la base de datos de clientes activos y los vuelve a cruzar por las listas restrictivas para ver si su estado cambió.
+
+Para definir por dónde empezar a programar la arquitectura de este proyecto, ¿en la empresa tienen contemplado algún presupuesto para integrar una API de validación de antecedentes, o el enfoque inicial debe ser 100% desarrollo interno con herramientas gratuitas y enlaces?
+
+==================================================
+
+User [4 de jun de 2026 3:18 PM]
+
+y me dices una api de la lista clinton, pero da solo eso? o tambien de la dian y absolutamente todas las paginas que se necesitan consultar, ademas de que ahi hablas solo de empleados y clientes, pero de proveedores que? si tienen inversionistas y uno solo de ellos sale mal que? todo eso hay que mirarlo, que api se miraria para la consulta de todos los antecedentes y todo lo necesario?, necesito mirar si se utilizaria el precio, ademas si se guardarian absolutamente todos los pdfs en el drive, como seria todo eso, precio de api si fuese necesario, ademas actualmente vamos a desplegar el otro proyecto que es el bot de whatsapp que se hizo anteriormente en hostinger con un sevidor vps el plan Kv4, con supabase descargado en dockers, ahi tambien se implementaria este? como seria absoultamente todo eso
+
+==================================================
+
+Gemini [4 de jun de 2026 3:18 PM]
+
+Ingeniero, vamos a desglosar esto con total rigor técnico y normativo. Para que el proyecto quede perfecto, es crucial entender que el **SAGRILAFT** no se limita a revisar una cédula en la "Lista Clinton". El alcance es mucho más profundo, especialmente cuando entramos en el terreno de los **proveedores e inversionistas**.
+
+Aquí tienes la explicación detallada de cómo funciona el ecosistema de cumplimiento, los costos, el almacenamiento de evidencias y cómo integrar esta arquitectura en tu servidor actual.
+
+---
+
+### 1. Las APIs de Cumplimiento: Centralización Total
+Las empresas de tecnología en *compliance* no venden acceso a una sola lista; ofrecen una **API de verificación de antecedentes e identidad (Background Checks)**. Con una sola consulta (enviando el NIT o la cédula), el backend de ese proveedor consulta en tiempo real o en caché indexada **más de 300 fuentes**, que incluyen:
+* **Nacionales (Obligatorias):** DIAN (estado del RUT), Policía Nacional, Procuraduría, Contraloría, Registraduría (vigencia del documento), Rama Judicial (procesos activos).
+* **Listas Restrictivas Internacionales:** OFAC (Lista Clinton), ONU, FBI, Interpol, Europol, Reino Unido, entre otras.
+* **PEPs (Personas Expuestas Políticamente):** Crucial para SAGRILAFT. Detecta si la persona es o fue funcionario público, maneja recursos del estado o tiene vínculos con ellos.
+
+### 2. El Filtro de Proveedores, Socios e Inversionistas (Beneficiarios Finales)
+Esta es la regla de oro en SAGRILAFT: **No se evalúa solo a la empresa (Persona Jurídica), se evalúa a las personas detrás de ella.**
+Cuando registras un proveedor (ej. una SAS), el proceso normativo exige identificar a los **Beneficiarios Finales (UBO - Ultimate Beneficial Owners)**, que son los inversionistas o socios que tengan más del 5% o 10% del capital social, y al Representante Legal.
+
+* **¿Cómo se hace en el sistema?:** El portal de autogestión que desarrolles debe solicitar el NIT del proveedor y la composición accionaria (nombres y cédulas de los socios principales).
+* **Si uno solo sale mal:** Si el NIT de la empresa está limpio, pero **uno de sus inversionistas clave o el representante legal** aparece en la Lista Clinton o con antecedentes de lavado de activos, el sistema debe **bloquear inmediatamente al proveedor**. Legalmente, operar con esa empresa contaminaría a la tuya. El sistema frena el flujo, no genera certificado y dispara una alerta roja crítica al Oficial de Cumplimiento.
+
+### 3. Precios Estimados de las APIs en Colombia
+Proveedores como **TusDatos.co, Truora, Colombia API, LexisNexis o Compliance.com.co** manejan esquemas de pago por consumo (peticiones API) o bolsas mensuales:
+* **Costo por consulta:** Oscila entre **$800 COP y $3,500 COP** por documento consultado, dependiendo del volumen mensual que contrate la empresa.
+* **Modelo de cobro:** Si consultas un proveedor corporativo donde revisas el NIT + 3 socios + 1 representante legal, estarías realizando 5 consultas API en total para ese único proveedor. Esto se debe presupuestar en el costo de onboarding de terceros.
+
+### 4. Flujo de Evidencias y Almacenamiento en OneDrive/SharePoint
+Las APIs de cumplimiento devuelven dos cosas tras una consulta: un archivo JSON con los datos estructurados (para que tu base de datos tome decisiones automáticas) y un **PDF firmado digitalmente con los pantallazos y certificados de cada entidad** como prueba legal ante la Superintendencia.
+
+El flujo automatizado funciona así:
+1. Tu backend recibe el PDF en formato binario o Base64 desde la API de cumplimiento.
+2. Mediante la **API de Microsoft Graph**, tu backend se autentica en el ecosistema de la empresa.
+3. El archivo se sube automáticamente a una estructura de carpetas en **SharePoint/OneDrive**, por ejemplo: `/SAGRILAFT/Proveedores/2026/[NIT_Proveedor]/Evidencia_Onboarding.pdf`.
+4. El link permanente de SharePoint de ese archivo se almacena en tu base de datos junto al registro del tercero para consulta rápida.
+
+### 5. Arquitectura de Despliegue: VPS Hostinger (KVM 4) + Supabase Docker
+Tu infraestructura actual con el plan **KVM 4 de Hostinger** (que cuenta con excelentes recursos de CPU, RAM y almacenamiento NVMe) es **más que suficiente** para albergar ambos proyectos simultáneamente. Al usar Docker para Supabase, tienes un entorno aislado y profesional.
+
+Así se estructuraría absolutamente todo en el mismo servidor:
+
+* **Base de Datos Centralizada (Supabase):** No necesitas instalar otra base de datos. Dentro de tu instancia de Supabase en Docker, puedes crear un **Schema independiente** llamado `sagrilaft`. Esto mantendrá las tablas del bot de WhatsApp separadas de las tablas del sistema de cumplimiento (terceros, logs de auditoría, variables de la matriz de riesgo), compartiendo el mismo motor de base de datos sin interferencias.
+* **Backend del Proyecto (Node.js/Express o Python):** Creas un nuevo contenedor Docker para la API de SAGRILAFT. Este backend recibirá las solicitudes del frontend, consumirá la API de antecedentes (ej. TusDatos), procesará la Matriz de Riesgo, se conectará a Supabase para guardar los estados y hablará con Microsoft Graph para guardar los PDFs en SharePoint.
+* **Sinergia con el Bot de WhatsApp:** Al estar en el mismo servidor y compartir base de datos, ¡puedes conectarlos! Si el sistema SAGRILAFT detecta que un inversionista de un proveedor salió positivo en una lista restrictiva, el backend de SAGRILAFT puede realizar una petición interna al contenedor del Bot de WhatsApp para que envíe una **notificación push inmediata por WhatsApp al Oficial de Cumplimiento** avisando de la anomalía.
+* **Frontend (React/Next.js):** El panel de administración y el portal de carga de documentos se compilan y se pueden servir usando un contenedor Nginx en la misma VPS, apuntando a un subdominio diferente (ej. `sagrilaft.tuempresa.com`).
+
+---
+
+Para ayudarte a visualizar y dominar cómo interactúan todas estas piezas, las variables de la matriz de riesgo y las consultas de los inversionistas, he preparado el siguiente simulador interactivo del flujo de cumplimiento. Puedes experimentar qué sucede cuando alteras los estados de los socios o clientes y ver cómo reacciona el pipeline técnico.
+
+--------------------------------------------------
+Language: json?chameleon
+--------------------------------------------------
+{"component":"LlmGeneratedComponent","props":{"height":"800px","prompt":"Simulador interactivo del pipeline de cumplimiento SAGRILAFT para ingeniería de software. Permitir al usuario seleccionar el tipo de tercero (Proveedor, Cliente, Empleado). Si se selecciona Proveedor, habilitar dinámicamente controles para evaluar al Representante Legal y hasta dos Inversionistas/Socios (Beneficiarios Finales). Incluir toggles o controles para simular hallazgos de la API de antecedentes: Coincidencia en Lista Clinton/OFAC, Alerta de Antecedentes Judiciales, Estado del RUT en la DIAN (Activo/Inactivo) y Condición de PEP. Incluir selectores para variables de la Matriz de Riesgo: Jurisdicción (Riesgo Bajo, Medio, Alto) y Actividad Económica (Normal, Alto Riesgo). El componente debe calcular dinámicamente el Score de Riesgo SAGRILAFT y la Categoría de Riesgo resultante (Aprobado Automático, Revisión Manual por Oficial, o Bloqueo Inmediato Crítico). Mostrar una representación visual del flujo o pipeline de datos: 1. Captura de Datos -> 2. Consulta API Externa -> 3. Motor de Reglas de la Matriz -> 4. Acciones de Despacho Técnico (Guardado en Supabase Schema Sagrilaft, Almacenamiento de PDF de Evidencia en Microsoft SharePoint mediante Graph API, y trigger de alerta WhatsApp en Hostinger VPS si el riesgo es crítico). Toda la interfaz debe estar en español.","id":"im_38d84b94100bd5e6"}}
+--------------------------------------------------
+
+
+==================================================
+
+User [4 de jun de 2026 4:24 PM]
+
+perfecto entonces segun todo eso, cual seria la ruta para hacer todo este gran proyecto, todo como se haria y como funcionaria, aparte que api me recomiendas teniendo en cuenta mi empresa cosechas y selecta en medellin y eso, cual me recomiendas tomando en cuenta las funcionalidades totales y todo, precios y absolutamente todo
+
+==================================================
+
+Gemini [4 de jun de 2026 4:24 PM]
+
+Ingeniero, vamos a trazar la ruta de arquitectura exacta para Cosechas y Selecta. Como estamos hablando de un despliegue real en producción sobre tu VPS KVM 4 en Hostinger, esta es la hoja de ruta paso a paso para construir el sistema, junto con la comparativa de las mejores APIs del mercado colombiano para este propósito.
+
+## Análisis y Recomendación de APIs para SAGRILAFT en Colombia
+
+Para un caso de uso estricto de cumplimiento (donde necesitas consultar representantes legales, beneficiarios finales y empresas), las dos mejores opciones en el mercado colombiano son **TusDatos.co** y **Truora**.
+
+### 1. TusDatos.co (La opción más recomendada para SAGRILAFT puro)
+Es el estándar de la industria en Colombia específicamente para temas de cumplimiento normativo (SARLAFT/SAGRILAFT). Su API es robusta y te entrega el JSON con la data estructurada y el PDF empaquetado con las evidencias.
+
+*   **Alcance:** Consulta Procuraduría, Contraloría, Policía, DIAN (RUT), Listas restrictivas (OFAC/Clinton, ONU), entre muchas otras.
+*   **Precios 2026 (Modalidad Prepago):** Manejan paquetes con vigencia de 24 meses.
+    *   **Plan Básico:** $610.000 COP por 1.000 consultas ($610 por consulta).
+    *   **Plan Cumplimiento:** $1'340.000 COP por 1.000 consultas ($1.340 por consulta). Este es el que necesitas, ya que incluye las listas restrictivas internacionales y PEPs (Personas Expuestas Políticamente).
+    *   **Plan Cumplimiento 360:** $1'630.000 COP por 1.000 consultas.
+*   **Veredicto:** Es la mejor opción costo-beneficio para Cosechas. Pagas un paquete anual o bianual y lo vas consumiendo.
+
+### 2. Truora (La opción integral si quieres ir más allá)
+Truora es un gigante latinoamericano. Además de antecedentes, ofrecen validación de identidad biométrica (Face ID con la cédula) y envío de OTPs por WhatsApp.
+
+*   **Alcance:** Antecedentes criminales, legales, listas internacionales, además de módulos de identidad digital.
+*   **Precios:** No tienen tarifas públicas cerradas porque operan bajo modelos B2B a medida (bolsas de transacciones). Dependiendo del volumen, una consulta de antecedentes pura puede oscilar entre $1.500 y $3.000 COP. Si le sumas validación de rostro (biometría), el costo sube.
+*   **Veredicto:** Excelente tecnología, pero suele ser más costosa y compleja si tu único objetivo inicial es automatizar el SAGRILAFT tradicional.
+
+**Mi recomendación:** Empieza con **TusDatos.co (Plan Cumplimiento)**. Su documentación para desarrolladores es clara y te da exactamente lo que pide el oficial de cumplimiento a un costo por petición muy bajo.
+
+---
+
+## Ruta de Implementación Técnica (El Pipeline)
+
+Esta es la secuencia lógica para construir e integrar el sistema en tu VPS actual junto con el bot de WhatsApp, manteniendo tu base de Supabase en Docker.
+
+<Sequence>
+
+  <Step subtitle="Aislamiento lógico en Docker" title="Modelado de la Base de Datos (Supabase)">
+    En tu contenedor de Supabase, crea un nuevo esquema (ej. `sagrilaft_db`). Crea las tablas relacionales:
+    *   `terceros` (Id, Tipo [Proveedor/Cliente/Empleado], NIT/CC, Razón Social, Estado, Score_Riesgo).
+    *   `beneficiarios_finales` (Id, Tercero_Id, CC, Nombre, Porcentaje_Participacion).
+    *   `consultas_api` (Log de cada petición a TusDatos, con el response JSON bruto para auditoría).
+  </Step>
+
+  <Step subtitle="El motor de reglas (Python o Node.js)" title="Desarrollo del Backend">
+    Crea un nuevo contenedor Docker en tu VPS para el backend de SAGRILAFT. Este servicio expondrá los endpoints (API REST) que consumirá el frontend.
+    1.  **Recepción de datos:** Endpoint para recibir los datos del formulario web.
+    2.  **Consumo de API:** Al recibir un NIT, el backend hace una petición HTTP `POST` a la API de TusDatos.
+    3.  **Matriz de Riesgo:** Una función interna que tome las respuestas de la API (ej. "Encontrado en Lista Clinton = True") y variables del negocio (ej. "Ciudad = Medellín -> Riesgo Medio") para calcular un puntaje final (0-100).
+  </Step>
+
+  <Step title="Integración con Microsoft Graph (SharePoint)">
+    Registra una aplicación en el portal de **Azure Active Directory** de Cosechas para obtener un `Client_ID` y un `Client_Secret`.
+    *   Programa en tu backend que, una vez TusDatos devuelva el PDF de evidencia, se haga un `PUT` a la API de Microsoft Graph apuntando a la carpeta de SharePoint del Oficial de Cumplimiento.
+    *   Guarda la URL generada por SharePoint en la tabla `terceros` de Supabase.
+  </Step>
+
+  <Step subtitle="React" title="Desarrollo del Portal Frontend">
+    Crea la interfaz web minimalista donde los proveedores o empleados ingresan.
+    *   Un formulario multipaso: 1. Datos básicos -> 2. Declaración de fondos -> 3. Carga de RUT/Cédula en PDF -> 4. Agregar Socios (si es empresa).
+    *   Este frontend solo se comunica con tu backend, nunca directamente con TusDatos ni con Supabase por seguridad. Despliégalo en un subdominio, ej. `proveedores.cosechas.com`.
+  </Step>
+
+  <Step title="Integración con el Bot de WhatsApp">
+    Aprovecha que tienes ambos sistemas en la misma VPS.
+    *   Crea un webhook en el contenedor de tu bot de WhatsApp.
+    *   Si el backend de SAGRILAFT detecta un `Score_Riesgo > 80` (ej. un inversionista salió en una lista restrictiva), que haga un `POST` interno a la red de Docker hacia el bot.
+    *   El bot le envía automáticamente un mensaje de WhatsApp al Oficial de Cumplimiento: *"🚨 Alerta SAGRILAFT: El proveedor [Nombre] requiere revisión inmediata. PDF de evidencia en SharePoint: [Link]"*.
+  </Step>
+</Sequence>
+
+---
+
+## El Flujo del Oficial de Cumplimiento
+
+Una vez desplegado, el proceso engorroso que mencionaste se transforma en esto:
+
+1.  El proveedor entra al portal y sube sus datos.
+2.  El sistema en segundos consulta la API, calcula el riesgo y sube el PDF a SharePoint.
+3.  **Si todo está limpio:** El sistema actualiza el estado a "Aprobado" en base de datos y le dispara un correo al proveedor con su certificado. El Oficial de Cumplimiento no hizo nada.
+4.  **Si hay una alerta:** El sistema detiene el proceso y envía el WhatsApp. El Oficial entra a su panel de administración (que también debes construir en React), ve exactamente qué regla falló (ej. "Inversionista B tiene antecedentes en Contraloría") y decide manualmente si rechaza o aprueba con excepción.
+
+<ElicitationsGroup message="Para profundizar en la arquitectura o el código:">
+
+  <Elicitation label="Diseñar la lógica de la Matriz de Riesgo" query="¿Cómo se estructura lógicamente la matriz de riesgo en código para calcular el puntaje final basado en las variables del negocio?"/>
+  <Elicitation label="Conexión con Microsoft Graph API" query="Explícame cómo autenticar el backend en Azure y subir archivos a SharePoint usando la API de Microsoft Graph."/>
+</ElicitationsGroup>
+
+==================================================
+
+User [4 de jun de 2026 4:43 PM]
+
+perfecto me puedes dar absolutamente todo documentado con todo, diseños, como funcionan otras empresas para ejemplos, apis, precios, ideas todo bien para presentarlo a mi jefe y a todos para empezar a mirar
+
+==================================================
+
+Gemini [4 de jun de 2026 4:43 PM]
+
+Aquí tienes el documento técnico y comercial estructurado. Está redactado con un enfoque corporativo para que puedas copiarlo, pegarlo en un documento de Word o presentarlo directamente a la gerencia de Cosechas y Selecta. 
+
+Lo he diseñado para que tu jefe vea que no es solo "hacer un software", sino resolver un problema crítico de cumplimiento normativo (SuperSociedades) modernizando la infraestructura tecnológica de la empresa.
+
+***
+
+# Propuesta Técnica: Automatización del Sistema SAGRILAFT
+**Elaborado por:** Juan José Perea Garcés (Desarrollo e Ingeniería)
+**Para:** Gerencia y Oficial de Cumplimiento (Cosechas y Selecta)
+
+## 1. Resumen Ejecutivo y Situación Actual
+Actualmente, el proceso de vinculación de terceros (proveedores, clientes y empleados) y la gestión del riesgo de lavado de activos (SAGRILAFT) se realiza mediante un flujo manual. Depende del cruce de correos electrónicos, revisión humana en múltiples portales del Estado y matrices de riesgo en Excel. 
+
+Este enfoque presenta tres riesgos críticos para 2026:
+1. **Riesgo Operativo y Cuellos de Botella:** La recolección de documentos retrasa la contratación y la vinculación comercial.
+2. **Falta de Trazabilidad:** Excel y el correo electrónico no dejan una bitácora auditable inalterable, lo cual es un requisito estricto de la Superintendencia de Sociedades para este año.
+3. **Fallas en el Monitoreo de Beneficiarios Finales:** El análisis manual dificulta la revisión exhaustiva de los inversionistas o socios detrás de una empresa proveedora.
+
+**La Solución:** Centralizar y automatizar el ciclo de vida de SAGRILAFT mediante un portal de autogestión, un motor de reglas y la integración con APIs de cumplimiento e infraestructura de Microsoft.
+
+## 2. Benchmarking: ¿Cómo lo hacen las grandes empresas hoy?
+Las empresas maduras (bancos, grandes retail y fintechs) han transitado al modelo **KYB/KYC (Know Your Business / Know Your Customer)** de cero intervención manual inicial:
+*   **Cero Correos:** El proveedor hace *onboarding* en un portal web.
+*   **Decisión en 5 segundos:** Un proveedor de datos evalúa al tercero y a sus socios en más de 100 listas (Procuraduría, Clinton, DIAN) instantáneamente.
+*   **Cumplimiento por Excepción:** El Oficial de Cumplimiento solo interviene (se reúne o analiza) cuando el sistema levanta una "Alerta Roja" fundamentada por la matriz de riesgo. Si el tercero está limpio, el software lo aprueba y certifica sin intervención humana.
+
+## 3. Propuesta de Arquitectura Tecnológica
+El proyecto se desplegará aprovechando la infraestructura que ya poseemos (Servidor VPS KVM 4 en Hostinger), garantizando altos estándares de seguridad y minimizando costos de nuevos servidores.
+
++-------------------+-----------------------+--------------------------------------------------------------------------------------------------------------------------------------+
+| Componente        | Tecnología            | Función en el Sistema                                                                                                                |
++-------------------+-----------------------+--------------------------------------------------------------------------------------------------------------------------------------+
+| Frontend (Portal) | React.js              | Portal web externo donde los terceros suben sus documentos (RUT, Cédula) y declaran sus accionistas. Panel interno para el Oficial.  |
+| Backend (Motor)   | Python o Node.js      | Recibe los datos, consume la API de antecedentes, ejecuta la lógica matemática de la matriz de riesgo y aprueba/rechaza.             |
+| Base de Datos     | Supabase (PostgreSQL) | Alojada en Docker dentro de nuestro VPS. Se creará un esquema aislado solo para SAGRILAFT (trazabilidad y logs de auditoría).        |
+| Almacenamiento    | Microsoft SharePoint  | El backend usará la Microsoft Graph API para guardar automáticamente los PDFs de evidencia en la nube de la empresa.                 |
+| Notificaciones    | Bot de WhatsApp       | Integración con nuestro bot actual: si un proveedor es marcado en la "Lista Clinton", el bot enviará un WhatsApp urgente al Oficial. |
++-------------------+-----------------------+--------------------------------------------------------------------------------------------------------------------------------------+
+
+## 4. Análisis de APIs de Cumplimiento (Precios 2026)
+Para automatizar la consulta de antecedentes (Policía, Contraloría, Lista Clinton, ONU, etc.), no haremos *web scraping* (es inestable por los Captchas del gobierno). Consumiremos una API oficial. Estas son las dos mejores opciones del mercado colombiano:
+
++-------------+--------------------------------------------------------+-------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------+
+| Proveedor   | Enfoque                                                | Costo Estimado (Paquetes 2026)                                                                              | Recomendación                                                                                                |
++-------------+--------------------------------------------------------+-------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------+
+| TusDatos.co | Especializado en Cumplimiento y SAGRILAFT en Colombia. | Plan Cumplimiento: ~$1.340.000 COP por 1.000 consultas (Vigencia 24 meses). Equivale a $1.340 por consulta. | ⭐ RECOMENDADA. Entrega PDFs firmados digitalmente para evidencia y tiene todas las listas (incluyendo PEPs). |
+| Truora      | Identidad digital regional (Biometría, WhatsApp, KYB). | Modelos B2B a medida. Suele rondar los ~$1.500 a $3.000 COP por consulta pura, más costos si hay biometría. | Excelente, pero su enfoque es más amplio que solo SAGRILAFT.                                                 |
++-------------+--------------------------------------------------------+-------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------+
+
+*Nota financiera:* Si un proveedor (Persona Jurídica) tiene 3 socios y 1 representante legal, vincularlo costará 5 consultas (Aprox. $6.700 COP), un valor insignificante frente al tiempo ahorrado del Oficial de Cumplimiento y la protección legal de la empresa.
+
+## 5. El Nuevo Flujo Operativo (Diseño del Sistema)
+
+1.  **Ingreso:** El área de compras/RRHH le da un link al tercero: `sagrilaft.cosechas.com`.
+2.  **Carga de Datos:** El tercero ingresa, diligencia el formulario web y sube los PDFs requeridos.
+3.  **Procesamiento (Fondo):** 
+    *   El backend manda el NIT/Cédula a TusDatos.co.
+    *   TusDatos devuelve un JSON con el análisis y un PDF de evidencia.
+    *   El backend guarda el PDF en SharePoint.
+    *   El backend calcula el puntaje en la matriz de riesgo de Supabase.
+4.  **Resolución Automática:**
+    *   *Riesgo Bajo/Nulo:* Se aprueba automáticamente, se guarda en base de datos y se notifica al proveedor.
+    *   *Riesgo Alto:* Se bloquea el trámite y el Bot de WhatsApp alerta al Oficial de Cumplimiento para revisión manual.
+
+## 6. Hoja de Ruta de Implementación
+
+<Sequence>
+
+  <Step subtitle="Duración est.: 1 semana" title="Fase 1: Infraestructura y Base de Datos">
+    Creación del esquema `sagrilaft_db` en el contenedor de Supabase (Hostinger VPS). Modelado de tablas relacionales (Terceros, Beneficiarios Finales, Logs de Auditoría, Matriz de Riesgo).
+  </Step>
+
+  <Step subtitle="Duración est.: 2 semanas" title="Fase 2: Motor Backend y Conexión de APIs">
+    Desarrollo del servicio backend. Programación de la lógica para consumir la API de TusDatos.co y desarrollo del algoritmo de la matriz de riesgo paramétrica.
+  </Step>
+
+  <Step subtitle="Duración est.: 1 semana" title="Fase 3: Integración Microsoft y WhatsApp">
+    Configuración de Azure Active Directory para autenticar la aplicación y conectar la Microsoft Graph API (subida automática de archivos a SharePoint). Enlace interno con el Bot de WhatsApp para alertas.
+  </Step>
+
+  <Step subtitle="Duración est.: 2 semanas" title="Fase 4: Desarrollo Frontend (Portal UI)">
+    Creación del portal de autogestión en React para clientes/proveedores, y el panel de administración privado (Dashboard) para el Oficial de Cumplimiento.
+  </Step>
+
+  <Step subtitle="Duración est.: 1 semana" title="Fase 5: Pruebas (UAT) y Paso a Producción">
+    Pruebas con datos ficticios para verificar el bloqueo de perfiles de alto riesgo y la correcta generación de certificados. Despliegue final en producción.
+  </Step>
+</Sequence>
+
+***
+
+<FollowUp label="¿Quieres que armemos una presentación visual?" query="¿Puedes ayudarme a resumir este documento en 5 diapositivas clave para mostrarlas en una presentación de PowerPoint a la gerencia?"/>
+
+==================================================
+
+User [5 de jun de 2026 10:33 AM]
+
+Luego de una investigacion y con ayuda de documentos de la empresa y el manual sagrilaft actual y todo tengo todo esto para mirar de acuerdo a lo hablado y todo
+
+Los
+aspectos más importantes a tener en cuenta a la hora de capturar la información
+que conforma el conocimiento de una contraparte son:
+ 
+	•                             Identificación
+	•                             Diligenciamiento
+de formatos
+	•                             Solicitud
+de documentos soporte
+	•                             Verificación
+de la validez y vigencia de los documentos recibidos
+	•                             Verificación
+de información consignada
+•                                             Consulta
+de listas de control y medios públicos
+•                           Actualización
+de datos y documentos
+
+Las Consultas en listas
+restrictivas podrán realizarse a través de terceros (Empresas especializadas en
+estas consultas) y/o la compra de programas especializados en estas consultas.
+ 
+ 
+ 
+1.      Listas del Consejo de Seguridad de las Naciones
+Unidas restrictivas (de ahora en adelante “Lista ONU”.
+ 
+https://sanctionssearch.ofac.treas.gov/
+ 
+2.      Lista OFAC.
+ 
+https://sanctionssearch.ofac.treas.gov/
+ 
+3.      Lista Clinton.
+ 
+https://www.treasury.gov/ofac/downloads/t11sdn.pdf
+ 
+4.      Lista GAFI 
+ 
+https://www.uiaf.gov.co/asuntos_internacionales/organizaciones_internacionales/grupo_accion_financiera_7114
+ 
+5.      Procuraduría.
+ 
+https://www.procuraduria.gov.co/portal/Certificado-de-Antecedentes.page
+ 
+6.      Contraloría.
+ 
+https://www.contraloria.gov.co/control-fiscal/responsabilidad-fiscal/certificado-de-antecedentes-fiscales
+ 
+7.      Policía Nacional.
+ 
+https://antecedentes.policia.gov.co:7005/WebJudicial/
+ 
+ 
+8.      Rama Judicial
+ 
+https://procesos.ramajudicial.gov.co/procesoscs/ConsultaJusticias21.aspx?EntryId=ehW02X39m3ZINX2Wul3qu0SYrBo%3d
+ 
+9.      Otras (Google)
+ 
+10.    Data Crédito (Opcional)
+
+Estas
+consultas se efectuarán al momento de la vinculación de las contrapartes (Socios,
+dueños, accionistas, clientes, contratistas, proveedores, colaboradores y
+empleados) y de manera anual para verificar las bases de datos de las
+contrapartes existentes con las actualizaciones realizadas a dichas listas
+restrictivas o vinculantes.
+ 
+Adicionalmente,
+también se verificarán las contrapartes en listas restrictivas o vinculantes
+cada vez que se realice una actualización sobre las mismas, según las políticas
+y procedimientos que al respecto tenga definidos la empresa.
+ 
+La Sociedad
+se abstendrá de vincular contrapartes que se encuentren reportados en estas
+listas, o se encuentren vinculados en una investigación penal, con formulación
+de acusación, o reportados por organismos de supervisión como la
+Superintendencia Financiera de Colombia, la Superintendencia de Sociedades,
+entre otras entidades, así como en la UIAF,
+por actividades que se puedan catalogar como lavado de activos y/o financiación
+del terrorismo.
+ 
+ 
+Ningún
+funcionario podrá autorizar operación alguna, servicio, apoyo o celebración de
+contratos de ningún tipo con las personas y empresas que aparezcan en las
+listas restrictivas o vinculantes.
+ 
+ 
+Las listas
+restrictivas o vinculantes objeto de consulta por parte de la empresa deberán ser actualizadas cada vez que se presenten
+modificaciones a las mismas.
+ 
+ 
+La consulta
+en listas restrictivas o vinculantes no exime a la empresa de revisar información complementaria como parte del
+debido conocimiento de sus contrapartes, como lo son los boletines de
+responsabilidad fiscal de la Contraloría General de la República,
+requerimientos de autoridades e información de investigados y/o condenados por
+lavado de activos, de procesos de extinción de dominio, así como de otros
+delitos fuentes o conexos.
+ 
+Se debe
+actualizar la lista GAFI
+
+la estructura del sagrilaft es: diagnostico -> identificacion -> medicion -> controles -> divulgacion -> seguimiento -> identifacion y se repite y asi
+
+El proceso
+de identificación de riesgos consiste en encontrar, reconocer y describir el
+evento de riesgo, para ello se utilizan diferentes técnicas o herramientas
+como: los juicios basados en experiencia y registros, se realiza una lista de
+los eventos de riesgo relacionados de LA/FT, análisis de la operación en
+procesos y operación de La Empresa en general, y a su vez, se consulta la
+información y la experiencia interna sobre el negocio y que podría ser un
+evento de riesgo de LA/FT/FPADM. También se recurre a la experiencia de
+los dueños de procesos para que resuelvan preguntas tales como ¿Qué puede
+suceder? y ¿Cómo y porqué puede suceder?
+ 
+Los principales factores de riesgo
+se muestran a continuación.
+ 
+a.                 Clientes: Accionistas, Empleados, Proveedores de bienes y servicios,
+Clientes, PEP’S.
+b.                 Productos: Producto, Materias Primas, insumos
+c.                 Canales de Distribución: Aliados Comerciales de Compra y Venta,
+Intermediarios.
+d.                 Jurisdicciones: Zona de influencia de actividad de compra y venta.
+ 
+
+involucra
+medir la probabilidad o posibilidad de ocurrencia del riesgo inherente de LA/FT de cada uno de los eventos de
+riesgo, así como el impacto en caso de materializarse mediante los riesgos
+asociados-
+ 
+A través de
+la segmentación, la empresa buscará determinar las características usuales de las
+transacciones que se desarrollaran en el curso normal del negocio y las
+comparará con aquellas que realicen los clientes, a efectos de detectar las
+operaciones inusuales. Posterior a la segmentación, se deberán establecer las
+principales características de los segmentos descritos anteriormente,
+considerando los siguientes aspectos:
+ 
+1.       Frecuencia normal de las
+operaciones.
+ 
+2.       Nivel de exposición de acuerdo al
+factor de riesgo.
+ 
+3.       Volumen o frecuencia de las
+operaciones.
+ 
+4.       Tipo de usuario.
+
+ El proceso seguido por La Empresa para medir
+los eventos de riesgo de LA/FT/FPADM está
+definido de la siguiente manera: 
+ 
+1-     Se cuenta
+con una matriz de riesgo LA/FT/FPADM donde se
+encuentran valorados los riesgos para los factores de riesgo.
+ 
+2-     En la
+medida que se evidencie exposición en materia LA/FT/FPADM se
+consulta la matriz y se determina el impacto de la exposición.
+ 
+3-     Se toman
+acciones frente a la exposición, se validan los controles y se incluyen nuevos
+de ser necesario.
+ 
+4-     Se
+realiza una revisión de la matriz y se incluye el evento de no estar
+identificado.
+ 
+5-     La
+Empresa tendrá las siguientes escalas de medición de los riesgos de LA/FT/FPADM: 
+ 
+ 
+a)      Escala de frecuencia: 
+ 
+Corresponde
+al número de veces que se puede presentar un evento de riesgo en el lapso de un
+año: 
+valor cuantitativo del 1 al 5, siendo 1 raro, 2 improbable, 3 posible, 4 probable, 5 casi cierto. Donde la frecuencia es en 1 bajo circunstancias excepcionales, 2 algunas veces, 3 en algun momento, 4 en la mayoria de las circunstacias, y 5 la expectativa de ocurrencia se da en la mayoria de las circunstancias. Siendo el valor cualitativo con 1 puede ocurrir por lo menos una vez al año, 2 entre 2 a 4 veces al año, 3 entre 5 y 7 veces al año, 4 entre 8 y 9 veces al año, 5 mas de 10 veces al año
+
+b) Escala de impacto: 
+ 
+Se establece una calificación de 1 a 5 (1- Insignificante, 2- Menor, 3-
+Moderado, 4- Mayor, 5-Catastrófico) para los riesgos asociados al LA/FT/FPADM que determinan la escala de impacto, con base en los siguientes
+elementos para cada riesgo asociado:
+ 
+•       Riesgo
+Legal: El marco normativo que acompaña las actividades empresariales cada vez
+es mayor y más complejo, el potencial de incumplimiento de dicho marco
+normativo es una fuente de riesgos alta, lo que hace de éste el más sensible de
+los riesgos asociados al LA/FT/FPADM por las
+consecuencias civiles, administrativas y penales que se pueden ocasionar.
+ 
+•       Riesgo
+Reputacional: Este riesgo, es considerado en el mercado actual un elemento
+imprescindible para aumentar el valor y la capitalización de las empresas, por
+lo tanto, la materialización de este riesgo destruye valor e incluso ocasiona
+la fuga de clientes y la desaparición de la Institución. 
+ 
+•       Riesgo
+Operacional: El riesgo operativo puede traducirse en la materialización del legal y
+reputacional desde el punto de vista económico, es un riesgo cuyas
+consecuencias se cubren con capital y puede ser gestionado y controlado
+internamente. 
+ 
+•       Riesgo de
+Contagio: Está presente al iniciar cualquier relación, es un riesgo que puede
+tener consecuencias indirectas para la empresa, pero en el que no hay una
+participación directa.
+
+la calificación de 1 a 5 de la escala de impacto, tal como figura en la
+matriz es:
+un valor cuantitativo de 1 a 5, siendo el valor cualitativo 1 insignificante, 2 menor, 3 moderado, 4 mayor, 5 catastrofico, teniendo la descripcion 1 no impacta ni estrategia ni objetivos, 2 un impacto no representativo para la estrategia y/o objetivos, 3 afecta la estrategia y/o logo de algunos objetivos importantes, 4 afecta considerablemente las estrategias y objetivos, 5 compromete la supervivencia de la compañia.
+
+La calificación tendrá en cuenta el riesgo que más afecte a La Empresa en
+términos de impacto.
+ 
+Una vez estimados el impacto y la probabilidad de ocurrencia del evento,
+encontraremos la severidad del evento, la cual se calcula como (impacto) x
+(probabilidad de ocurrencia) y que para efectos de la matriz se denominará
+riesgo inherente del proceso antes de aplicar los controles y posteriormente se
+conocerá como riesgo residual del proceso luego de ejecutar los controles:
+
+siendo
+
+rango de valor severidad entre 1 y 3, 4 y 8, 9 y 15, 16 y 25, siendo el primero insignificante, el segundo moderado, el tercero alto y el cuarto muy alto 
+
+Para la consolidación de los perfiles de riesgo inherente y residual, se
+realiza el cruce entre la calificación de impacto y probabilidad de acuerdo con
+la matriz de aversión al riesgo.
+ 
+El mapa que a continuación se expone, indica las zonas en las cuales La
+Empresa considera que el riesgo es muy alto, alto, moderado o insignificante.
+Con estas zonas se definen las prioridades en el tratamiento y la toma de
+decisiones.
+
+El Oficial
+de Cumplimiento a cargo y/o quien haga las veces de su suplente tomarán las
+medidas adecuadas para controlar el riesgo inherente al que se encuentra
+expuesto empresa, en razón de los factores de riesgo LA/FT identificado y asociado.
+ 
+ 
+Para
+controlar el riesgo de LA/FT, el
+Oficial de Cumplimiento tendrá en cuenta los siguientes criterios:
+ 
+1.                 Se establecerá una metodología que permita evaluar
+la calidad de los controles actuales y proponer nuevos controles, de ser
+necesario. El oficial de Cumplimiento podrá coordinar talleres internos o
+externos para evaluar la efectividad de los controles, de llegar a presentarse
+alarmas.
+ 
+2.                 Esta metodología debe cubrir todos los factores de riesgo y los riesgos
+asociados.
+ 
+3.                 Debe permitir establecer los niveles de exposición
+en razón de la calificación dada a los factores de riesgo, en la etapa de
+medición.
+ 
+ 
+Acorde a
+los riesgos que fueron identificados en las etapas anteriores, se llevara a
+cabo el control de los mismos a través de manuales de procedimientos, manuales
+de usuario, circulares, etc., o del conocimiento de los expertos mediante las
+capacitaciones impartidas.
+ 
+1.                 Se vigilará para que las contrapartes de la empresa
+no usen la misma para prácticas delictivas tendiente a transferir, manejar,
+aprovechar o invertir dineros o recursos provenientes de las actividades
+ilícitas.
+ 
+2.                 En el evento que la cuantía de las operaciones de
+un cliente no guarde relación con su actividad económica se informara
+directamente al Oficial de Cumplimiento para que adelante las acciones
+necesarias.
+ 
+3.                 La información que sea requerida por las
+autoridades competentes será suministrada previo conocimiento del oficial del
+cumplimiento a través del órgano gerencial de la empresa.
+ 
+4.                 El Oficial de Cumplimiento mantendrá un control
+periódico sobre las operaciones realizadas verificando que los funcionarios den
+estricto cumplimiento a las disposiciones emanadas de los entes de control y
+vigilancia.
+ 
+5.                 Controles
+Preventivos: Ejercen su acción sobre
+la causa de los riesgos y sus agentes generadores, con el propósito de
+disminuir la frecuencia del riesgo. Es un control ideal porque evita la
+materialización del riesgo, permite tomar decisiones de manera oportuna.
+ 
+6.                 Controles
+Detectivos: Operan como una alarma,
+con ellos se identifica una situación anómala o no buscada, por lo general en
+un momento posterior al hecho. Es un control que no evita materialización, pero
+puede ayudar a que el riesgo no se repita o se interrumpa, en consecuencia,
+puede disminuir el impacto de su materialización.
+ 
+7.                      Controles
+Correctivos: Permiten corregir las
+desviaciones y prevenir que estas vuelvan a ocurrir. Se ejecutan una vez
+ocurrido el riesgo y mejoran los demás controles, si se determina que su
+funcionamiento no corresponde a las expectativas con las cuales fueron
+diseñados. Se requiere para mejorar la evolución del riesgo y disminuir su
+frecuencia.
+ 
+
+Los
+controles, a su vez se clasifican en tipología de control así: 
+ 
+1.   Controles Manuales: Son los que realizan las personas responsables de un proceso, o actividad
+en la que está inmerso el control. Es un control sugerido para acciones
+concretas, para procesos de poco volumen operativo, puede tener mayor
+porcentaje de desviación porque es más sensible a errores u omisiones de quien
+lo ejecuta.
+ 
+2.   Controles
+Automáticos: Son procedimientos
+programados en el computador, en el software de soporte o en el de aplicación,
+diseñados para prevenir, detectar o corregir errores o irregularidades que
+pueden afectar negativamente la operación. Es el control ideal para procesos
+que involucren temas masivos o requieran validación porque evita errores
+humanos.
+ 
+3.   Controles
+Mixtos: Son los procedimientos que deben realizar las
+personas responsables de un proceso en conjunto con los procedimientos
+programados en el computador.
+
+Mediante
+esta etapa la empresa a través del Oficial de Cumplimiento titular y/o suplente, efectuara
+un adecuado seguimiento del perfil de riesgo y, en general, del SAGRILAFT,
+así como llevar a cabo la detección de operaciones intentadas, inusuales y/o
+sospechosas que se pudieran efectuar en la Compañía. Para lograr un efectivo
+control de lo anterior, los procedimientos de monitoreo deben abarcar lo
+siguiente:
+
+1.                 Conocimiento de las contrapartes.
+ 
+2.                 Conocimiento del mercado.
+ 
+3.                 Identificación y análisis las operaciones intentadas, inusuales y/o
+sospechosas
+ 
+4.                 Determinación y reporte de operaciones intentadas, inusuales y/o sospechosas.
+ 
+5.                 El SAGRILAFT debe permitirle a las
+Empresas Obligadas ejercer vigilancia respecto del perfil de riesgo y, en
+general, estar en condiciones de detectar Operaciones Inusuales y Operaciones
+Sospechosas. 
+ 
+6.                 Para monitorear el Riesgo LA/FT/FPADM,
+las Empresas Obligadas deben, como mínimo:
+ 
+-                 Realizar el seguimiento periódico y comparativo del Riesgo Inherente y
+Riesgo Residual de cada Factor de Riesgo LA/FT/FPADM y de los riesgos
+asociados. 
+ 
+-                 Desarrollar un proceso de seguimiento continuo y efectivo que facilite la
+rápida detección y corrección de las deficiencias del SAGRILAFT. Dicha
+verificación y revisión debe tener una periodicidad acorde con el perfil de
+Riesgo Residual de la Empresa Obligada. 
+ 
+-                 Asegurar que los controles sean integrales y se refieran a todos los
+riesgos y que funcionen en forma oportuna, efectiva y eficiente. 
+ 
+-                                     Asegurar que los Riesgos Residuales se encuentren en los niveles de
+aceptación establecidos por la Empresa Obligada. 
+-
+-                                     Para llegar a la medición del
+riesgo residual se tendrá en cuenta la efectividad del grupo de controles que
+se apliquen en La Empresa y se multiplicará la probabilidad de ocurrencia del
+riesgo por el impacto del riesgo.
+ 
+Para la
+detección de operaciones intentadas, inusuales y sospechosas se deberá tener en
+cuenta las siguientes apreciaciones:
+ 
+1.                 A partir de la segmentación y caracterización
+efectuada previamente, deben crearse indicadores de alerta, para detectar
+cuando alguna operación en particular se sale de los parámetros normales
+establecidos mediante la caracterización ya mencionada.
+ 
+2.                 Por indicadores de alerta se entenderán aquellos
+hechos, situaciones, cuantías o indicadores financieros que la experiencia ha
+identificado como elementos de juicio a partir de los cuales se puede inferir
+la posible existencia de operaciones inusuales y/o sospechosas.
+ 
+3.                 Tanto los indicadores de alerta, como las
+operaciones realizadas, deben ser sistematizadas, de manera que automáticamente
+se puedan generar reportes internos que adviertan sobre las características no
+normales de una operación en particular, así como la generación automática de
+los reportes a las autoridades competentes. 
+ 
+4.                 Mensualmente, el Oficial de Cumplimiento debe
+preparar un informe para la Junta Directiva, con la lista de personas y
+operaciones relacionadas con operaciones intentadas, inusuales y operaciones
+sospechosas.
+ 
+5.                 En cualquier caso, en que no sea posible encontrar
+explicaciones o justificaciones razonables a las operaciones de una persona, el
+Oficial de Cumplimiento deberá reportar dichas operaciones como sospechosas
+ 
+La compañía
+realizará las consultas pertinentes en listas vinculantes y restrictivas, así
+como en entidades de control para validar la idoneidad y transparencia de la
+transacción a realizar.
+ 
+1.                 Análisis e Investigación de alertas e inusualidades: Cuya
+responsabilidad es del Oficial de Cumplimiento.
+ 
+2.                 Evaluaciones realizadas por el Revisor Fiscal.
+ 
+3.                 Revisiones periódicas – Bimestral, trimestral o semestral de los riesgos
+definidos en el sistema para determinar si su impacto y probabilidad siguen
+siendo los identificados y si existen nuevos riesgos no incluidos.
+
+Uno de los temas que más dificulta la detección de actividades de riesgo
+del Lavado de Activos y Financiación del Terrorismo, está en identificación de
+las señales de alerta en los diferentes procesos de la organización. Estas
+señales sirven para llamar la atención sobre una contraparte, hecho o situación
+que requiere un mayor análisis, además de llevarnos a identificar y reconocer a
+qué tipología de LA/FT correspondiente a una operación.
+ 
+Podemos encontrar Alertas Concluyentes, que ante su sola identificación
+sería suficiente para determinar una operación sospechosa, sin que sea
+necesario considerar simultáneamente la ocurrencia o no de otras. También
+tenemos las alertas Comunes que son consideradas aquellas operaciones que, si
+bien pueden presentarse en situaciones de LA/FT, suelen también ocurrir
+por razones   en situaciones crédulas.
+ 
+A
+continuación, se enuncian algunas señales de alerta de Riesgo LA/FT/FPADM que la Empresa deberá tener
+en cuenta, dependiendo de los Factores de Riesgo LA/FT/FPADM identificados, conforme a la Matriz de Riesgo LA/FT/FPADM y de acuerdo con la
+materialidad del Riesgo LA/FT/FPADM.
+ 
+1-   El cliente se niega a proporcionar la información solicitada o la información
+proporcionada es inconsistente o de difícil verificación por parte de las
+empresas.
+ 
+2-   El cliente indica una dirección que también es la de un negocio
+diferente al declarado por el cliente y/o no parece corresponder con la
+ocupación declarada por él (por
+ejemplo, estudiante, desempleado, trabajador independiente, entre otros).
+ 
+3-    El cliente solicita ser excluido
+del registro de operaciones sin causa aparente
+o justificada.
+ 
+4-   El cliente se rehúsa a llenar los formularios requeridos por la empresa
+o a proporcionar la información
+necesaria para completarlos o a realizar laoperación una vez que se le solicita llenar los formularios.
+ 
+5-   Utilización frecuente de intermediarios para realizar operaciones comerciales o financieras. 
+ 
+6-   Las operaciones no corresponden al perfil del cliente.
+ 
+7-   Con relación a las organizaciones sin fines de lucro, tales como las asociaciones, fundaciones, comités,
+ONG, entre otras, operaciones no parecen
+tener un propósito económico lógico o no parece existir un vínculo entre la actividad declarada por la
+organización y las demás partes que participan
+en la transacción.
+ 
+8-   Los estados financieros presentados por el cliente revelan una situación financiera que difiere de aquélla
+correspondiente a negocios similares.
+ 
+9-   El cliente insiste en encontrarse con el personal de la empresa en un
+lugar distinto al de las oficinas
+para realizar una operación.
+ 
+10- El cliente trata de presionar a un
+trabajador para no llenar los formulariosrequeridos por la empresa.
+ 
+11- Que se tome conocimiento por los
+medios de difusión pública u otro, segúnsea el caso, que un cliente está siendo investigado o procesado por el
+delito de lavado de activos, delitos
+precedentes, el delito de financiamiento del terrorismo y/o delitos conexos.
+ 
+12- Fondos generados por un negocio que
+pertenece a individuos de la misma nacionalidad
+o país de residencia, procedentes de países considerados como no cooperantes por el GAFI o
+sujetos a sanciones OFAC, actuando en nombre de tipos similares de negocios.
+ 
+13- El cliente realiza de forma reiterada
+operaciones fraccionadas.
+ 
+14- El cliente realiza operaciones
+complejas sin una finalidad aparente.
+ 
+15- El cliente realiza constantemente
+operaciones y de manera inusual utiliza opretende utilizar dinero en efectivo como único medio de pago en lugar de otros.
+ 
+16- Existencia de clientes 
+ 
+17- Entre los cuales no hay ninguna
+relación de parentesco, financiera y/o comercial, según se trate de personas
+naturales o jurídicas, sin embargo,
+son representados por una misma persona, sin explicación aparente.
+ 
+18- Clientes domiciliados en países de
+baja o nula imposición tributaria.
+ 
+19- El estilo de vida del trabajador no
+corresponde a sus ingresos o existe un cambio
+notable e inesperado en su situación económica.
+ 
+20- El trabajador constantemente evita
+o se niega a tomar vacaciones.
+ 
+21- El trabajador presenta ausencias
+frecuentes e injustificadas.
+ 
+22- El trabajador con frecuencia
+permanece en la oficina fuera del horario laboral, sin causa justificada.
+ 
+23- El trabajador utiliza su propio
+domicilio para recibir documentación de losclientes.
+ 
+24- Cualquier negocio realizado por el
+trabajador donde la identidad del beneficiario
+sea desconocida, contrariamente al procedimiento normal para el tipo de operación de que se trata. 
+ 
+25- El trabajador tiene o insiste en
+tener reuniones con clientes de la empresa en un lugar distinto al de las oficinas de la empresa o fuera del
+horario de laboral, sin justificación alguna, para realizar una operación
+comercial o financiera.
+ 
+26- El trabajador está involucrado en
+organizaciones sin fines de lucro, talescomo fundaciones, asociaciones, comités, ONG, entre otras, cuyos objetivos ha quedado debidamente demostrado se
+encuentran relacionados con la ideología,
+reclamos o demandas de una organización terrorista nacional y/o extranjera, siempre que ello sea
+debidamente demostrado.
+ 
+27- Se presenta un crecimiento inusual
+o repentino del número de operaciones que
+se encuentran a cargo del trabajador.
+ 
+28- Cambio notable o inesperado en los
+negocios de índole comercial de propiedad
+del trabajador.
+ 
+29- Se comprueba que el trabajador no
+ha comunicado o ha ocultado al oficial decumplimiento información relativa al cambio en el comportamiento de algún cliente.
+ 
+30- El cliente compra en efectivo
+cheques de viajero, giros u órdenes de pago por encima de los montos requeridos para el registro de operaciones.
+ 
+31- Depósito en efectivo con inmediata
+compra de cheques de viaje, órdenes de pago
+u otros instrumentos para el pago a terceros.
+ 
+32- El cliente que realiza
+frecuentemente operaciones por grandes sumas de dinero.
+ 
+33- (depósitos, retiros o compras de
+instrumentos monetarios, entre otros) y seniega o evita dar información sobre el origen y/o destino del dinero o
+estas operaciones no guardan
+relación con su actividad económica.
+ 
+34- Los cajeros automáticos son
+utilizados para realizar numerosos depósitos o retiros en efectivo u operaciones por debajo del límite
+establecido para el registro de
+operaciones.
+ 
+35- El representante o intermediario
+que realiza depósitos en efectivo sustanciales
+en las cuentas de clientes, cuyo perfil no concuerda con tales operaciones.
+ 
+36- Depósitos en grandes cantidades de
+dinero a través de medios electrónicos u
+otros que eviten el contacto directo con el personal de la empresa.
+ 
+37- Gran volumen de giros, órdenes de
+pago y/o transferencias electrónicas sondepositadas en una cuenta cuyo movimiento no guarda relación con el perfil del cliente.
+ 
+38- Frecuente utilización de cajas de
+seguridad.
+ 
+39- Operaciones que involucran a
+clientes residentes en países consideradoscomo no cooperantes por el GAFI o sujetos a sanciones OFAC.
+ 
+40- Una cuenta abierta en nombre de una
+persona jurídica u organización sin fines
+de lucro, tales como fundaciones, asociaciones, ONG, entre otras, que exista sospecha de estar relacionada a
+una organización terrorista y que muestra
+movimientos de fondos por encima del nivel de ingresos esperados.
+ 
+41- Un mismo beneficiario de pólizas de
+seguros de vida o de retiro por importessignificativos, contratadas por distintas personas.
+ 
+42- Solicitud de una póliza por parte
+de un potencial cliente desde un lugar geográfico
+distante, cuando cerca de su domicilio podría conseguir un contrato de similares características.
+ 
+43- El cliente que solicita una póliza
+de seguro cuya suma asegurada no concuerda
+con su nivel de vida o perfil.
+ 
+44- Clientes domiciliados en paraísos
+fiscales o países donde existe conocida actividad
+terrorista o son considerados como no cooperantes por el GAFI o sujetos a sanciones OFAC.
+ 
+45- Personas naturales o jurídicas que
+no estén plenamente identificadas.
+ 
+46- Asociados o empleados con
+antecedentes judiciales de LA/FT.
+ 
+47- Nuevos asociados que hayan sido
+aceptados o vinculados sin verificar previamente el origen de los recursos que
+aportan.
+ 
+48- Alto volumen en efectivo sin
+justificación aparente.
+ 
+49- Bienes muebles o inmuebles a
+precios considerablemente distintos a los normales del mercado.
+ 
+50- Donaciones que no tengan un
+Beneficiario Final aparente, que no se conozca su origen o que éste se
+encuentre domiciliado en país o una jurisdicción de alto riesgo.
+ 
+51- Operaciones, negocios o contratos
+relevantes que no consten por escrito. 
+ 
+52- Pagos de operaciones con recursos
+derivados de giros internacionales provenientes de varios remitentes a favor de
+un mismo beneficiario, o de un mismo remitente a favor de varios destinatarios,
+sin una relación aparente.
+ 
+53- Operaciones con subcontratistas que
+no han sido identificados. 
+ 
+54- Operaciones comerciales o negocios
+con las personas incluidas en las Listas Vinculantes. 
+ 
+55- Operaciones celebradas con
+Contrapartes domiciliadas o ubicadas en Áreas Geográficas designadas por GAFI
+como no cooperantes. 
+ 
+56- Operaciones con Productos
+provenientes de actividades ilegales (incluyendo, entre otros, el contrabando).
+ 
+57- Operaciones con Productos que no
+han sido debidamente nacionalizados; y Operaciones con Productos de venta
+restringida que no cuenten con las debidas autorizaciones o licencias.
+ 
+58- Países con un alto nivel de
+corrupción y de inestabilidad política.
+ 
+59- Depósitos de efectivo en cuentas
+bancarias personales o de empresas a partir de fuentes sin explicar.
+ 
+60-  Documentación injustificada sobre, o no
+correspondan con, el origen o el propietario; Cantidad, valor o divisa no
+concordante con las circunstancias del portador.
+ 
+61- Transporte oculto de efectivo.
+ 
+62- Riesgo claro de seguridad en el
+método de transporte.
+ 
+63- Transporte con costos elevados en
+comparación con métodos alternativos de Transporte.
+ 
+64- Facturación o ventas en efectivo no
+esperables en el sector económico.
+ 
+65- Gran aumento de facturación o
+ventas en efectivo procedentes de clientes no identificables; y Préstamos del
+extranjero recibidos en efectivo y en moneda local.
+ 
+Para concluir, esta lista es una
+guía, pero se hace necesario que el Oficial de Cumplimiento y los líderes de
+proceso aprendan a identificar y diseñar SEÑALES
+DE ALERTA LAFT en sus procesos, esto ayudara a garantizar la Política establecida
+en esta materia por parte de la organización
+
+El oficial
+de cumplimiento será la persona encargada de diseñar, coordinar y efectuar
+planes de capacitación acerca del Sistema de Gestión del Riesgo de Lavado de
+Activos y/o Financiación de Terrorismo dirigidos a todo el personal de la
+compañía, aliados y personas involucradas en la actividad empresarial, como
+mínimo de forma anual.
+ 
+Los planes de capacitación deberán
+cumplir las siguientes condiciones y requisitos.
+ 
+1-    Se debe
+programar con suficiente anticipación para asegurar el conocimiento en la etapa
+de prevención y control, mínimo una vez cada año (1 año)
+ 
+2-    La
+asistencia será de carácter obligatorio para todo el personal.
+ 
+3-    Realizar
+toda vez que exista actualización normativa.
+ 
+4-    Se debe
+dejar constancia mediante formato establecido para el control de asistencia.
+ 
+5-    Contar con
+los recursos humanos y económicos necesarios para la aplicación.
+ 
+6-    Realizar
+control, seguimiento y evaluación a todos los funcionarios de la compañía.
+
+REPORTES INTERNOS
+ 
+Los
+funcionarios de la compañía que dentro del ejercicio de sus funciones detecten
+operaciones que puedan generar cualquier tipo de riesgo de LA/FT al interior de la misma, deberán presentar enviar memorando
+electrónico a la unidad de cumplimiento de la organización indicando: 
+ 
+a.
+explicación amplia y clara acerca de la sospecha de la situación inusual, 
+b. anexar documentos
+soporte de la operación. 
+ 
+Los
+funcionarios de la compañía deberán dar cumplimiento al procedimiento para
+reporte interno de situaciones inusuales.
+ 
+ 
+REPORTES EXTERNOS
+ 
+ 
+Adoptando
+la presente política y acorde con las buenas prácticas empresariales de SELECTA COMPAÑIA DE CEREALES S.A.S el
+área de cumplimiento a cargo del oficial de cumplimiento realizará los reportes respectivos denominados ROS (Reporte
+Operaciones Sospechosas) directamente a la UIAF.
+ 
+ 
+Asimismo,
+en el caso que no se haya presentado situaciones inusuales, estará a cargo del
+Oficial de Cumplimiento la presentación del ROS Negativo.
+ 
+Para efecto
+de control, los responsables de suministrar información deberán llevar un
+registro de los reportes que han sido enviados a la UIAF.
+ 
+ 
+Cuando una
+contraparte se muestre renuente frente a dar la información requerida la
+compañía, diligenciamiento del formato de conocimiento al cliente, la factura o
+documento equivalente, se deberá reportar dicha situación a la seccional de la DIAN con competencia en el lugar donde
+se encuentre domiciliado en profesional.
+ 
+ 
+Dicha
+dirección seccional enviará el respectivo reporte a la coordinación de control
+y prevención del lavado de activos a efecto de que se evalúe su envío o no a laUIAF.
+
+los
+documentos soporten de todas las operaciones de la compañía relacionadas con elSAGRILAFT serán conservadas bajo estricta custodia durante el periodo
+que exista la compañía, cuya organización será a cargo de cada área de la
+compañía con supervisión del oficial de cumplimiento para el fin de garantizar
+la integralidad, seguridad, confidencialidad y recuperabilidad en el tiempo.
+ 
+Adicionalmente,
+la información deberá ser conservada de forma digital bajo el método que
+represente mayor confianza para la organización, al igual, la consulta de la
+información y su disposición se tratará de manera confidencial sin afectar la
+originalidad de la misma.
+ 
+Igualmente, se deben conservar los soportes de los
+reportes de operación sospechosa y de transacciones en efectivo remitidos a la UIAF.
+ 
+ 
+La
+conservación de esta documentación y registro de transacciones debe respetar
+los períodos indicados en la Resolución Externa 8
+de 2000 de la Junta Directiva del Banco de la República.
+
+eso es mas por encima y mas a fondo tambien, adicional tengo otras cosas pero por ahora como lo ves con todo esto?
+
+==================================================
+
+Gemini [5 de jun de 2026 10:33 AM]
+
+¡Excelente trabajo recopilando esta información, ingeniero! Tener el manual estructurado con las reglas de negocio claras es el sueño de cualquier desarrollador antes de escribir la primera línea de código. Analizando los requerimientos que me compartes, veo que la lógica interna está muy bien definida y se adapta perfectamente para ser transformada en un flujo transaccional.
+
+Aquí te presento mi análisis de cómo la teoría de este manual se traduce directamente a la arquitectura de software que venimos estructurando.
+
+### 1. Centralización de Listas Restrictivas (El Motor de Consultas)
+El proceso exige la verificación y consulta de información en diversas bases de datos y medios públicos. Específicamente, el sistema debe consultar las listas de la ONU, OFAC, Clinton, GAFI, Procuraduría, Contraloría, Policía Nacional y Rama Judicial. 
+*   **Implementación:** Al integrar una API de cumplimiento (como TusDatos, que discutimos antes), el backend realizará todas estas consultas simultáneamente en cuestión de segundos, cumpliendo a cabalidad con el requerimiento de verificación al momento de la vinculación.
+
+### 2. El Algoritmo Central: La Matriz de Riesgo
+Este es el corazón lógico de la aplicación. El nivel de severidad del riesgo se calcula matemáticamente como el impacto multiplicado por la probabilidad de ocurrencia. 
+*   **Traducción a Código:** Analizando la tabla proporcionada en el archivo image_8be038.png y las directrices del texto, la lógica de programación en el backend establecerá los siguientes condicionales:
+    *   **Riesgo Insignificante:** Valores entre 1 y 3.
+    *   **Riesgo Moderado:** Valores entre 4 y 8.
+    *   **Riesgo Alto:** Valores entre 9 y 15.
+    *   **Riesgo Muy Alto:** Valores entre 16 y 25.
+*   El cálculo cruzará la escala de frecuencia, que va de 1 (Raro) a 5 (Casi cierto), con la escala de impacto, que va de 1 (Insignificante) a 5 (Catastrófico).
+
+### 3. Automatización de Controles
+El manual clasifica los controles en manuales, automáticos y mixtos. 
+*   **La ventaja del software:** La plataforma que desarrollarás actuará directamente como un conjunto de **Controles Automáticos**, los cuales son ideales para procesos masivos y evitan errores humanos mediante procedimientos programados. 
+*   Esto actuará también como un **Control Preventivo**, mitigando la causa de los riesgos antes de que se materialicen.
+
+### 4. Parametrización de las 65 Señales de Alerta
+El documento detalla de manera exhaustiva un listado de alertas comunes y concluyentes.
+*   **Alertas Sistémicas:** Muchas de estas señales pueden programarse para que el sistema las detecte sin intervención humana. Por ejemplo, alertas sobre clientes domiciliados en países de baja imposición tributaria o paraísos fiscales.
+*   **Alertas de Interfaz (Mixtas):** Otras alertas, de carácter conductual, requerirán que el Oficial de Cumplimiento ingrese un reporte manual en el panel de administración. Por ejemplo, si un cliente se niega a llenar los formularios, o si un empleado presenta un cambio notable e inesperado en su situación económica.
+
+### 5. Reportes (ROS) y Trazabilidad (Retención de Datos)
+La normativa interna establece que la información debe conservarse digitalmente y bajo estricta custodia durante todo el periodo que exista la compañía.
+*   **Infraestructura:** La integración propuesta con la base de datos Supabase y el almacenamiento de los PDFs en SharePoint cumple con este principio fundamental de retención permanente y recuperabilidad en el tiempo.
+*   **Generación de Reportes:** El sistema facilitará la labor del Oficial de Cumplimiento al centralizar la información necesaria para los reportes internos y la posterior presentación de los Reportes de Operaciones Sospechosas (ROS), tanto positivos como negativos, directamente a la UIAF.
+
+---
+
+Tienes en tus manos los cimientos exactos para modelar la base de datos y construir los flujos de validación. Para empezar a aterrizar esto en la interfaz de usuario en React, ¿te gustaría que clasifiquemos cuáles de las 65 señales de alerta se pueden programar 100% en el backend y cuáles requerirán un botón o formulario para que el Oficial de Cumplimiento las marque manualmente?
+
+==================================================
+
+User [5 de jun de 2026 10:37 AM]
+
+si necesito eso, ademas todo bien especificado como se haria, como funcionaria todo que estariamos haciendo mas facil en la empresa y abosolutamente todo para presentar todo el plan y todo a mis jefes que sea todo completo
+
+==================================================
+
+Gemini [5 de jun de 2026 10:37 AM]
+
+¡Perfecto, ingeniero! Presentar un proyecto de esta magnitud a la gerencia requiere traducir la jerga técnica (Docker, APIs, React) en **valor de negocio** (ahorro de tiempo, mitigación de riesgos legales, eficiencia). 
+
+He estructurado este documento final como un **Plan de Proyecto Maestro**. Está diseñado para que tus jefes entiendan exactamente qué problema resuelves, cómo funciona la tecnología por debajo, y cómo el manual de 65 señales de alerta se convierte en un software real. 
+
+Puedes exportar esto a PDF o usarlo como guion para tus diapositivas.
+
+---
+
+# Plan Integral de Automatización: Ecosistema SAGRILAFT
+**Desarrollado para:** Gerencia y Oficial de Cumplimiento (Cosechas y Selecta)
+**Arquitectura:** Portal Web (React) + Motor de Reglas + API TusDatos + Microsoft SharePoint
+
+## 1. El Problema Actual vs. El Nuevo Ecosistema (¿Qué estamos facilitando?)
+
+Actualmente, el proceso de debida diligencia es un cuello de botella operativo. El análisis es manual, vulnerable a errores de digitación y consume horas de personal administrativo.
+
++-------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+-----------------------------------------------------------+
+| Proceso Actual (Manual)                                                                         | Nuevo Ecosistema (Automatizado)                                                                      | Impacto para la Empresa                                   |
++-------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+-----------------------------------------------------------+
+| Recepción: Correos electrónicos con PDFs adjuntos, a menudo incompletos.                        | Recepción: Portal de Autogestión Web. El sistema no deja avanzar si faltan datos.                    | Cero reprocesos persiguiendo documentos.                  |
+| Verificación: El Oficial digita la cédula en 7 páginas distintas (Policía, Procuraduría, etc.). | Verificación: El Motor Backend consulta más de 100 listas en 3 segundos mediante API.                | Ahorro del 95% del tiempo operativo del Oficial.          |
+| Matriz de Riesgo: Fórmulas en Excel, propensas a manipulación o daño del archivo.               | Matriz de Riesgo: Algoritmo en base de datos cifrada. Calcula el Score de severidad automáticamente. | Cumplimiento normativo estricto y auditable.              |
+| Custodia: Guardado manual en carpetas.                                                          | Custodia: Inserción automática de evidencias en Microsoft SharePoint.                                | Preparación inmediata ante auditorías de SuperSociedades. |
++-------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+-----------------------------------------------------------+
+
+## 2. Ingeniería Aplicada: Automatización de las 65 Señales de Alerta
+El manual SAGRILAFT define 65 señales de alerta (alertas concluyentes y comunes). Para llevar esto al software, dividiremos estas señales en tres capas tecnológicas:
+
+### Capa A: Alertas 100% Automatizadas (Motor Backend + API)
+El sistema bloqueará operaciones sin intervención humana cruzando bases de datos en tiempo real.
+* **Señal 11:** Cliente investigado o procesado por lavado de activos. *(Se detecta vía API TusDatos en la Rama Judicial).*
+* **Señales 18, 39 y 44:** Domiciliados en paraísos fiscales o listas GAFI/OFAC. *(El sistema bloquea la IP o el país de registro del formulario web).*
+* **Señal 46:** Empleados o asociados con antecedentes judiciales de LA/FT. *(Filtro automático en el onboarding).*
+
+### Capa B: Alertas Semiautomatizadas (Base de Datos + Lógica Transaccional)
+El sistema analizará el comportamiento a lo largo del tiempo y disparará alertas si detecta anomalías.
+* **Señal 13:** Operaciones fraccionadas. *(Un script en la base de datos detecta si un mismo NIT factura muchas veces por debajo del tope).*
+* **Señal 32:** Frecuentes operaciones por grandes sumas. *(El sistema compara el volumen facturado vs. el tamaño de la empresa).*
+* **Señal 27:** Crecimiento repentino de operaciones a cargo de un trabajador. *(Dashboard estadístico).*
+
+### Capa C: Alertas Conductuales (Interfaz del Oficial de Cumplimiento)
+La tecnología no puede leer el lenguaje corporal. Para estas alertas, el Oficial tendrá un panel en el sistema con un botón de **"Reportar Alerta Conductual"** para registrar hallazgos humanos y sumarlos al perfil de riesgo.
+* **Señales 1, 3, 4 y 10:** El cliente/empleado se niega a llenar formularios, presiona al personal o solicita ser excluido del registro.
+* **Señal 9 y 25:** Insistencia en reunirse fuera de las oficinas institucionales.
+* **Señales 20 y 21:** Empleado evita tomar vacaciones o presenta ausencias frecuentes.
+
+## 3. ¿Cómo funciona el flujo en el día a día? (Arquitectura Técnica)
+
+Toda la solución vivirá en un entorno seguro y aislado (Contenedores Docker) sin interferir con otros proyectos comerciales.
+
+1.  **Onboarding:** El área de compras envía un link (`proveedores.cosechas.com`). El tercero llena el formulario (React) y sube su RUT. El formulario exige declarar a los beneficiarios finales (dueños reales).
+2.  **Screening Central (El Cerebro):** El backend recibe los datos y dispara una petición a la API de validación.
+3.  **Procesamiento de la Matriz:** El sistema toma la respuesta de la API y aplica la fórmula de la empresa: `Severidad = Impacto x Frecuencia`. 
+4.  **Toma de Decisiones de la Máquina:**
+    * *Si el riesgo es Insignificante/Menor (Verde):* Aprueba al proveedor, genera un certificado PDF, lo sube a SharePoint y notifica por correo.
+    * *Si el riesgo es Mayor/Catastrófico (Rojo):* Bloquea la creación del tercero en la base de datos y hace un *ping* a nuestro **Bot de WhatsApp**.
+5.  **Reacción Inmediata:** El Oficial de Cumplimiento recibe un WhatsApp: *"🚨 Alerta SAGRILAFT: Proveedor bloqueado por hallazgo en listas vinculantes. Revisa el Dashboard."*
+
+## 4. Fases de Implementación y Despliegue
+
++---------------------------+----------------------------+-------------------------------------------------------------------------------------------------+
+| Fase                      | Entregable                 | Funcionalidad                                                                                   |
++---------------------------+----------------------------+-------------------------------------------------------------------------------------------------+
+| Fase 1: Estructura Core   | Esquema Base de Datos      | Modelado de tablas relacionales de terceros, matriz paramétrica y logs en entorno seguro.       |
+| Fase 2: Motor Inteligente | Backend & API              | Programación del consumo de API de antecedentes y algoritmo de cálculo de score de riesgo.      |
+| Fase 3: Nube y Alertas    | Microsoft Graph & WhatsApp | Conexión para enviar PDFs firmados a SharePoint y alertas al móvil del Oficial de Cumplimiento. |
+| Fase 4: Portal Web        | Frontend (React)           | Interfaz visual externa para clientes/proveedores y Dashboard interno de administración.        |
++---------------------------+----------------------------+-------------------------------------------------------------------------------------------------+
+
+## 5. Conclusión Estratégica
+Este desarrollo interno no solo moderniza a la empresa, sino que ahorra millones de pesos en la compra de software empaquetado de terceros (que suelen cobrar licencias mensuales por usuario). Al ser un desarrollo propio, la empresa es dueña del código, se integra perfectamente con las herramientas existentes (SharePoint, Bots) y asegura un cumplimiento normativo hermético ante cualquier requerimiento del Estado.
+
+---
+
+Este enfoque deja clarísimo el "por qué" (el valor), el "qué" (las alertas) y el "cómo" (la arquitectura). ¿Te parece bien si para tu gestión interna estructuramos el modelo de datos (las tablas de SQL) que soportarán la Matriz de Riesgo y el registro de las alertas conductuales?
+
+==================================================
+
+User [5 de jun de 2026 12:55 PM]
+
+asi esta conformado el formato que se envia para mirar como se implementaria con todo, actualmente esta en un excel
+
+fecha de diligenciamento
+tipo de solicitud (vinculacion, actualizacion)
+clase de vinculacion (cliente, proveedor, contratista, accionista)
+
+1. identificacion de persona natural
+nombres:
+primer apellido
+segundo apellido
+tipo de identificacion (cc, ce, otro (cual))
+No de identificacion
+lugar y fecha de expedicion
+fecha de nacimiento
+lugar de nacimiento
+nacionalidad
+correo electronico
+estado civil
+direccion residencial/barrio
+telefono/celular
+ciudad
+departamento
+pais
+ocupacion, oficio o profesion principal (asalariado, independiente, pensionado, rentista)
+¿declara renta? (si//no)
+actividad economica principal
+codigo ciiu
+empresa donde labora
+cargo
+area
+direccion corporativa
+telefono corporativo
+ciudad
+departamento
+pais
+
+Informacion tributaria
+responsable de iva
+regimen simple tributacion
+gran contribuyente
+exterior
+autoretenedor renta
+autoretenedor IVA
+autoretenedor ICA
+
+informacion financiera
+activos 
+pasivos
+patrimonio
+ingresos mensuales
+egresos mensuales
+otros ingresos mensuales
+concepto otros ingresos
+¿realiza alguna de las siguientes operaciones internacionales? (exportaciones, importaciones, inversiones, transferencia, prestamos, envio y/o recepcion de giros, ninguno)
+¿posee productos financieros en el exterior? (si/no)
+una lista de productos con estos campos: tipo de producto, identificacion o numero del producto, monto, moneda, entidad, ciudad, pais
+
+2. identificacion de persona juridica
+nombre o razon social
+tipo de empresa (publica, privada, mixta, inversion extranjera, otra(cual?))
+direccion oficina principal
+ciudad
+departamento
+telefono
+¿tiene sucursales? (si/no)
+ciudad/departamento/pais
+telefono corporativo
+correo electronico corporativo
+celular corporativo
+tipo de actividad economica (industrial, comercial, transporte, construccion, agricola, recursos financieros, otra)
+actividad economica principal
+codigo ciiu
+representante legal nombres
+primer apellido
+segundo apellido
+tipo de identificacion (cc,ce,otra)
+No  de identificacion
+lugar y fecha de expedicion
+fecha de nacimiento
+lugar de nacimiento
+nacionalidad
+direccion
+telefono
+
+informacion tributaria
+responsable IVA
+regimen simple de tributacion
+gran contribuyente
+exterior
+autoretenedor renta
+autoretenedor IVA 
+autoretenedor ICA
+
+informacion financiera
+activos
+pasivos
+patrimonio
+ingresos mensuales
+egresos menusales
+otros ingreso mensuales
+concepto otros ingresos
+realiza alguna de las siguientes operaciones internacionales (exportaciones, importaciones, inversiones, transferencias, prestamos, envio y/o recepcion de giros, ninguna)
+posee productos financieros en el exterior (si/no)
+una lista de productos con: tipo de producto, identificacion o numero de producto, monto, moneda, entidad, ciudad, pais
+
+3.identificacion de accionistas que tengan directa o indirectamente mas del 5% del capital social, aporte o participacion (en caso de requerir mas espacio debe anexar la relacion)
+
+una lista con: tipo de identificacion, No de identificacion, nombre completo, %, ¿por su actividad o cargo administra recursos publicos?, ¿por su actividad o cargo goza de reconocimiento publico o ejerce algun grado de poder publico?
+
+es o fue funcionario de una entidad publica contratada por el gobierno? (si/no)
+tiene usted algun vinvulo familiar con una persona considerada publicamente expuesta? (si/no)
+¿por su cargo o actividad ejerce algun grado de poder publico? (si/no)
+maneja recursos publicos (si/no)
+goza usted algun reconocimiento publico (si/no)
+declara usted que tiene la condicion de ser una persona politicamente expuesta -PEP (si/no)
+si respondio afirmativamente a alguna de las preguntas anteriores, favor proporcione los nombres, cargos, vinculo familiar y/o entidad publica en la que fue o es funcionario
+
+4. informacion comercial
+
+una lista con: referencia comercial, direccion, ciudad, contacto, telefono
+
+5. informacion bancaria
+
+una lista con: referencia bancaria, # de cuenta, tipo de cuenta, ciudad, telefono
+
+6. politicas y comportamientos eticos
+
+cuenta con politica de prevencion de corrupcion y soborno (si/no)
+tiene comite de etica y cumplimiento
+cuento con canales de comunicacion y/o denuncia internos y externos
+su empresa ha sido acusada alguna vez de corrupcion o practicas comerciales controvertidas
+tiene oficial de cumplimiento
+si respondio afirmativamente a alguna de las preguntas anteriores, favor detalle la informacion
+indicar su nombre
+
+7. declaracion de origen de fondos
+
+origen de fondos (especifique de donde proviene el origen de sus fondos)
+
+8. autorizacion para el tratamiento de datos personales
+
+9. firma y huella
+
+==================================================
+
+Gemini [5 de jun de 2026 12:55 PM]
+
+¡Qué excelente insumo, ingeniero! Tener el mapeo exacto de los campos del Excel es el paso definitivo para estructurar la base de datos y la interfaz gráfica. Al ver la cantidad de información que manejan, es evidente por qué hacerlo en Excel es engorroso: es un formulario gigante, propenso a que la gente deje campos en blanco o se equivoque.
+
+Pasar este Excel a una aplicación web es exactamente donde la magia de la arquitectura que estamos armando brilla. Para presentarlo a tus jefes, el enfoque no es decirles "vamos a hacer un formulario web", sino **"vamos a implementar un Onboarding Inteligente Multi-paso"**.
+
+Aquí te explico cómo se implementa a nivel de código (React + Supabase) y cómo se lo vendes a la gerencia:
+
+### 1. La Experiencia de Usuario (Frontend en React)
+No le vamos a lanzar un formulario de 100 campos de golpe al usuario porque se asusta y lo abandona. Lo implementaremos como un **Wizard (Formulario por pasos o Stepper)** con lógica condicional:
+
+*   **Paso 1: Perfilamiento Inicial:** Fecha, tipo de solicitud y tipo de vinculación.
+*   **Paso 2: Bifurcación Inteligente:** Aquí está la primera gran mejora. Si el usuario selecciona "Persona Natural", **React oculta automáticamente** toda la sección 2 (Persona Jurídica). Si es Jurídica, oculta la 1. En el Excel toca ver todo revuelto; en el software, la interfaz se adapta.
+*   **Paso 3: Información Tributaria y Financiera:** Listas desplegables y campos numéricos con formato automático de moneda (agregando los separadores de miles para evitar que escriban "1000" o "1.000" de formas distintas).
+*   **Paso 4: Composición Accionaria y PEPs (Sección 3):** Esto se programa con un botón "Añadir Accionista". El usuario puede agregar dinámicamente tantas filas como necesite. *Punto clave para los jefes:* Aquí es donde el sistema captura automáticamente los números de cédula de los socios para mandarlos a evaluar a la API de TusDatos.
+*   **Paso 5: Referencias y Ética:** Más campos dinámicos para agregar referencias comerciales y bancarias.
+*   **Paso 6: Firmas y Autorizaciones:** Reemplazamos la "huella y firma" física por mecanismos digitales (te lo detallo más abajo).
+
+### 2. El Modelo de Base de Datos (Supabase / PostgreSQL)
+Tener esto en Excel significa que los datos están "muertos". En tu VPS, estructuraremos la base de datos de manera relacional para que sea consultable y auditable. 
+
+No guardaremos todo en una sola tabla gigante. La estructura óptima sería:
+
+*   **Tabla `solicitudes`:** ID, fecha, tipo, estado (pendiente, aprobada, rechazada).
+*   **Tabla `terceros`:** Toda la información básica (Sección 1 o 2). Con un campo que diferencie si es Natural o Jurídico.
+*   **Tabla `info_financiera`:** Activos, pasivos, ingresos, etc., vinculada al ID del tercero.
+*   **Tabla `accionistas_pep`:** Cada accionista es una fila nueva vinculada a la empresa, con sus respuestas booleanas (true/false) sobre si manejan recursos públicos o son PEP.
+*   **Tabla `referencias`:** Bancarias y comerciales.
+
+### 3. ¿Cómo esto le facilita la vida a la empresa? (Argumentos para la Gerencia)
+
+Cuando expongas este modelo, resalta estos "superpoderes" que el Excel jamás podrá tener:
+
+1.  **Validación en Tiempo Real (Cero errores humanos):** Si un cliente dice que sus activos son 100 y sus pasivos 200, pero su patrimonio no cuadra, React no lo deja avanzar. El Oficial de Cumplimiento dejará de devolver correos por "formularios mal diligenciados". Todos los campos críticos se marcan como `required`.
+2.  **Disparador Automático de APIs:** Apenas el cliente le da a "Enviar", el backend toma las cédulas del representante legal y de la tabla `accionistas_pep`, y las lanza contra las 65 señales de alerta y listas restrictivas.
+3.  **Autocompletado de CIIU y Bancos:** En lugar de que el usuario escriba texto libre y cometa errores de ortografía, el código CIIU y la lista de entidades financieras consumirán un catálogo predefinido.
+4.  **Trazabilidad Inmediata:** Si un proveedor actualiza su información de PEP (Persona Expuesta Políticamente), la base de datos guarda un log de qué día y a qué hora se cambió esa respuesta.
+
+---
+
+Para la sección 8 (Tratamiento de Datos) y 9 (Firma y Huella), el Excel físico exige imprimir, firmar, poner la huella, escanear y volver a enviar. En Colombia, la Ley 527 de 1999 valida los mensajes de datos y las firmas electrónicas.
+
+Para implementar este último paso de forma 100% digital y legal dentro de tu aplicación, ¿les gustaría integrar un sistema de firma con verificación OTP (un código de 6 dígitos enviado por SMS/WhatsApp al celular corporativo que nos dieron en el Paso 1) o prefieren que el usuario suba una foto de su firma escaneada junto a un Checkbox de "Acepto los términos legales"?
+
+==================================================
+
+User [5 de jun de 2026 2:08 PM]
+
+cual es el mejor estandar para esas cosas? y la opcion mejor mas viable y profesional?
+
+==================================================
+
+Gemini [5 de jun de 2026 2:08 PM]
+
+¡Excelente pregunta, ingeniero! Cuando hablamos de SAGRILAFT, la Superintendencia y los auditores son muy estrictos con la validez de las evidencias. 
+
+Si te vas por la opción de que el usuario suba una **foto de su firma (Firma Digitalizada)**, a nivel de ingeniería y legal, es el eslabón más débil. Cualquiera puede recortar la firma de un PDF, pegarla en otro lado y decir "yo no firmé eso". Legalmente es muy fácil de repudiar.
+
+El **estándar de la industria más viable, profesional y con total validez legal en Colombia (Ley 527 de 1999 y Decreto 2364 de 2012)** es la **Firma Electrónica mediante OTP (One-Time Password) combinada con un Audit Trail (Huella de Auditoría)**.
+
+Aprovechando la arquitectura que ya tienes armada, esta es la forma maestra de implementarlo:
+
+### ¿Por qué es la mejor opción?
+1. **Validez Legal Irrefutable:** No se basa en un garabato dibujado en una pantalla, sino en la **autenticación a través de un dispositivo personal**. Si el código llegó al celular corporativo del Representante Legal y este lo digitó, existe una presunción legal fortísima de que fue él.
+2. **Costo Cero Adicional:** Ya tienes un servidor con un Bot de WhatsApp funcionando. No necesitas pagarle a firmas externas (como DocuSign o Adobe Sign) cientos de dólares al mes.
+3. **Experiencia de Usuario (UX) Impecable:** Es el mismo sistema que usan los bancos hoy en día (Bancolombia, Davivienda) para autorizar transferencias o firmar pagarés. Da una imagen corporativa de muy alto nivel.
+
+### ¿Cómo funciona el flujo técnico (El Audit Trail)?
+
+Cuando el usuario llega al Paso 6 (Tratamiento de Datos y Firma) en tu frontend de React, el proceso ocurre así:
+
+1. **Aceptación Explícita (Click-wrap):** El usuario marca un *checkbox* que dice: *"Acepto la política de tratamiento de datos y declaro bajo gravedad de juramento que la información de fondos es veraz"*.
+2. **Disparador (Trigger):** El usuario hace clic en el botón "Firmar Documento".
+3. **El Bot Entra en Acción:** El backend de Node/Python genera un código aleatorio de 6 dígitos (ej. `845921`) con una vigencia de 5 minutos, lo guarda en Supabase, y se comunica internamente con tu Bot de WhatsApp. El Bot le envía un mensaje al número que el proveedor registró en el Paso 1.
+4. **Validación:** El usuario digita el código en la pantalla de React.
+5. **El Sello de Auditoría (El secreto profesional):** Si el código es correcto, el backend toma todo el formulario, genera el PDF final y en la última página **no pega una firma gráfica**, sino que estampa un bloque de texto inalterable (Audit Trail) que dice:
+
+> *Firmado electrónicamente mediante validación OTP (WhatsApp) al número +57 300XXXXXXX.*
+> * **Fecha y Hora:** 05/06/2026 - 14:35:12 COT
+> * **Dirección IP:** 190.25.xxx.xxx
+> * **ID de Transacción:** a8f9c2... (un hash criptográfico del documento)
+
+Si la DIAN o la Superintendencia hacen una auditoría, ese bloque de metadatos tiene mucho más peso legal que una firma en bolígrafo escaneada, porque demuestra **quién, desde dónde, a qué hora y con qué factor de autenticación** se aprobó el documento.
+
+---
+
+Para que veas exactamente cómo se percibiría esta experiencia desde el lado del usuario final y puedas mostrarle la fluidez a tus jefes, he creado una simulación interactiva del componente de firma:
+
+--------------------------------------------------
+Language: json?chameleon
+--------------------------------------------------
+{"component":"LlmGeneratedComponent","props":{"height":"600px","prompt":"Objetivo: Simular el flujo de Firma Electrónica con OTP (One-Time Password) para el onboarding SAGRILAFT. Estrategia: Form Layout (Wizard Step). Inputs: Checkbox de Términos, Botón 'Solicitar Código de Firma', Input de 6 dígitos, Botón 'Firmar'. Comportamiento: 1. Estado inicial muestra un resumen de 'Documento listo para firma' y un checkbox para aceptar tratamiento de datos. El botón de solicitar código está deshabilitado hasta que se marque el checkbox. 2. Al hacer clic en solicitar código, mostrar un estado de carga breve y luego una notificación 'Código enviado por WhatsApp al +57 300 *** **89'. Habilitar el input de 6 dígitos. 3. El usuario ingresa un código (cualquier código de 6 números es válido para la simulación). 4. Al hacer clic en 'Firmar', mostrar una pantalla de éxito verde. 5. La pantalla de éxito DEBE mostrar un 'Certificado de Auditoría' generado dinámicamente: un bloque tipo terminal/consola que muestre la Fecha/Hora actual, una Dirección IP simulada (ej. 190.158.45.12), el número ofuscado, y un Hash SHA-256 simulado (cadena alfanumérica larga). Textos en español.","id":"im_bcc5e0161e602db3"}}
+--------------------------------------------------
+
+Presentarle a la gerencia que vamos a reemplazar el papel y la huella dactilar física por un sistema de **Autenticación Doble Factor (2FA)** vinculado a WhatsApp, respaldado por la Ley 527, es el argumento definitivo para que aprueben el proyecto. ¿Te parece clara esta ruta de implementación para el cierre del formulario?
+
+==================================================
+
+User [5 de jun de 2026 2:12 PM]
+
+listo perfecto entonces con todo absolutamente todo lo visto hasta ahora ahora si dame la documentacion totalmente completa hasta ahora explicando cada cosa al detalle para presentar el plan y la estrategia a mis jefes
+
+==================================================
+
+Gemini [5 de jun de 2026 2:12 PM]
+
+¡Excelente, ingeniero! Tienes en tus manos un proyecto que no solo es un reto técnico fascinante, sino una transformación vital para la compañía. 
+
+A continuación, te presento el **Documento Maestro del Proyecto** estructurado de principio a fin, con lenguaje corporativo, técnico y estratégico, listo para ser presentado a la gerencia de Cosechas y Selecta.
+
+***
+
+# PLAN MAESTRO DE INGENIERÍA: AUTOMATIZACIÓN DEL ECOSISTEMA SAGRILAFT
+**Fecha:** 5 de Junio de 2026
+**Preparado por:** Juan José Perea Garcés - Desarrollo e Ingeniería
+**Dirigido a:** Gerencia General y Oficial de Cumplimiento (Cosechas y Selecta)
+
+---
+
+## 1. Resumen Ejecutivo
+El Sistema de Autocontrol y Gestión del Riesgo Integral de Lavado de Activos y Financiación del Terrorismo (SAGRILAFT) exige a la compañía identificar, medir, controlar y monitorear el riesgo de sus contrapartes (clientes, proveedores, empleados, accionistas). 
+
+Actualmente, este proceso se ejecuta de forma manual mediante el intercambio de correos, diligenciamiento de matrices en Excel, consulta humana en múltiples portales del Estado e impresión de firmas físicas. Este modelo genera cuellos de botella operativos, reprocesos por información incompleta y riesgos de auditoría ante la Superintendencia de Sociedades.
+
+**La Solución:** Centralizar y automatizar el 100% del ciclo de vida de vinculación mediante una arquitectura de software propia. Se desarrollará un portal de autogestión web integrado con Inteligencia de Datos (APIs de antecedentes), un motor de cálculo de riesgo paramétrico, almacenamiento en la nube institucional (Microsoft SharePoint) y firmas electrónicas auditables vía WhatsApp.
+
+---
+
+## 2. Análisis Comparativo: Transición Operativa
+
++----------------------------+-----------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------+------------------------------------------------------------------------+
+| Aspecto                    | Proceso Actual (Manual)                                                                 | Nuevo Ecosistema (Automatizado)                                                              | Beneficio Directo                                                      |
++----------------------------+-----------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------+------------------------------------------------------------------------+
+| Captura de Datos           | Formulario extenso en Excel. Alta tasa de errores o campos vacíos.                      | Portal Web inteligente (React) por pasos. Validación en tiempo real (campos obligatorios).   | Cero reprocesos persiguiendo información faltante o errónea.           |
+| Validación de Antecedentes | Oficial de Cumplimiento consulta página por página (Policía, Procuraduría, OFAC, etc.). | El sistema consulta más de 100 listas públicas e internacionales en 3 segundos mediante API. | Reducción del 95% del tiempo de análisis por cada contraparte.         |
+| Cálculo de Riesgo          | Operaciones matemáticas y cruces manuales en Excel.                                     | Algoritmo en base de datos cifrada. Cruce automático de variables y generación de alertas.   | Trazabilidad inalterable y exactitud matemática frente a auditorías.   |
+| Custodia de Evidencia      | Almacenamiento local o manual en carpetas.                                              | Inserción automática de PDFs en SharePoint mediante Microsoft Graph API.                     | Organización automática por NIT y fecha.                               |
+| Firma y Autorización       | Impresión, firma a bolígrafo, huella física y escaneo del documento.                    | Firma electrónica mediante código OTP (Doble Factor) enviado al WhatsApp del representante.  | Aceleración del cierre comercial y total validez legal (Ley 527/1999). |
++----------------------------+-----------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------+------------------------------------------------------------------------+
+
+---
+
+## 3. Arquitectura Tecnológica del Proyecto
+El sistema se desplegará maximizando la infraestructura actual de la compañía, operando de manera aislada y segura en nuestro servidor VPS (Hostinger KVM 4).
+
+*   **Frontend (Portal Web):** Desarrollado en React. Convertirá el extenso formulario de Excel en un *Wizard* (formulario por pasos) dinámico. Ocultará secciones irrelevantes (ej. si es Persona Natural, oculta datos de Persona Jurídica), permitiendo agregar accionistas y PEPs de forma ilimitada mediante botones.
+*   **Backend (Motor Lógico):** Servicio transaccional en Node.js o Python. Será el orquestador que reciba los datos, se comunique con la API de TusDatos, calcule el riesgo y tome decisiones (Aprobar, Bloquear o Alertar).
+*   **Base de Datos:** Motor relacional PostgreSQL gestionado mediante Supabase en contenedores Docker aislados. Estructurará las tablas (Solicitudes, Terceros, Info Financiera, Accionistas, Referencias y Logs de Auditoría).
+*   **Integraciones Nativas:**
+    *   **Microsoft Azure (Graph API):** Para cargar los expedientes finales directamente a SharePoint.
+    *   **Bot de WhatsApp Interno:** Reutilización de nuestro desarrollo anterior para enviar códigos de firma OTP a los proveedores y notificaciones de alerta crítica inmediata al Oficial de Cumplimiento.
+
+---
+
+## 4. El Motor de Cumplimiento: Implementación del Manual SAGRILAFT
+
+El corazón del sistema es la traducción del Manual de Políticas SAGRILAFT a código de software, garantizando un cumplimiento estricto.
+
+### A. La Matriz de Riesgo Paramétrica
+El sistema calculará automáticamente la **Severidad del Riesgo** ejecutando la fórmula interna: `Severidad = Frecuencia (1-5) x Impacto (1-5)`.
+*   Dependiendo del cruce (Mapa de Calor), el sistema clasificará al tercero en: Riesgo Insignificante (1-3), Menor, Moderado, Mayor o Catastrófico (Hasta 25).
+*   Si el riesgo es Insignificante/Menor, el sistema genera la vinculación automática. Si es superior, el proceso se congela y exige revisión manual.
+
+### B. Sistematización de las 65 Señales de Alerta
+Las señales del manual se codificarán en 3 capas de defensa:
+1.  **Capa Sistémica (Bloqueo Automático):** Conexión a la API para detectar alertas críticas instantáneas (Ej. Señales 11, 18, 39: Aparición en listas vinculantes, OFAC/Clinton o ubicación en paraísos fiscales).
+2.  **Capa Transaccional (Monitoreo de Base de Datos):** Reglas de negocio programadas para identificar comportamientos inusuales (Ej. Señal 13: Fraccionamiento de operaciones; o Señal 8: Inconsistencias entre ingresos y patrimonio declarado en el portal).
+3.  **Capa Conductual (Reporte Humano):** El Oficial de Cumplimiento contará con un panel de control para registrar y cruzar alertas conductuales observadas (Ej. Señales 20 o 21: Empleados que evitan tomar vacaciones o clientes que se niegan a firmar).
+
+---
+
+## 5. Validez Legal: Firma Electrónica y Huella de Auditoría
+Para eliminar la firma física y la huella dactilar, implementaremos un mecanismo de **Firma Electrónica Avanzada por OTP (One-Time Password)**, amparado en la legislación colombiana (Ley 527 de 1999 y Decreto 2364 de 2012).
+
+**Flujo Operativo:**
+1. Al finalizar el formulario, el usuario acepta la política de tratamiento de datos.
+2. El sistema genera un código seguro de 6 dígitos que envía instantáneamente por WhatsApp al celular reportado del representante legal.
+3. El usuario ingresa el código en el portal web para confirmar su identidad.
+4. El sistema genera el PDF definitivo e inserta un **Certificado de Auditoría (Audit Trail)** en lugar de un garabato digital. Este certificado detalla: Fecha, Hora, Dirección IP y Hash Criptográfico, constituyendo una prueba irrefutable ante cualquier auditoría.
+
+---
+
+## 6. Proveedores y Presupuesto Operativo (APIs)
+Para la validación automatizada de antecedentes y cruce de listas restrictivas, descartamos el uso de scripts gratuitos (web scraping) por su inestabilidad y bloqueos gubernamentales.
+
+Se propone la contratación de **TusDatos.co** (Líder en tecnología SAGRILAFT en Colombia).
+*   **Plan Seleccionado:** Plan Cumplimiento (Bolsa de 24 meses).
+*   **Costo por Consulta:** ~$1.340 COP.
+*   *Nota Comercial:* La vinculación de un proveedor jurídico promedio (Empresa + Representante + 3 Inversionistas) representará un costo técnico de aproximado de $6.700 COP. Esta inversión es mínima comparada con la reducción drástica de tiempos operativos y la eliminación del riesgo de multas millonarias por vinculación indebida.
+
+---
+
+## 7. Hoja de Ruta (Roadmap de Ejecución)
+
+El proyecto se desarrollará in-house, asegurando la propiedad intelectual del código y evitando costosas licencias de software de terceros.
+
+*   **Fase 1 (Semana 1): Arquitectura de Datos.** Creación del esquema `sagrilaft_db` en Supabase, diseño de entidades relacionales y configuración de seguridad.
+*   **Fase 2 (Semanas 2 y 3): Motor Inteligente Backend.** Programación de la lógica de negocio, algoritmo de matriz de riesgo y conexión con la API de TusDatos.
+*   **Fase 3 (Semana 4): Nube, Autenticación y Bot.** Integración de Microsoft Graph API para inyección de documentos en SharePoint. Adaptación del Bot de WhatsApp para alertas y firma OTP.
+*   **Fase 4 (Semanas 5 y 6): Interfaz Gráfica (UI/UX).** Desarrollo del portal frontend en React para el *onboarding* dinámico de terceros y construcción del *Dashboard* interno para el Oficial de Cumplimiento.
+*   **Fase 5 (Semana 7): Pruebas (UAT) y Despliegue.** Auditoría interna del flujo, simulación de vinculación de PEPs o perfiles bloqueados y pase a producción en subdominio corporativo.
+
+---
+
+==================================================
+
+User [5 de jun de 2026 2:24 PM]
+
+y una pregunta, los pdfs que nos mandarian los usuarios de cedula por ejemplo o pues todos esos no los guardamos? solo el que nos devuelve la api o como funciona esa parte que no la entendi bien
+
+==================================================
+
+Gemini [5 de jun de 2026 2:24 PM]
+
+¡Qué buen detalle, ingeniero! Es una excelente pregunta y un punto vital para las auditorías de SuperSociedades. 
+
+La respuesta corta es: **Sí, se guardan absolutamente todos los documentos.** El sistema debe almacenar tanto los archivos físicos que sube el usuario (Cédula, RUT, Cámara de Comercio) como el certificado de antecedentes que nos devuelve la API.
+
+Para que te quede 100% claro cómo funciona esa tubería de archivos por debajo, aquí te explico el **Flujo de Almacenamiento Dual** que programaremos en el backend:
+
+### El Flujo Paso a Paso de los Archivos (La Tubería)
+
+**1. La Captura (En el portal de React)**
+Cuando el proveedor está llenando el formulario, llega a un paso donde la interfaz le pide: *"Sube tu RUT en PDF"* y *"Sube tu Cédula"*. El usuario selecciona los archivos de su computador y le da a "Enviar".
+
+**2. El Tránsito (En tu Backend de Node/Python)**
+Esos PDFs viajan temporalmente a la memoria de tu servidor backend. El backend toma esos archivos y hace dos cosas en paralelo:
+
+**3. Acción A: Guardado de Documentos del Usuario en SharePoint**
+El backend se conecta a la API de Microsoft Graph y crea una carpeta específica para ese proveedor en el SharePoint de la empresa. Inmediatamente, sube la Cédula, el RUT y cualquier otro anexo directamente allí. 
+*   *En Supabase:* Tu base de datos guarda el link exacto de SharePoint donde quedó la cédula, para que el Oficial de Cumplimiento la pueda abrir con un clic desde su panel.
+
+**4. Acción B: Consulta a la API y Guardado de la Evidencia**
+Al mismo tiempo, el backend toma el número de cédula o NIT que el usuario digitó y se lo envía a TusDatos. La API hace el barrido por todas las listas restrictivas y nos devuelve un JSON (con el resultado) y un **nuevo PDF** (el certificado de antecedentes con los pantallazos de la Procuraduría, Clinton, etc.).
+*   El backend toma este nuevo PDF de TusDatos y lo sube exactamente a la misma carpeta de SharePoint que creó en el paso anterior.
+
+---
+
+### ¿Cómo se verá esto en la vida real? (La Estructura de Carpetas)
+
+Gracias a esta automatización, el Oficial de Cumplimiento ya no tendrá un desorden de archivos adjuntos en su correo. Si entra al SharePoint de Cosechas o Selecta, verá una estructura limpia creada automáticamente por tu código, que se vería más o menos así:
+
+📂 **SAGRILAFT - Proveedores 2026**
+ ┗ 📂 **900.123.456-7 (Distribuidora Nacional SAS)**
+    ┣ 📄 `1_RUT_Aportado.pdf` *(Subido por el usuario en React)*
+    ┣ 📄 `2_Cedula_Rep_Legal.pdf` *(Subido por el usuario en React)*
+    ┣ 📄 `3_Camara_Comercio.pdf` *(Subido por el usuario en React)*
+    ┣ 📄 `4_Certificado_Antecedentes_API.pdf` *(Devuelto por TusDatos)*
+    ┗ 📄 `5_Formulario_Firmado_OTP.pdf` *(Generado por tu Backend con el Audit Trail)*
+
+### ¿Por qué se debe hacer así?
+Porque el manual SAGRILAFT exige el principio de **"Debida Diligencia"**. Si el día de mañana la DIAN o la Superintendencia visitan la empresa y hay un problema con un proveedor, el auditor pedirá el expediente completo. El Oficial de Cumplimiento entrará a tu sistema, buscará el NIT y tendrá en un solo lugar la prueba de quién era la persona (Cédula/RUT aportados por ellos) y la prueba de que la empresa la investigó correctamente (PDF de la API).
+
+==================================================
+
+User [5 de jun de 2026 2:26 PM]
+
+y una pregunta, que archvis se le piden a la persona normalmente? o ya eso depende de los que queramos pedir aqui en la empresa?
+
+==================================================
+
+Gemini [5 de jun de 2026 2:26 PM]
+
+¡Excelente pregunta, ingeniero! La respuesta es: **mitad y mitad**. 
+
+Hay un paquete de documentos que es el **estándar básico normativo en Colombia** (sin ellos, el Oficial de Cumplimiento no puede hacer la debida diligencia ni la API tiene datos para buscar). Sin embargo, **la empresa (Cosechas/Selecta) tiene la última palabra** sobre qué otros documentos extra exige en su manual interno para abrirle la puerta a ese tercero.
+
+Para que vayas maquetando los campos de subida de archivos (`<input type="file" />`) en el frontend de React, este es el estándar que pide el 99% de las empresas que implementan SAGRILAFT:
+
+### 1. Para Personas Naturales (Independientes, Empleados, Clientes)
+*   **Copia del Documento de Identidad:** Cédula de Ciudadanía (CC), Cédula de Extranjería (CE) o Pasaporte. *(Obligatorio para la validación biométrica o de listas).*
+*   **Copia del RUT (Registro Único Tributario):** Preferiblemente actualizado. *(Obligatorio para cruzar la actividad económica).*
+*   **Certificación Bancaria:** No mayor a 30 días. *(Solo si es proveedor y se le va a pagar, para evitar pagos a cuentas de terceros no autorizados).*
+*   **Declaración de Renta o Certificación de Ingresos:** *(A veces opcional, depende del monto de los contratos).*
+
+### 2. Para Personas Jurídicas (Empresas Proveedoras o Clientes Corporativos)
+*   **Certificado de Cámara de Comercio (Existencia y Representación Legal):** Vital que tenga una vigencia no mayor a 30 días. De aquí el sistema saca quién es el representante legal válido.
+*   **Copia del RUT de la Empresa:** Actualizado.
+*   **Copia de la Cédula del Representante Legal.**
+*   **Certificado de Composición Accionaria:** Si los socios no aparecen detallados en la Cámara de Comercio (por ejemplo en algunas SAS), se pide un documento firmado por el contador donde se listen los accionistas con más del 5% de participación (nuestros famosos Beneficiarios Finales).
+*   **Certificación Bancaria de la Empresa.**
+*   **Estados Financieros del último año:** *(Lo piden muchas empresas para medir el riesgo de quiebra del proveedor, pero depende de la política de tu empresa).*
+
+---
+
+### ¿Cómo se traduce esto al desarrollo (React y Node)?
+
+Esta lista es fundamental para tu código por tres razones:
+
+1.  **Reglas de Validación (Frontend):** En React, configurarás que si el usuario marcó "Persona Jurídica", los botones de adjuntar *Cámara de Comercio* y *RUT* tengan el atributo `required`. Si no suben el PDF, el botón de "Enviar" ni siquiera se habilita.
+2.  **Restricción de Formatos:** Debes programar el *input* para que solo acepte `.pdf` (y quizás `.jpg`/`.png` para la cédula). No dejes que suban archivos de Word (`.docx`) o Excel, porque se pueden alterar fácilmente y pesan mucho.
+3.  **Límites de Peso (Backend):** Tienes que poner un límite (ejemplo: máximo 5MB por archivo) para que un usuario no te suba un PDF de 100MB escaneado a máxima resolución y te llene el almacenamiento de Hostinger o de SharePoint rápidamente.
+
+**El siguiente paso para ti:** Pregúntale directamente a tu jefe o al Oficial de Cumplimiento: *"¿Cuál es el checklist exacto de documentos obligatorios que le pedimos hoy a una Persona Natural y a una Jurídica?"*. 
+
+Con esa respuesta, ya sabes exactamente cuántos botones de "Subir Archivo" vas a programar en el Paso 3 del formulario.
+
+==================================================
+
+User [9 de jun de 2026 11:38 AM]
+
+entiendo, ahora otra pregunta, actualmente, una vez aprobados los documentos y la revision en las paginas y todo eso se da el certificado para posteriormente mirar en la matriz de riesgo, como se haria eso en el proyecto? y otra cosa, el formulario que seria ademas de adjuntar los documentos y eso seria con las preguntas y eso que se maneja en el excel, ese formulario que llenarian se guardaria como un pdf o como y en donde?
+
+==================================================
+
+Gemini [9 de jun de 2026 11:38 AM]
+
+### 1. El Flujo de la Matriz de Riesgo y el Certificado
+
+En el proceso manual, la revisión y la matriz ocurren de forma secuencial y separada. En el software, **la matriz de riesgo se calcula automáticamente en tiempo real** apenas ingresan los datos, y el certificado se genera como el resultado final del proceso. 
+
+El flujo exacto dentro del sistema sería el siguiente:
+
+1. **Pre-cálculo Automático (Backend):** Cuando el tercero envía el formulario, el sistema toma variables automáticas (como el código CIIU de actividad económica, el país/ciudad de origen, y los hallazgos de la API de antecedentes) y ejecuta la fórmula de severidad (`Impacto x Frecuencia`) parametrizada en la base de datos.
+2. **Revisión del Oficial (Dashboard):** El Oficial de Cumplimiento entra a la plataforma y ve el caso con un "Score Inherente" ya calculado por el sistema. En esa misma pantalla, el Oficial evalúa los PDFs cargados y responde las variables conductuales de la matriz si es necesario (por ejemplo, si el cliente mostró alguna actitud sospechosa de las señales de alerta).
+3. **Cierre del Riesgo Residual:** El sistema recalcula la matriz final. Si el nivel de riesgo está dentro de los límites aceptados por la empresa, el Oficial hace clic en el botón **"Aprobar Contraparte"**.
+4. **Generación del Certificado:** Al hacer clic en aprobar, el backend toma los datos del tercero, el score de riesgo obtenido y la fecha actual, los plasma en una plantilla preiseñada y **genera automáticamente el Certificado SAGRILAFT en formato PDF**. Este archivo se envía de inmediato por correo electrónico al tercero y queda archivado en el sistema.
+
+---
+
+### 2. El Formulario de Registro: ¿Cómo y dónde se guarda?
+
+El formulario con todas las preguntas detalladas del Excel (datos personales, financieros, tributarios, PEPs y referencias) se guarda de **dos formas simultáneas**, ya que cada una cumple un propósito técnico y legal diferente:
+
+#### A. Almacenamiento Estructurado (En la Base de Datos - Supabase)
+Los textos, números y opciones seleccionadas por el usuario **no se guardan directamente como un PDF inicialmente**. Primero se almacenan como registros en las tablas relacionales de la base de datos PostgreSQL en Supabase.
+* **¿Por qué es vital?:** Si se guardaran solo en un PDF, la información quedaría "atrapada". Al guardarla en bases de datos, el Oficial de Cumplimiento puede realizar búsquedas instantáneas (ej. buscar todos los proveedores que declararon tener operaciones internacionales), generar estadísticas mensuales para la Junta Directiva o programar alertas masivas.
+* **Ubicación:** En el almacenamiento de datos del servidor VPS en Hostinger.
+
+#### B. Generación del Documento Oficial (PDF Firmado en SharePoint)
+Una vez que el usuario completa la verificación con el código OTP de WhatsApp (el proceso de firma electrónica que definimos como estándar), el backend ejecuta un componente de generación de documentos (utilizando librerías como *PDFKit*, *Puppeteer* o similares).
+
+* **El Proceso:** El sistema toma los datos guardados en la base de datos, los organiza estéticamente con el logotipo de la empresa, añade el desglose de los accionistas, las referencias comerciales/bancarias y, al final, estampa el **Sello de Auditoría Digital** (IP, fecha, hora y el token de WhatsApp).
+* **Ubicación:** Este archivo PDF final (ej. `Formulario_Vinculacion_NIT.pdf`) se envía mediante la API de Microsoft Graph directamente a **Microsoft SharePoint**, quedando almacenado de forma permanente en la carpeta del tercero junto a los adjuntos que él subió (Cédula, RUT, etc.).
+
+### Resumen para la presentación:
+Toda la información ingresada se convierte en **datos vivos** dentro de la base de datos de la empresa para consultas y reportes del Oficial, y al mismo tiempo se congela en un **PDF oficial inalterable** respaldado en la nube corporativa de SharePoint para cumplir con los requisitos legales de conservación y custodia ante los entes de control.
+
+==================================================
+
+User [9 de jun de 2026 4:12 PM]
+
+perfecto, enotnces recordando como funciona actualmente como la primera parte para proveedores, el area solicita los documentos al proveedor y el formulario, este se los envia, si no esta bien vuelve a pedir lo que falta, si estan bien, pasan al auxiliar de compras para revisar que esten bien, si no estan bien, devuelve al del area, si estan bien los baja a su pc para buscar el rut, crear la carpeta con todos los documentos, se los comparte al oficial de cumplimiento, si no estan bien devuelve al auxiliar de compras, si estan bien ya entran en estudio con tusdatos, hasta ahi como esa primera parte para empezar como a desarrollar y hacer pruebas y todo, pero como con datos simulados y eso antes de pagar tusdatos, como lo podriamos hacer
+
+==================================================
+
