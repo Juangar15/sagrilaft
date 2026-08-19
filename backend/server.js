@@ -767,7 +767,7 @@ app.post('/api/v1/solicitudes/:id/devolver', async (req, res) => {
             try {
                 const correoProveedor = solicitud.datos_formulario.correo_electronico;
                 await transporter.sendMail({
-                    from: '"Cosechas Compliance" <no-reply@cosechas.com>',
+                    from: `"Cosechas Compliance" <${process.env.SMTP_USER || 'no-reply@cosechasexpress.com'}>`,
                     to: correoProveedor,
                     subject: 'Acción Requerida: Corrección en su proceso SAGRILAFT',
                     html: `
