@@ -665,15 +665,22 @@ export default function DashboardOficial() {
                                                     
                                                     // Filtrado inteligente basado en tipo_persona y vinculacion
                                                     if (datos.tipo_persona === 'natural') {
-                                                        validKeys = validKeys.filter(k => !k.includes('juridica') && !k.includes('rep_legal') && !k.includes('socios') && k !== 'razon_social' && k !== 'nit' && k !== 'tipo_sociedad' && k !== 'fecha_constitucion' && k !== 'tipo_empresa');
+                                                        validKeys = validKeys.filter(k => !k.includes('juridica') && !k.includes('rep_legal') && !k.includes('socios') && !k.includes('sucursal') && k !== 'razon_social' && k !== 'nit' && k !== 'tipo_sociedad' && k !== 'fecha_constitucion' && k !== 'tipo_empresa' && k !== 'sector');
                                                     } else if (datos.tipo_persona === 'juridica') {
                                                         validKeys = validKeys.filter(k => !['nombres', 'primer_apellido', 'segundo_apellido', 'fecha_nacimiento', 'lugar_nacimiento', 'nacionalidad'].includes(k));
                                                     }
 
                                                     if (['empleado', 'prestacion_servicios', 'contratista', 'accionista'].includes(datos.clase_vinculacion)) {
-                                                        // Empleados y asociados no tienen datos bancarios ni comerciales en este flujo
-                                                        validKeys = validKeys.filter(k => !k.includes('banco') && !k.includes('cuenta') && !k.includes('referencia') && !k.includes('comercial'));
+                                                        // Empleados y asociados no tienen datos bancarios, comerciales, ESG ni anticorrupción corporativa
+                                                        validKeys = validKeys.filter(k => 
+                                                            !k.includes('banco') && !k.includes('cuenta') && !k.includes('referencia') && !k.includes('comercial') &&
+                                                            !k.includes('esg_') && !['politica_corrupcion', 'codigo_etica_conducta', 'tiene_comite_etica', 'canales_denuncia', 'acusada_corrupcion', 'tiene_oficial_cumplimiento', 'nombre_oficial_cumplimiento', 'regimen_simple'].includes(k)
+                                                        );
                                                     }
+                                                    
+                                                    // No mostrar "Otros Datos" que sean puramente internos
+                                                    validKeys = validKeys.filter(k => !['area', 'pais', 'cargo', 'exterior_tributario', 'exterior_cuentas'].includes(k));
+
                                                     if (validKeys.length === 0) return null;
                                                     return (
                                                         <div key={title} style={{ marginBottom: '1.5rem' }}>
