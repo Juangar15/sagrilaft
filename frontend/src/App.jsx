@@ -2,7 +2,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import GatewayOnboarding from './components/GatewayOnboarding';
 import FormularioProveedor from './components/FormularioProveedor';
-import FormularioEmpleado from './components/FormularioEmpleado';
 import DashboardOficial from './components/DashboardOficial';
 import PortalInterno from './components/PortalInterno';
 
@@ -16,7 +15,7 @@ function App() {
         {/* Rutas principales del MVP */}
         <Route path="/onboarding" element={<GatewayOnboarding />} />
         <Route path="/onboarding/proveedor" element={<FormularioProveedor />} />
-        <Route path="/onboarding/empleado" element={<FormularioEmpleado />} />
+        <Route path="/onboarding/empleado" element={<FormularioProveedor isGenericEmpleado={true} />} />
         <Route path="/dashboard" element={<DashboardOficial />} />
         <Route path="/portal-interno" element={<PortalInterno />} />
       </Routes>

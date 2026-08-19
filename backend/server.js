@@ -348,12 +348,16 @@ app.post('/api/v1/onboarding', upload.any(), async (req, res) => {
             }
         }
 
-        // 1. Verificar si la solicitud ya existe (Ping-Pong)
-        const { data: solicitudExistente } = await supabase
-            .from('solicitudes_sagrilaft')
-            .select('id, estado_actual')
-            .eq('token_asociado', token)
-            .single();
+        // 1. Verificar si la solicitud ya existe (Ping-Pong) usando el token
+        let solicitudExistente = null;
+        if (token) {
+            const { data } = await supabase
+                .from('solicitudes_sagrilaft')
+                .select('id, estado_actual')
+                .eq('token_asociado', token)
+                .single();
+            solicitudExistente = data;
+        }
 
         // Subir archivos a R2 (o local)
         const archivosSubidos = {};

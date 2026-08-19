@@ -26,7 +26,7 @@ const CurrencyInput = ({ label, name, value, onChange, width="1fr", required = t
     )
 };
 
-export default function FormularioProveedor() {
+export default function FormularioProveedor({ isGenericEmpleado = false }) {
     const [searchParams] = useSearchParams();
     const token = searchParams.get('token');
 
@@ -57,9 +57,9 @@ export default function FormularioProveedor() {
         ambito_operacion: 'nacional',
         empresa_destino: 'selecta',
         tipo_solicitud: 'vinculacion',
-        clase_vinculacion: 'proveedor', // proveedor, empleado, cliente_selecta, franquiciado, posible_franquiciado
+        clase_vinculacion: isGenericEmpleado ? 'empleado' : 'proveedor',
         tipo_proveeduria: '',
-        tipo_persona: 'juridica',
+        tipo_persona: isGenericEmpleado ? 'natural' : 'juridica',
 
         // 1. Identificación Natural
         nombres: '', primer_apellido: '', segundo_apellido: '',
