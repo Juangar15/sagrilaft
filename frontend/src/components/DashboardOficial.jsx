@@ -661,7 +661,19 @@ export default function DashboardOficial() {
                                                 const formatKey = (k) => k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                                                 
                                                 const renderGroup = (keys, title) => {
-                                                    const validKeys = keys.filter(k => datos[k] !== undefined && datos[k] !== null && datos[k] !== '' && !Array.isArray(datos[k]) && typeof datos[k] !== 'object');
+                                                    let validKeys = keys.filter(k => datos[k] !== undefined && datos[k] !== null && datos[k] !== '' && !Array.isArray(datos[k]) && typeof datos[k] !== 'object');
+                                                    
+                                                    // Filtrado inteligente basado en tipo_persona y vinculacion
+                                                    if (datos.tipo_persona === 'natural') {
+                                                        validKeys = validKeys.filter(k => !k.includes('juridica') && !k.includes('rep_legal') && !k.includes('socios') && k !== 'razon_social' && k !== 'nit' && k !== 'tipo_sociedad' && k !== 'fecha_constitucion' && k !== 'tipo_empresa');
+                                                    } else if (datos.tipo_persona === 'juridica') {
+                                                        validKeys = validKeys.filter(k => !['nombres', 'primer_apellido', 'segundo_apellido', 'fecha_nacimiento', 'lugar_nacimiento', 'nacionalidad'].includes(k));
+                                                    }
+
+                                                    if (['empleado', 'prestacion_servicios', 'contratista', 'accionista'].includes(datos.clase_vinculacion)) {
+                                                        // Empleados y asociados no tienen datos bancarios ni comerciales en este flujo
+                                                        validKeys = validKeys.filter(k => !k.includes('banco') && !k.includes('cuenta') && !k.includes('referencia') && !k.includes('comercial'));
+                                                    }
                                                     if (validKeys.length === 0) return null;
                                                     return (
                                                         <div key={title} style={{ marginBottom: '1.5rem' }}>
