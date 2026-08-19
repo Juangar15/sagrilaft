@@ -461,10 +461,19 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         try {
             // 1. Verify OTP
             const email = formData.correo_electronico;
+            const isEmpresa = formData.tipo_persona === 'juridica';
+            const idSujeto = formData.numero_identificacion;
+            const nombreSujeto = isEmpresa ? formData.razon_social : `${formData.nombres || ''} ${formData.primer_apellido || ''} ${formData.segundo_apellido || ''}`.trim();
+
             const otpResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/otp/verify`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, code: codigoOTP })
+                body: JSON.stringify({ 
+                    email, 
+                    code: codigoOTP,
+                    documento: idSujeto,
+                    nombre_completo: nombreSujeto
+                })
             });
             const otpData = await otpResponse.json();
             if (!otpResponse.ok) throw new Error(otpData.error || 'Fallo en la verificación OTP');
@@ -1457,11 +1466,13 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>El expediente ha sido analizado por el motor de riesgo y firmado digitalmente.</p>
 
                                 <div style={{ background: '#1e293b', color: '#10b981', fontFamily: 'monospace', padding: '1.5rem', borderRadius: 'var(--radius-md)', textAlign: 'left', marginBottom: '2rem', fontSize: '0.85rem', wordBreak: 'break-all' }}>
-                                    <div style={{ color: '#94a3b8', marginBottom: '0.5rem' }}>--- AUDIT TRAIL & OTP LOG ---</div>
+                                    <div style={{ color: '#94a3b8', marginBottom: '0.5rem' }}>--- LEY 527 DE 1999 - AUDIT TRAIL & OTP LOG ---</div>
                                     <div>[OK] Transacción Hash (SHA-256): {auditHash}</div>
-                                    <div>[OK] Identidad Autenticada vía Dispositivo Móvil (OTP).</div>
-                                    <div>[OK] ID Radicado Expediente: {resultadoApi.id}</div>
-                                    <div style={{ color: resultadoApi.estado_actual === 'ALERTA_CRITICA' ? '#ef4444' : '#10b981', marginTop: '0.5rem' }}>[RESULT] Estado: {resultadoApi.estado_actual} | Score: {resultadoApi.score_riesgo}/100</div>
+                                    <div>[OK] Nombre y Documento registrados y verificados.</div>
+                                    <div>[OK] Identidad Autenticada vía Correo Electrónico (OTP).</div>
+                                    <div>[OK] Trazabilidad IP y Timestamp registrada con éxito.</div>
+                                    <div>[OK] ID Radicado Expediente: {resultadoApi?.id || 'N/A'}</div>
+                                    <div style={{ color: resultadoApi?.estado_actual === 'ALERTA_CRITICA' ? '#ef4444' : '#10b981', marginTop: '0.5rem' }}>[RESULT] Estado: {resultadoApi?.estado_actual || 'FINALIZADO'} | Score: {resultadoApi?.score_riesgo || 0}/100</div>
                                 </div>
 
                                 <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>

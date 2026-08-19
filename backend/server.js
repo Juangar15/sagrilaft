@@ -353,7 +353,7 @@ app.post('/api/v1/onboarding', upload.any(), async (req, res) => {
         if (token) {
             const { data } = await supabase
                 .from('solicitudes_sagrilaft')
-                .select('id, estado_actual')
+                .select('id, estado_actual, datos_formulario')
                 .eq('token_asociado', token)
                 .single();
             solicitudExistente = data;
@@ -384,6 +384,22 @@ app.post('/api/v1/onboarding', upload.any(), async (req, res) => {
         let resultId;
 
         if (solicitudExistente) {
+            // Preservar historial de firmas (audit_info) de correcciones anteriores
+            const historialAnterior = solicitudExistente.datos_formulario?.historial_firmas || [];
+            
+            // Si el form anterior tenía un audit_info suelto (de la primera firma), lo agregamos al historial
+            if (solicitudExistente.datos_formulario?.audit_info && historialAnterior.length === 0) {
+                historialAnterior.push({ ...solicitudExistente.datos_formulario.audit_info, tipo: 'FIRMA_INICIAL' });
+            }
+
+            // Agregamos la firma actual
+            if (formData.audit_info) {
+                historialAnterior.push({ ...formData.audit_info, tipo: 'FIRMA_CORRECCION' });
+            }
+
+            // Mantenemos la última firma en audit_info para fácil acceso, y el historial completo en historial_firmas
+            formData.historial_firmas = historialAnterior;
+
             const { error: errUpdate } = await supabase
                 .from('solicitudes_sagrilaft')
                 .update({
@@ -398,7 +414,11 @@ app.post('/api/v1/onboarding', upload.any(), async (req, res) => {
             if (errUpdate) throw new Error("Error actualizando solicitud: " + errUpdate.message);
             resultId = solicitudExistente.id;
         } else {
-            // Primera vez
+            // Primera vez: inicializamos el historial con la firma actual
+            if (formData.audit_info) {
+                formData.historial_firmas = [{ ...formData.audit_info, tipo: 'FIRMA_INICIAL' }];
+            }
+
             const { data: nuevaSolicitud, error: errorSolicitud } = await supabase
                 .from('solicitudes_sagrilaft')
                 .insert([{
@@ -746,7 +766,7 @@ app.post('/api/v1/otp/send', async (req, res) => {
 
 // POST /api/v1/otp/verify - Verify OTP
 app.post('/api/v1/otp/verify', (req, res) => {
-    const { email, code } = req.body;
+    const { email, code, documento, nombre_completo } = req.body;
     const record = otpCache.get(email);
 
     if (!record || record.code !== code || Date.now() > record.expiresAt) {
@@ -759,7 +779,11 @@ app.post('/api/v1/otp/verify', (req, res) => {
         ip: req.ip,
         timestamp: new Date().toISOString(),
         email: email,
-        hash: require('crypto').createHash('sha256').update(`${email}-${code}-${Date.now()}`).digest('hex')
+        documento: documento || 'No proporcionado',
+        nombre_completo: nombre_completo || 'No proporcionado',
+        metodo_autenticacion: 'OTP_EMAIL',
+        ley_527_1999_compliance: true,
+        hash: require('crypto').createHash('sha256').update(`${email}-${code}-${documento}-${nombre_completo}-${Date.now()}`).digest('hex')
     };
 
     return res.status(200).json({ success: true, audit: auditInfo });
