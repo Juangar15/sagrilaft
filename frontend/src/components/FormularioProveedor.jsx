@@ -12,16 +12,16 @@ import {
 import ciiuData from '../data/CIIU.json';
 
 // --- COMPONENTE AUXILIAR PARA MONEDA ---
-const CurrencyInput = ({ label, name, value, onChange, width="1fr", required = true }) => {
+const CurrencyInput = ({ label, name, value, onChange, width="1fr", required = true, disabled = false, isError = false }) => {
     const handleChange = (e) => {
         let rawValue = e.target.value.replace(/\D/g, '');
         onChange({ target: { name, value: rawValue }});
     }
     const formatted = value ? `$ ${parseInt(value, 10).toLocaleString('es-CO')}` : '';
     return (
-        <div>
-            <label className={required ? "label required" : "label"}>{label}</label>
-            <input type="text" value={formatted} onChange={handleChange} className="input-field" placeholder="$ 0" />
+        <div style={{ position: 'relative' }}>
+            <label className={required && !disabled ? "label required" : "label"}>{label}</label>
+            <input type="text" value={formatted} onChange={handleChange} className="input-field" placeholder="$ 0" disabled={disabled} style={{ ...(disabled ? {opacity: 0.7, cursor: 'not-allowed', background: '#f3f4f6'} : {}), ...(isError ? {border: '2px solid #ef4444', background: '#fef2f2'} : {}) }} />
         </div>
     )
 };
@@ -842,17 +842,17 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 <h4 style={{ margin: '0 0 1rem 0', color: 'var(--text-main)' }}>Perfil Financiero (Valores en COP)</h4>
                                 <div style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem', border: '1px solid var(--border)' }}>
                                     <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
-                                        <CurrencyInput label="Total Activos" name="activos" value={formData.activos} onChange={handleChange} required={true} />
-                                        <CurrencyInput label="Total Pasivos" name="pasivos" value={formData.pasivos} onChange={handleChange} required={true} />
-                                        <CurrencyInput label="Patrimonio Líquido" name="patrimonio" value={formData.patrimonio} onChange={handleChange} required={true} />
+                                        <CurrencyInput label="Total Activos" name="activos" value={formData.activos} onChange={handleChange} required={true} disabled={isDisabled('activos')} isError={!!camposACorregir['activos']} />
+                                        <CurrencyInput label="Total Pasivos" name="pasivos" value={formData.pasivos} onChange={handleChange} required={true} disabled={isDisabled('pasivos')} isError={!!camposACorregir['pasivos']} />
+                                        <CurrencyInput label="Patrimonio Líquido" name="patrimonio" value={formData.patrimonio} onChange={handleChange} required={true} disabled={isDisabled('patrimonio')} isError={!!camposACorregir['patrimonio']} />
                                     </div>
                                     <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
-                                        <CurrencyInput label="Ingresos Mensuales" name="ingresos_mensuales" value={formData.ingresos_mensuales} onChange={handleChange} required={true} />
-                                        <CurrencyInput label="Egresos Mensuales" name="egresos_mensuales" value={formData.egresos_mensuales} onChange={handleChange} required={true} />
+                                        <CurrencyInput label="Ingresos Mensuales" name="ingresos_mensuales" value={formData.ingresos_mensuales} onChange={handleChange} required={true} disabled={isDisabled('ingresos_mensuales')} isError={!!camposACorregir['ingresos_mensuales']} />
+                                        <CurrencyInput label="Egresos Mensuales" name="egresos_mensuales" value={formData.egresos_mensuales} onChange={handleChange} required={true} disabled={isDisabled('egresos_mensuales')} isError={!!camposACorregir['egresos_mensuales']} />
                                     </div>
 
                                     <div className="form-grid form-grid-3">
-                                        <CurrencyInput label="Otros Ingresos Mensuales" name="otros_ingresos_mensuales" value={formData.otros_ingresos_mensuales} onChange={handleChange} />
+                                        <CurrencyInput label="Otros Ingresos Mensuales" name="otros_ingresos_mensuales" value={formData.otros_ingresos_mensuales} onChange={handleChange} disabled={isDisabled('otros_ingresos_mensuales')} isError={!!camposACorregir['otros_ingresos_mensuales']} />
                                         {renderInput("Concepto Otros Ingresos", "concepto_otros_ingresos", "text", "1fr", false, false)}
                                     </div>
                                 </div>
@@ -922,16 +922,16 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                     </ol>
                                 </div>
 
-                                <div style={{ background: 'var(--surface)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', marginBottom: '2rem' }}>
+                                <div style={{ background: 'var(--surface)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', marginBottom: '2rem', ...(isDisabled('tiene_conflicto_interes') ? {opacity: 0.7} : {}), ...(camposACorregir['tiene_conflicto_interes'] ? {border: '2px solid #ef4444', background: '#fef2f2'} : {}) }}>
                                     <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '1rem', color: 'var(--text-main)' }}>
                                         Declaro que a la fecha tengo situación(es) que pueda(n) presentar un potencial CONFLICTO DE INTERÉS para el ejercicio del cargo que actualmente desempeño en SELECTA COMPAÑÍA DE CEREALES S.A.S, en mi relación con los siguientes empleados, proveedores, clientes entre otros:
                                     </label>
                                     <div style={{ display: 'flex', gap: '2rem' }}>
-                                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                                            <input type="radio" name="tiene_conflicto_interes" value="no" checked={formData.tiene_conflicto_interes === 'no' || !formData.tiene_conflicto_interes} onChange={handleChange} /> No
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: isDisabled('tiene_conflicto_interes') ? 'not-allowed' : 'pointer' }}>
+                                            <input type="radio" name="tiene_conflicto_interes" value="no" checked={formData.tiene_conflicto_interes === 'no' || !formData.tiene_conflicto_interes} onChange={handleChange} disabled={isDisabled('tiene_conflicto_interes')} /> No
                                         </label>
-                                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                                            <input type="radio" name="tiene_conflicto_interes" value="si" checked={formData.tiene_conflicto_interes === 'si'} onChange={handleChange} /> Sí
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: isDisabled('tiene_conflicto_interes') ? 'not-allowed' : 'pointer' }}>
+                                            <input type="radio" name="tiene_conflicto_interes" value="si" checked={formData.tiene_conflicto_interes === 'si'} onChange={handleChange} disabled={isDisabled('tiene_conflicto_interes')} /> Sí
                                         </label>
                                     </div>
                                 </div>

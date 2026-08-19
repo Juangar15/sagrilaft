@@ -384,13 +384,14 @@ app.post('/api/v1/onboarding', upload.any(), async (req, res) => {
         let resultId;
 
         if (solicitudExistente) {
-            // Ping-Pong: Es una corrección
             const { error: errUpdate } = await supabase
                 .from('solicitudes_sagrilaft')
                 .update({
                     datos_formulario: formData,
                     campos_a_corregir: {}, // Limpiamos correcciones
-                    estado_actual: 'REVISION_PREVIA'
+                    estado_actual: 'REVISION_PREVIA',
+                    razon_social: razon_social,
+                    nit_cedula: nit
                 })
                 .eq('id', solicitudExistente.id);
 
