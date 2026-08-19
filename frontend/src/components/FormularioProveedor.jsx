@@ -155,6 +155,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                 const sol = await sagrilaftService.obtenerSolicitudPorToken(token);
                 if (sol && sol.datos_formulario) {
                     setFormData(prev => ({ ...prev, ...sol.datos_formulario, token }));
+                    setTerminosAceptados(true);
                     esPingPong = true;
                     if (sol.estado_actual === 'DEVUELTO_CORRECCION') {
                         setEsCorreccion(true);
@@ -211,17 +212,19 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
 
     const renderCheckboxArray = (label, field, options) => {
         const currentArray = formData[field] || [];
+        const disabled = esCorreccion && !camposACorregir[field];
         return (
-            <div style={{ marginBottom: '1rem', width: '100%' }}>
+            <div style={{ marginBottom: '1rem', width: '100%', ...(disabled ? {opacity: 0.7} : {}), ...(camposACorregir[field] ? {border: '2px solid #ef4444', background: '#fef2f2', padding: '1rem', borderRadius: '8px'} : {}) }}>
                 <label className="label">{label}</label>
                 <div className="form-grid form-grid-2">
                     {options.map(opt => (
-                        <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', cursor: 'pointer' }}>
+                        <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', cursor: disabled ? 'not-allowed' : 'pointer' }}>
                             <input 
                                 type="checkbox" 
                                 value={opt.value} 
                                 checked={currentArray.includes(opt.value)} 
                                 onChange={(e) => handleCheckboxArray(e, field)} 
+                                disabled={disabled}
                             />
                             {opt.label}
                         </label>
@@ -526,26 +529,32 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         exit: { opacity: 0, y: -15, transition: { duration: 0.2 } }
     };
 
+    const isDisabled = (name) => esCorreccion && !camposACorregir[name];
+
     const renderInput = (label, name, type = "text", width = "1fr", readOnly = false, required = true) => {
+        const disabled = readOnly || isDisabled(name);
         return (
-        <div>
-            <label className={required ? "label required" : "label"}>{label}</label>
-            <input type={type} name={name} value={formData[name]} onChange={(e) => { handleChange(e); if(required && !e.target.value) e.target.classList.add('error'); else e.target.classList.remove('error'); }} className="input-field" readOnly={readOnly} style={readOnly ? {opacity: 0.7, cursor: 'not-allowed'} : {}} />
+        <div style={{ position: 'relative' }}>
+            <label className={required && !disabled ? "label required" : "label"}>{label}</label>
+            <input type={type} name={name} value={formData[name] || ''} onChange={(e) => { handleChange(e); if(required && !e.target.value) e.target.classList.add('error'); else e.target.classList.remove('error'); }} className="input-field" readOnly={disabled} style={{ ...(disabled ? {opacity: 0.7, cursor: 'not-allowed', background: '#f3f4f6'} : {}), ...(camposACorregir[name] ? {border: '2px solid #ef4444', background: '#fef2f2'} : {}) }} />
         </div>
     )};
 
-    const renderCiiuInput = (label, name, width = "1fr") => (
-        <div>
-            <label className={required ? "label required" : "label"}>{label}</label>
-            <input type="text" name={name} list="ciiu-list" value={formData[name]} onChange={handleChange} className="input-field" placeholder="Ej: 1102" />
+    const renderCiiuInput = (label, name, width = "1fr") => {
+        const disabled = isDisabled(name);
+        return (
+        <div style={{ position: 'relative' }}>
+            <label className={!disabled ? "label required" : "label"}>{label}</label>
+            <input type="text" name={name} list="ciiu-list" value={formData[name] || ''} onChange={handleChange} className="input-field" placeholder="Ej: 1102" readOnly={disabled} style={{ ...(disabled ? {opacity: 0.7, cursor: 'not-allowed', background: '#f3f4f6'} : {}), ...(camposACorregir[name] ? {border: '2px solid #ef4444', background: '#fef2f2'} : {}) }} />
         </div>
-    );
+    )};
 
     const renderSelect = (label, name, options, width = "1fr", required = true) => {
+        const disabled = isDisabled(name);
         return (
-        <div>
-            <label className={required ? "label required" : "label"}>{label}</label>
-            <select name={name} value={formData[name]} onChange={handleChange} className="input-field">
+        <div style={{ position: 'relative' }}>
+            <label className={required && !disabled ? "label required" : "label"}>{label}</label>
+            <select name={name} value={formData[name] || ''} onChange={handleChange} className="input-field" disabled={disabled} style={{ ...(disabled ? {opacity: 0.7, cursor: 'not-allowed', background: '#f3f4f6'} : {}), ...(camposACorregir[name] ? {border: '2px solid #ef4444', background: '#fef2f2'} : {}) }}>
                 {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
             </select>
         </div>
@@ -1352,22 +1361,28 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                             setFormData({...formData, archivos_cargados: {...formData.archivos_cargados, [doc.id]: true}});
                                         };
 
+                                        const disabledUpload = esCorreccion && !camposACorregir[doc.id];
+
                                         return (
                                             <div key={doc.id} style={{ 
                                                 border: `2px dashed ${formData.archivos_cargados[doc.id] ? 'var(--success)' : (isExpired ? 'var(--danger)' : 'var(--border)')}`, 
                                                 borderRadius: 'var(--radius-md)', padding: '1.5rem', textAlign: 'center',
                                                 background: formData.archivos_cargados[doc.id] ? 'var(--success-bg)' : 'var(--surface)', transition: '0.3s',
-                                                display: 'flex', flexDirection: 'column', gap: '1rem', justifyContent: 'center'
+                                                display: 'flex', flexDirection: 'column', gap: '1rem', justifyContent: 'center',
+                                                ...(disabledUpload ? {opacity: 0.7} : {}),
+                                                ...(camposACorregir[doc.id] ? {border: '2px solid #ef4444', background: '#fef2f2'} : {})
                                             }}>
                                                 {formData.archivos_cargados[doc.id] ? (
                                                     <>
                                                         <CheckCircle size={32} color="var(--success-text)" style={{ margin: '0 auto' }}/>
                                                         <div style={{color:'var(--success-text)', fontWeight:600}}>{doc.label} Cargado</div>
-                                                        <div style={{fontSize: '0.8rem', color: 'var(--success-text)'}}>{archivosFisicos[doc.id]?.name}</div>
-                                                        <button className="btn-outline" style={{ marginTop: '0.5rem', padding: '0.3rem 0.5rem', fontSize: '0.8rem' }} onClick={() => {
-                                                            const n = {...archivosFisicos}; delete n[doc.id]; setArchivosFisicos(n);
-                                                            const m = {...formData.archivos_cargados}; delete m[doc.id]; setFormData({...formData, archivos_cargados: m});
-                                                        }}>Eliminar</button>
+                                                        <div style={{fontSize: '0.8rem', color: 'var(--success-text)'}}>{archivosFisicos[doc.id]?.name || 'Documento en el sistema'}</div>
+                                                        {!disabledUpload && (
+                                                            <button className="btn-outline" style={{ marginTop: '0.5rem', padding: '0.3rem 0.5rem', fontSize: '0.8rem' }} onClick={() => {
+                                                                const n = {...archivosFisicos}; delete n[doc.id]; setArchivosFisicos(n);
+                                                                const m = {...formData.archivos_cargados}; delete m[doc.id]; setFormData({...formData, archivos_cargados: m});
+                                                            }}>Eliminar</button>
+                                                        )}
                                                     </>
                                                 ) : (
                                                     <>
@@ -1379,14 +1394,17 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                                                 <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Fecha de Expedición:</label>
                                                                 <input type="date" className="input-field" style={{ width: '150px', padding: '0.25rem' }} 
                                                                        value={fechasDocumentos[doc.id] || ''} 
-                                                                       onChange={(e) => setFechasDocumentos({...fechasDocumentos, [doc.id]: e.target.value})} />
+                                                                       onChange={(e) => setFechasDocumentos({...fechasDocumentos, [doc.id]: e.target.value})}
+                                                                       disabled={disabledUpload} />
                                                                 {isExpired && <span style={{ color: 'var(--danger)', fontSize: '0.75rem' }}>{doc.errorMsg || 'Documento vencido'}</span>}
                                                             </div>
                                                         )}
-                                                        <label className="btn-outline" style={{ marginTop: '0.5rem', cursor: 'pointer', display: 'inline-block' }}>
-                                                            Seleccionar Archivo (Solo PDF)
-                                                            <input type="file" style={{ display: 'none' }} accept=".pdf,application/pdf" onChange={handleUpload} />
-                                                        </label>
+                                                        {!disabledUpload && (
+                                                            <label className="btn-outline" style={{ marginTop: '0.5rem', cursor: 'pointer', display: 'inline-block' }}>
+                                                                Seleccionar Archivo (Solo PDF)
+                                                                <input type="file" style={{ display: 'none' }} accept=".pdf,application/pdf" onChange={handleUpload} />
+                                                            </label>
+                                                        )}
                                                     </>
                                                 )}
                                             </div>
