@@ -148,36 +148,40 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         if (!token) return;
 
         const inicializarFormulario = async () => {
+            let esPingPong = false;
+            
+            // 1. Intentar recuperar como un Ping-Pong (Formulario devuelto)
             try {
-                // 1. Validar el token y obtener datos de la invitación
-                const validacion = await sagrilaftService.validarInvitacion(token);
-                if (validacion && validacion.valido) {
-                    setFormData(prev => ({ 
-                        ...prev, 
-                        token,
-                        clase_vinculacion: validacion.datos.tipo_vinculacion?.toLowerCase() || '',
-                        correo_electronico: validacion.datos.correo || '',
-                        // Si es empleado, forzar a natural
-                        tipo_persona: ['empleado', 'contratista', 'accionista'].includes(validacion.datos.tipo_vinculacion?.toLowerCase()) ? 'natural' : prev.tipo_persona
-                    }));
-                }
-            } catch (error) {
-                showToast("El enlace de invitación es inválido o ha expirado.");
-                return;
-            }
-
-            try {
-                // 2. Revisar si hay una solicitud guardada (caso ping-pong correcciones)
                 const sol = await sagrilaftService.obtenerSolicitudPorToken(token);
                 if (sol && sol.datos_formulario) {
                     setFormData(prev => ({ ...prev, ...sol.datos_formulario, token }));
-                }
-                if (sol && sol.estado_actual === 'DEVUELTO_CORRECCION') {
-                    setEsCorreccion(true);
-                    setCamposACorregir(sol.campos_a_corregir || {});
+                    esPingPong = true;
+                    if (sol.estado_actual === 'DEVUELTO_CORRECCION') {
+                        setEsCorreccion(true);
+                        setCamposACorregir(sol.campos_a_corregir || {});
+                    }
                 }
             } catch (error) {
-                // Es la primera vez que entra, no hay solicitud en BD
+                // No es Ping-Pong o no existe aún en la base de datos
+            }
+
+            // 2. Si no es Ping-Pong, intentar validar como Invitación Nueva
+            if (!esPingPong) {
+                try {
+                    const validacion = await sagrilaftService.validarInvitacion(token);
+                    if (validacion && validacion.valido) {
+                        setFormData(prev => ({ 
+                            ...prev, 
+                            token,
+                            clase_vinculacion: validacion.datos.tipo_vinculacion?.toLowerCase() || '',
+                            correo_electronico: validacion.datos.correo || '',
+                            // Si es empleado, forzar a natural
+                            tipo_persona: ['empleado', 'contratista', 'accionista'].includes(validacion.datos.tipo_vinculacion?.toLowerCase()) ? 'natural' : prev.tipo_persona
+                        }));
+                    }
+                } catch (error) {
+                    showToast("El enlace de invitación es inválido o ha expirado.");
+                }
             }
         };
         
