@@ -752,7 +752,11 @@ app.post('/api/v1/solicitudes/:id/devolver', async (req, res) => {
             .select()
             .single();
 
-        if (errSol || !solicitud) return res.status(404).json({ error: "Error al actualizar para devolución." });
+        if (errSol) {
+            console.error("Error actualizando Supabase:", errSol);
+            return res.status(500).json({ error: "Error en base de datos al devolver solicitud.", detalle: errSol.message });
+        }
+        if (!solicitud) return res.status(404).json({ error: "No se pudo actualizar." });
 
         const claseVinculacion = solicitud.datos_formulario?.clase_vinculacion;
         const basePath = ['empleado', 'prestacion_servicios', 'contratista', 'accionista'].includes(claseVinculacion) ? 'empleado' : 'proveedor';

@@ -169,7 +169,7 @@ export default function DashboardOficial() {
                 alert(`¡Formulario devuelto con éxito!\n\nSi el empleado no recibe correos, envíele este enlace seguro para corregir:\n${res.enlace_correccion}`);
             }
         } catch (error) {
-            alert("Error devolviendo solicitud: " + error.message);
+            alert("Error devolviendo solicitud: " + (error.response?.data?.detalle || error.response?.data?.error || error.message));
         }
     };
 
