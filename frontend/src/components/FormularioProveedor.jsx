@@ -1334,6 +1334,10 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                             const file = e.target.files[0];
                                             if (!file) return;
 
+                                            if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+                                                return showToast('Por seguridad legal, solo se permiten documentos en formato PDF.');
+                                            }
+
                                             if (doc.requiereFecha) {
                                                 if (!fechasDocumentos[doc.id]) return showToast(`Por favor ingresa la fecha de expedición de ${doc.label}`);
                                                 if (isExpired) return showToast(`El documento ${doc.label} es inválido: ${doc.errorMsg || 'vencido'}.`);
@@ -1376,8 +1380,8 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                                             </div>
                                                         )}
                                                         <label className="btn-outline" style={{ marginTop: '0.5rem', cursor: 'pointer', display: 'inline-block' }}>
-                                                            Seleccionar Archivo (PDF/Img)
-                                                            <input type="file" style={{ display: 'none' }} accept=".pdf,.png,.jpg,.jpeg" onChange={handleUpload} />
+                                                            Seleccionar Archivo (Solo PDF)
+                                                            <input type="file" style={{ display: 'none' }} accept=".pdf,application/pdf" onChange={handleUpload} />
                                                         </label>
                                                     </>
                                                 )}
