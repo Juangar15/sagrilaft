@@ -160,11 +160,14 @@ export default function DashboardOficial() {
         seleccionados.forEach(k => payload[k] = "Información ilegible, incompleta o vencida. Favor actualizar.");
         
         try {
-            await sagrilaftService.devolverSolicitud(solicitudSeleccionada.id, { 
+            const res = await sagrilaftService.devolverSolicitud(solicitudSeleccionada.id, { 
                 campos_a_corregir: payload, 
                 observaciones: observacionPingPong 
             });
             handleCambiarEstado('DEVUELTO_CORRECCION');
+            if (res && res.enlace_correccion) {
+                alert(`¡Formulario devuelto con éxito!\n\nSi el empleado no recibe correos, envíele este enlace seguro para corregir:\n${res.enlace_correccion}`);
+            }
         } catch (error) {
             alert("Error devolviendo solicitud: " + error.message);
         }

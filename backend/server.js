@@ -733,17 +733,30 @@ app.post('/api/v1/solicitudes/:id/devolver', async (req, res) => {
     const { campos_a_corregir, observaciones } = req.body;
 
     try {
+        const { data: solActual } = await supabase.from('solicitudes_sagrilaft').select('token_asociado, datos_formulario').eq('id', id).single();
+        if (!solActual) return res.status(404).json({ error: "Solicitud no encontrada." });
+
+        let token = solActual.token_asociado;
+        if (!token) {
+            token = require('crypto').randomBytes(16).toString('hex');
+        }
+
         const { data: solicitud, error: errSol } = await supabase
             .from('solicitudes_sagrilaft')
             .update({
                 estado_actual: 'DEVUELTO_CORRECCION',
-                campos_a_corregir: campos_a_corregir
+                campos_a_corregir: campos_a_corregir,
+                token_asociado: token
             })
             .eq('id', id)
             .select()
             .single();
 
-        if (errSol || !solicitud) return res.status(404).json({ error: "Solicitud no encontrada para devolver." });
+        if (errSol || !solicitud) return res.status(404).json({ error: "Error al actualizar para devolución." });
+
+        const claseVinculacion = solicitud.datos_formulario?.clase_vinculacion;
+        const basePath = ['empleado', 'prestacion_servicios', 'contratista', 'accionista'].includes(claseVinculacion) ? 'empleado' : 'proveedor';
+        const correctionLink = `https://sagrilaft.cosechasexpress.com/onboarding/${basePath}?token=${token}`;
 
         // Enviar Correo de Notificación (vía Nodemailer)
         if (transporter && solicitud.datos_formulario && solicitud.datos_formulario.correo_electronico) {
@@ -760,14 +773,19 @@ app.post('/api/v1/solicitudes/:id/devolver', async (req, res) => {
                             ${Object.entries(campos_a_corregir).map(([campo, msg]) => `<li><b>${campo}:</b> ${msg}</li>`).join('')}
                         </ul>
                         <p><b>Nota del Oficial:</b> ${observaciones || 'Favor realizar las correcciones indicadas para continuar con su proceso.'}</p>
-                        <p>Por favor, utilice su enlace seguro original para acceder y subsanar estos datos.</p>
+                        <p>Por favor, utilice el siguiente enlace seguro para acceder a su formulario y subsanar estos datos:</p>
+                        <p><a href="${correctionLink}" style="background: #3b82f6; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; display: inline-block;">Corregir Formulario</a></p>
+                        <p>O copie y pegue esta URL: <br> <small>${correctionLink}</small></p>
                         <p>Atentamente,<br>Oficial de Cumplimiento SAGRILAFT</p>
                     </div>
                 `
             });
         }
 
-        return res.status(200).json({ mensaje: "Solicitud devuelta al proveedor correctamente. Correo enviado." });
+        return res.status(200).json({ 
+            mensaje: "Solicitud devuelta al proveedor correctamente.",
+            enlace_correccion: correctionLink
+        });
     } catch (error) {
         return res.status(500).json({ error: "Error al devolver la solicitud", detalle: error.message });
     }
