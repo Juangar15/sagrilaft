@@ -66,9 +66,9 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         tipo_identificacion: 'cc', numero_identificacion: '',
         lugar_expedicion: '', fecha_expedicion: '', 
         fecha_nacimiento: '', lugar_nacimiento: '', nacionalidad: 'Colombiana',
-        correo_electronico: '', estado_civil: 'soltero',
+        correo_electronico: '', estado_civil: '',
         direccion_residencial: '', telefono_celular: '',
-        ciudad: 'Medellín', departamento: 'Antioquia', pais: 'Colombia',
+        ciudad: '', departamento: '', pais: 'Colombia',
         ocupacion_profesion: 'independiente', declara_renta: 'no',
         actividad_economica_principal: '', codigo_ciiu: '', sector: 'Comercial', sector_otro: '',
         empresa_labora: '', cargo: '', area: '',
@@ -77,8 +77,8 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
 
         // 2. Identificación Jurídica
         razon_social: '', tipo_empresa: 'privada',
-        direccion_oficina_principal: '', ciudad_juridica: 'Medellín',
-        departamento_juridica: 'Antioquia', telefono_juridica: '',
+        direccion_oficina_principal: '', ciudad_juridica: '',
+        departamento_juridica: '', telefono_juridica: '',
         tiene_sucursales: 'no', sucursales_info: '', // ciudad/departamento/pais de sucursales
         telefono_corporativo_juridica: '', correo_corporativo_juridica: '', celular_corporativo_juridica: '',
         actividad_economica_principal_juridica: '', codigo_ciiu_juridica: '', sector_juridica: 'Comercial', sector_otro_juridica: '',
@@ -691,7 +691,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                         </div>
                                         <div className="form-grid form-grid-3">
                                             {renderInput("Correo Electrónico", "correo_electronico", "email", "1fr", false, true)}
-                                            {renderInput("Estado Civil", "estado_civil")}
+                                            {renderSelect("Estado Civil", "estado_civil", [{value:'', label:'Seleccione...'}, {value:'Soltero (a)', label:'Soltero (a)'}, {value:'Casado (a)', label:'Casado (a)'}, {value:'Divorciado (a)', label:'Divorciado (a)'}, {value:'Viudo (a)', label:'Viudo (a)'}, {value:'Unión libre / Unión marital de hecho', label:'Unión libre / Unión marital de hecho'}])}
                                             {renderInput("Dirección/Barrio", "direccion_residencial", "text", "1fr", false, true)}
                                         </div>
                                         <div className="form-grid form-grid-3">
@@ -821,31 +821,23 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                             <motion.div key="p3" variants={formVariants} initial="hidden" animate="visible" exit="exit">
                                 <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CreditCard size={20}/> 3. Información Tributaria y Financiera</h3>
                                 
-                                <h4 style={{ margin: '0 0 1rem 0', color: 'var(--text-main)' }}>Perfil Tributario</h4>
-                                <div className="form-grid form-grid-4" style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: 'var(--radius-md)', marginBottom: '2rem', border: '1px solid var(--border)' }}>
-                                    {renderSelect("Responsable IVA", "responsable_iva", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
-                                    {renderSelect("Régimen Simple", "regimen_simple", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
-                                    {renderSelect("Gran Contribuyente", "gran_contribuyente", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
-                                    {renderSelect("Exterior", "exterior_tributario", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
-                                    {renderSelect("Autorretenedor Renta", "autoretenedor_renta", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
-                                    {renderSelect("Autorretenedor IVA", "autoretenedor_iva", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
-                                    {renderSelect("Autorretenedor ICA", "autoretenedor_ica", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
-                                </div>
-
                                 <h4 style={{ margin: '0 0 1rem 0', color: 'var(--text-main)' }}>Perfil Financiero (Valores en COP)</h4>
                                 <div style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem', border: '1px solid var(--border)' }}>
+                                    <p style={{ fontSize: '0.85rem', color: 'var(--warning)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(217, 119, 6, 0.1)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(217, 119, 6, 0.3)' }}>
+                                        <AlertTriangle size={16} /> Nota: Esta información es opcional. Por favor, llene estos campos únicamente si está seguro de la información financiera.
+                                    </p>
                                     <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
-                                        <CurrencyInput label="Total Activos" name="activos" value={formData.activos} onChange={handleChange} required={true} disabled={isDisabled('activos')} isError={!!camposACorregir['activos']} />
-                                        <CurrencyInput label="Total Pasivos" name="pasivos" value={formData.pasivos} onChange={handleChange} required={true} disabled={isDisabled('pasivos')} isError={!!camposACorregir['pasivos']} />
-                                        <CurrencyInput label="Patrimonio Líquido" name="patrimonio" value={formData.patrimonio} onChange={handleChange} required={true} disabled={isDisabled('patrimonio')} isError={!!camposACorregir['patrimonio']} />
+                                        <CurrencyInput label="Total Activos" name="activos" value={formData.activos} onChange={handleChange} required={false} disabled={isDisabled('activos')} isError={!!camposACorregir['activos']} />
+                                        <CurrencyInput label="Total Pasivos" name="pasivos" value={formData.pasivos} onChange={handleChange} required={false} disabled={isDisabled('pasivos')} isError={!!camposACorregir['pasivos']} />
+                                        <CurrencyInput label="Patrimonio Líquido" name="patrimonio" value={formData.patrimonio} onChange={handleChange} required={false} disabled={isDisabled('patrimonio')} isError={!!camposACorregir['patrimonio']} />
                                     </div>
                                     <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
-                                        <CurrencyInput label="Ingresos Mensuales" name="ingresos_mensuales" value={formData.ingresos_mensuales} onChange={handleChange} required={true} disabled={isDisabled('ingresos_mensuales')} isError={!!camposACorregir['ingresos_mensuales']} />
-                                        <CurrencyInput label="Egresos Mensuales" name="egresos_mensuales" value={formData.egresos_mensuales} onChange={handleChange} required={true} disabled={isDisabled('egresos_mensuales')} isError={!!camposACorregir['egresos_mensuales']} />
+                                        <CurrencyInput label="Ingresos Mensuales" name="ingresos_mensuales" value={formData.ingresos_mensuales} onChange={handleChange} required={false} disabled={isDisabled('ingresos_mensuales')} isError={!!camposACorregir['ingresos_mensuales']} />
+                                        <CurrencyInput label="Egresos Mensuales" name="egresos_mensuales" value={formData.egresos_mensuales} onChange={handleChange} required={false} disabled={isDisabled('egresos_mensuales')} isError={!!camposACorregir['egresos_mensuales']} />
                                     </div>
 
                                     <div className="form-grid form-grid-3">
-                                        <CurrencyInput label="Otros Ingresos Mensuales" name="otros_ingresos_mensuales" value={formData.otros_ingresos_mensuales} onChange={handleChange} disabled={isDisabled('otros_ingresos_mensuales')} isError={!!camposACorregir['otros_ingresos_mensuales']} />
+                                        <CurrencyInput label="Otros Ingresos Mensuales" name="otros_ingresos_mensuales" value={formData.otros_ingresos_mensuales} onChange={handleChange} required={false} disabled={isDisabled('otros_ingresos_mensuales')} isError={!!camposACorregir['otros_ingresos_mensuales']} />
                                         {renderInput("Concepto Otros Ingresos", "concepto_otros_ingresos", "text", "1fr", false, false)}
                                     </div>
                                 </div>
@@ -1298,7 +1290,12 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                         {paso === 9 && (
                             <motion.div key="p9" variants={formVariants} initial="hidden" animate="visible" exit="exit">
                                 <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><UploadCloud size={20}/> 9. Soportes Documentales</h3>
-                                <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Adjunte los documentos exigidos. Tenga en cuenta las vigencias requeridas para Cámara de Comercio (30 días), Composición Accionaria (3 meses) y Balance (corte año anterior).</p>
+                                {!isInternalRole && (
+                                    <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Adjunte los documentos exigidos. Tenga en cuenta las vigencias requeridas para Cámara de Comercio (30 días), Composición Accionaria (3 meses) y Balance (corte año anterior).</p>
+                                )}
+                                {isInternalRole && (
+                                    <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Adjunte su documento de identidad vigente para continuar con el proceso.</p>
+                                )}
 
                                 <div className="form-grid form-grid-2" style={{ marginBottom: "1.5rem" }}>
                                     {(isInternalRole ? [
