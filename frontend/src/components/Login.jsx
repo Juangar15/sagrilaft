@@ -36,13 +36,14 @@ export default function Login({ setSession }) {
             .from('usuarios_sagrilaft')
             .select('rol, activo')
             .eq('email', authData.user.email)
-            .single();
+            .maybeSingle();
 
         if (userError || !userData) {
+            console.error("Error al buscar en usuarios_sagrilaft:", userError, "userData:", userData);
             // No existe en la tabla de este proyecto
             await supabase.auth.signOut();
             setCargando(false);
-            showToast('Tu usuario no tiene acceso a este proyecto (SAGRILAFT). Contacta al administrador.');
+            showToast('Tu usuario no tiene acceso a este proyecto (SAGRILAFT). Verifica la consola.');
             return;
         }
 

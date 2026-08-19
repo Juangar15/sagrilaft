@@ -510,7 +510,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
             setResultadoApi(response.resultado);
             setPaso(11);
         } catch (error) {
-            showToast("Error en el motor transaccional: " + error.message);
+            showToast("Error en el motor transaccional: " + (error.response?.data?.detalle || error.message));
         } finally {
             setCargando(false);
         }

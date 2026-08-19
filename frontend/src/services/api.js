@@ -14,11 +14,11 @@ const api = axios.create({
 });
 
 export const sagrilaftService = {
-    // Función para enviar el formulario del proveedor (soporta FormData)
     enviarOnboarding: async (datosProveedor) => {
-        // Si es FormData, axios ajusta los headers automáticamente
+        // Axios manejará automáticamente el boundary si le pasamos FormData,
+        // pero debemos asegurarnos de que NO tome el 'application/json' por defecto.
         const config = datosProveedor instanceof FormData
-            ? { headers: { 'Content-Type': 'multipart/form-data' } }
+            ? { headers: { 'Content-Type': undefined } }
             : {};
         const response = await api.post('/onboarding', datosProveedor, config);
         return response.data;
