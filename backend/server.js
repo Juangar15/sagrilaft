@@ -764,26 +764,31 @@ app.post('/api/v1/solicitudes/:id/devolver', async (req, res) => {
 
         // Enviar Correo de Notificación (vía Nodemailer)
         if (transporter && solicitud.datos_formulario && solicitud.datos_formulario.correo_electronico) {
-            const correoProveedor = solicitud.datos_formulario.correo_electronico;
-            await transporter.sendMail({
-                from: '"Cosechas Compliance" <no-reply@cosechas.com>',
-                to: correoProveedor,
-                subject: 'Acción Requerida: Corrección en su proceso SAGRILAFT',
-                html: `
-                    <div style="font-family: Arial, sans-serif; padding: 20px;">
-                        <h2>Estimado/a ${solicitud.razon_social},</h2>
-                        <p>El equipo de Cumplimiento de Cosechas ha revisado su formulario y se requiere corregir o adjuntar la siguiente información:</p>
-                        <ul style="color: #d97706; background: #fffbeb; padding: 15px; border-radius: 5px;">
-                            ${Object.entries(campos_a_corregir).map(([campo, msg]) => `<li><b>${campo}:</b> ${msg}</li>`).join('')}
-                        </ul>
-                        <p><b>Nota del Oficial:</b> ${observaciones || 'Favor realizar las correcciones indicadas para continuar con su proceso.'}</p>
-                        <p>Por favor, utilice el siguiente enlace seguro para acceder a su formulario y subsanar estos datos:</p>
-                        <p><a href="${correctionLink}" style="background: #3b82f6; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; display: inline-block;">Corregir Formulario</a></p>
-                        <p>O copie y pegue esta URL: <br> <small>${correctionLink}</small></p>
-                        <p>Atentamente,<br>Oficial de Cumplimiento SAGRILAFT</p>
-                    </div>
-                `
-            });
+            try {
+                const correoProveedor = solicitud.datos_formulario.correo_electronico;
+                await transporter.sendMail({
+                    from: '"Cosechas Compliance" <no-reply@cosechas.com>',
+                    to: correoProveedor,
+                    subject: 'Acción Requerida: Corrección en su proceso SAGRILAFT',
+                    html: `
+                        <div style="font-family: Arial, sans-serif; padding: 20px;">
+                            <h2>Estimado/a ${solicitud.razon_social || 'Usuario'},</h2>
+                            <p>El equipo de Cumplimiento de Cosechas ha revisado su formulario y se requiere corregir o adjuntar la siguiente información:</p>
+                            <ul style="color: #d97706; background: #fffbeb; padding: 15px; border-radius: 5px;">
+                                ${Object.entries(campos_a_corregir).map(([campo, msg]) => `<li><b>${campo}:</b> ${msg}</li>`).join('')}
+                            </ul>
+                            <p><b>Nota del Oficial:</b> ${observaciones || 'Favor realizar las correcciones indicadas para continuar con su proceso.'}</p>
+                            <p>Por favor, utilice el siguiente enlace seguro para acceder a su formulario y subsanar estos datos:</p>
+                            <p><a href="${correctionLink}" style="background: #3b82f6; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; display: inline-block;">Corregir Formulario</a></p>
+                            <p>O copie y pegue esta URL: <br> <small>${correctionLink}</small></p>
+                            <p>Atentamente,<br>Oficial de Cumplimiento SAGRILAFT</p>
+                        </div>
+                    `
+                });
+            } catch (mailErr) {
+                console.error("Error enviando correo de Ping-Pong:", mailErr);
+                // No retornamos error, permitimos que el flujo continúe para devolver el enlace en pantalla
+            }
         }
 
         return res.status(200).json({ 
