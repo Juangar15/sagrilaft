@@ -355,7 +355,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                 showToast("Debes aceptar la política de tratamiento de datos personales para continuar.");
                 return false;
             }
-            if (!d.fecha_diligenciamiento || !d.tipo_solicitud || !d.clase_vinculacion || !d.tipo_persona || !d.ambito_operacion || !d.empresa_destino) {
+            if (!d.fecha_diligenciamiento || !d.tipo_solicitud || !d.clase_vinculacion || !d.tipo_persona || !d.empresa_destino || (!isInternalRole && !d.ambito_operacion)) {
                 showToast("Por favor completa todos los campos de este paso.");
                 return false;
             }
@@ -582,7 +582,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
             <div style={{ background: 'var(--surface)', padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '1rem', position: 'sticky', top: 0, zIndex: 10 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <ShieldCheck size={28} color="var(--primary)" style={{ flexShrink: 0 }} />
-                    <h2 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.1rem', lineHeight: '1.3' }}>Portal de Vinculación y Debida Diligencia (SAGRILAFT)</h2>
+                    <h2 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.1rem', lineHeight: '1.3' }}>Portal de Vinculación Sistema de Autocontrol y Gestión del Riesgo LA/FT/FP y C/ST</h2>
                 </div>
                 <div style={{ display: 'flex', gap: '4px', width: '100%' }}>
                     {pasosDisponibles.map((p, i) => (
@@ -617,7 +617,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Briefcase size={20}/> 1. Naturaleza de la Solicitud</h3>
                                 <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
                                     {renderInput("Fecha Diligenciamiento", "fecha_diligenciamiento", "date", "1fr", true)}
-                                    {renderSelect("Ámbito de Operación", "ambito_operacion", [{value: 'nacional', label: 'Nacional'}, {value: 'internacional', label: 'Internacional'}])}
+                                    {!isInternalRole && renderSelect("Ámbito de Operación", "ambito_operacion", [{value: 'nacional', label: 'Nacional'}, {value: 'internacional', label: 'Internacional'}])}
                                     {renderSelect("Empresa Destino", "empresa_destino", [{value: 'selecta', label: 'Selecta'}, {value: 'cosechas', label: 'Cosechas'}])}
                                 </div>
                                 <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
@@ -678,7 +678,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                             {renderInput("Segundo Apellido", "segundo_apellido", "text", "1fr", false, false)}
                                         </div>
                                         <div className="form-grid form-grid-3">
-                                            {renderSelect("Tipo ID", "tipo_identificacion", [{value:'cc', label:'CC'}, {value:'ce', label:'CE'}, {value:'pasaporte', label:'Pasaporte'}, {value:'otro', label:'Otro'}], "0.5fr")}
+                                            {renderSelect("Tipo ID", "tipo_identificacion", [{value:'cc', label:'CC (Cédula de Ciudadanía)'}, {value:'ce', label:'CE (Cédula de Extranjería)'}, {value:'pasaporte', label:'Pasaporte'}, {value:'ppt', label:'PPT (Permiso de Protección Temporal)'}, {value:'otro', label:'Otro'}], "0.5fr")}
                                             {formData.tipo_identificacion === 'otro' && renderInput("Especifique", "otro_tipo_identificacion", "text", "0.5fr")}
                                             {renderInput("No. Identificación", "numero_identificacion", "text", "1fr", false, true)}
                                             {renderInput("Lugar de Expedición", "lugar_expedicion")}
@@ -765,7 +765,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                             {renderInput("Segundo Apellido", "rep_legal_segundo_apellido", "text", "1fr", false, false)}
                                         </div>
                                         <div className="form-grid form-grid-3">
-                                            {renderSelect("Tipo ID", "rep_legal_tipo_id", [{value:'cc', label:'CC'}, {value:'ce', label:'CE'}, {value:'pasaporte', label:'Pasaporte'}])}
+                                            {renderSelect("Tipo ID", "rep_legal_tipo_id", [{value:'cc', label:'CC (Cédula de Ciudadanía)'}, {value:'ce', label:'CE (Cédula de Extranjería)'}, {value:'pasaporte', label:'Pasaporte'}, {value:'ppt', label:'PPT (Permiso de Protección Temporal)'}])}
                                             {renderInput("No. Identificación", "rep_legal_numero_id", "text", "1fr", false, true)}
                                             {renderInput("Lugar Expedición", "rep_legal_lugar_expedicion")}
                                             {renderInput("Fecha Expedición", "rep_legal_fecha_expedicion", "date")}
@@ -927,7 +927,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Relacionar Padres, hermanos, hijos, esposo(a) y/o compañero(a) permanente.</p>
                                         
                                         <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-                                            {renderSelect("Tipo Identificación", "temp_familiar_tipo_id", [{value:'', label:'Seleccione...'}, {value:'cc', label:'CC'}, {value:'ce', label:'CE'}, {value:'pasaporte', label:'Pasaporte'}, {value:'otro', label:'Otro'}], "1fr")}
+                                            {renderSelect("Tipo Identificación", "temp_familiar_tipo_id", [{value:'', label:'Seleccione...'}, {value:'cc', label:'CC (Cédula de Ciudadanía)'}, {value:'ce', label:'CE (Cédula de Extranjería)'}, {value:'pasaporte', label:'Pasaporte'}, {value:'ppt', label:'PPT (Permiso de Protección Temporal)'}, {value:'otro', label:'Otro'}], "1fr")}
                                             {renderInput("No. Identificación", "temp_familiar_id", "text", "1fr")}
                                             {renderInput("Nombre Completo", "temp_familiar_nombre", "text", "2fr")}
                                             {renderInput("Parentesco", "temp_familiar_parentesco", "text", "1fr")}
