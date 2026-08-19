@@ -710,6 +710,61 @@ app.post('/api/v1/solicitudes/:id/tusdatos/retry', async (req, res) => {
     }
 });
 
+const otpCache = new Map();
+
+// POST /api/v1/otp/send - Send OTP via Email
+app.post('/api/v1/otp/send', async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Falta correo electrónico' });
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    otpCache.set(email, { code, expiresAt: Date.now() + 15 * 60 * 1000, ip: req.ip });
+
+    try {
+        if (!transporter) throw new Error('Servidor de correos no configurado');
+        
+        await transporter.sendMail({
+            from: `"Cosechas Compliance" <${process.env.SMTP_USER || 'no-reply@cosechasexpress.com'}>`,
+            to: email,
+            subject: 'Código de Firma Electrónica SAGRILAFT',
+            html: `
+                <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 500px;">
+                    <h2 style="color: #0f172a;">Verificación de Identidad</h2>
+                    <p>Usted ha solicitado la firma electrónica de su vinculación a SELECTA COMPAÑÍA DE CEREALES S.A.S.</p>
+                    <p>Su código de seguridad (OTP) es:</p>
+                    <h1 style="background: #f1f5f9; padding: 15px; text-align: center; letter-spacing: 5px; color: #3b82f6; border-radius: 5px;">${code}</h1>
+                    <p style="font-size: 0.85rem; color: #64748b;">Este código expirará en 15 minutos. Si no solicitó este código, ignore este mensaje.</p>
+                </div>
+            `
+        });
+        return res.status(200).json({ success: true, message: 'OTP enviado al correo' });
+    } catch (e) {
+        console.error("Error enviando OTP:", e);
+        return res.status(500).json({ error: 'Error enviando el código por correo', detalle: e.message });
+    }
+});
+
+// POST /api/v1/otp/verify - Verify OTP
+app.post('/api/v1/otp/verify', (req, res) => {
+    const { email, code } = req.body;
+    const record = otpCache.get(email);
+
+    if (!record || record.code !== code || Date.now() > record.expiresAt) {
+        return res.status(400).json({ error: 'Código inválido o expirado' });
+    }
+
+    otpCache.delete(email);
+
+    const auditInfo = {
+        ip: req.ip,
+        timestamp: new Date().toISOString(),
+        email: email,
+        hash: require('crypto').createHash('sha256').update(`${email}-${code}-${Date.now()}`).digest('hex')
+    };
+
+    return res.status(200).json({ success: true, audit: auditInfo });
+});
+
 // Arrancar el servidor
 // GET /api/v1/solicitudes/token/:token - Recuperar Formulario para Proveedor (Ping-Pong)
 app.get('/api/v1/solicitudes/token/:token', async (req, res) => {

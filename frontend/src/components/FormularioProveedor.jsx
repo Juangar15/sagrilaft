@@ -283,13 +283,32 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         resetStateFn(emptyState);
     };
 
-    const enviarOTP = () => {
+    const enviarOTP = async () => {
         setCargando(true);
-        setTimeout(() => {
+        try {
+            const email = formData.correo_electronico;
+            if (!email) {
+                showToast("No hay un correo electrónico asociado para enviar el código.");
+                setCargando(false);
+                return;
+            }
+            
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/otp/send`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+            const data = await response.json();
+            
+            if (!response.ok) throw new Error(data.error || 'Error enviando código');
+            
             setOtpEnviado(true);
+            showToast("Código de firma enviado a su correo electrónico.");
+        } catch (error) {
+            showToast(error.message);
+        } finally {
             setCargando(false);
-            setAuditHash(Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join(''));
-        }, 1500);
+        }
     };
 
     const isInternalRole = ['empleado', 'prestacion_servicios', 'contratista', 'accionista'].includes(formData.clase_vinculacion);
@@ -434,74 +453,28 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         if (prevStep) setPaso(prevStep.id);
     };
 
-    const generarFormularioPDF = () => {
-        try {
-            const doc = new jsPDF('p', 'mm', 'a4');
-            const nombreSujeto = formData.tipo_persona === 'juridica' ? formData.razon_social : `${formData.nombres} ${formData.primer_apellido}`;
-            const idSujeto = formData.numero_identificacion;
-            
-            doc.setFontSize(14);
-            doc.setTextColor(50, 50, 50);
-            doc.text("FORMULARIO DE VINCULACIÓN Y ORIGEN DE FONDOS", 14, 20);
-            doc.setFontSize(10);
-            doc.text(`Generado: ${new Date().toLocaleString()}`, 14, 26);
-
-            autoTable(doc, {
-                startY: 32,
-                head: [['Campo', 'Valor Declarado']],
-                body: [
-                    ['Tipo Solicitud', formData.tipo_solicitud.toUpperCase()],
-                    ['Clase Vinculación', formData.clase_vinculacion.toUpperCase()],
-                    ['Naturaleza', formData.tipo_persona.toUpperCase()],
-                    ['Nombre / Razón Social', nombreSujeto],
-                    ['Identificación', idSujeto],
-                    ['Actividad Económica', formData.actividad_economica_principal || formData.actividad_economica_principal_juridica],
-                    ['Total Activos', `$ ${parseInt(formData.activos || 0).toLocaleString('es-CO')}`],
-                    ['Total Pasivos', `$ ${parseInt(formData.pasivos || 0).toLocaleString('es-CO')}`],
-                    ['Ingresos Mensuales', `$ ${parseInt(formData.ingresos_mensuales || 0).toLocaleString('es-CO')}`],
-                    ['Origen de Fondos', formData.origen_fondos],
-                ],
-                theme: 'grid',
-                headStyles: { fillColor: [50, 50, 50] }
-            });
-
-            const finalY = doc.lastAutoTable.finalY || 100;
-
-            // CERTIFICADO DE AUDITORÍA Y FIRMA
-            doc.setFillColor(240, 248, 255);
-            doc.rect(14, finalY + 10, 180, 50, 'F');
-            doc.setFontSize(11);
-            doc.setTextColor(0, 0, 0);
-            doc.setFont("helvetica", "bold");
-            doc.text("CERTIFICADO DE AUDITORÍA Y FIRMA ELECTRÓNICA OTP", 18, finalY + 18);
-            
-            doc.setFontSize(9);
-            doc.setFont("helvetica", "normal");
-            doc.setTextColor(60, 60, 60);
-            doc.text(`En conformidad con la Ley 527 de 1999, este documento ha sido firmado electrónicamente`, 18, finalY + 25);
-            doc.text(`mediante validación de código OTP (One-Time Password) vía WhatsApp al celular del solicitante.`, 18, finalY + 30);
-            
-            doc.setFont("courier", "bold");
-            doc.setTextColor(20, 120, 60);
-            doc.text(`Timestamp:    ${new Date().toISOString()}`, 18, finalY + 40);
-            doc.text(`Dirección IP: 190.158.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`, 18, finalY + 45);
-            doc.text(`Hash SHA-256: ${auditHash}`, 18, finalY + 50);
-
-            doc.save(`Formulario_Vinculacion_${idSujeto}.pdf`);
-        } catch (e) {
-            showToast("Error generando PDF: " + e.message);
-        }
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (codigoOTP.length < 5) return showToast("Código OTP inválido.");
         
         setCargando(true);
         try {
-            const dataToSubmit = { ...formData, audit_hash: auditHash };
+            // 1. Verify OTP
+            const email = formData.correo_electronico;
+            const otpResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/otp/verify`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, code: codigoOTP })
+            });
+            const otpData = await otpResponse.json();
+            if (!otpResponse.ok) throw new Error(otpData.error || 'Fallo en la verificación OTP');
+
+            const auditInfo = otpData.audit;
+            setAuditHash(auditInfo.hash);
+
+            // 2. Submit Form
+            const dataToSubmit = { ...formData, audit_info: auditInfo };
             
-            // Si hay archivos físicos, usamos FormData
             const hayArchivos = Object.keys(archivosFisicos).length > 0;
             let payload = dataToSubmit;
             
@@ -517,7 +490,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
             setResultadoApi(response.resultado);
             setPaso(11);
         } catch (error) {
-            showToast("Error en el motor transaccional: " + (error.response?.data?.detalle || error.message));
+            showToast(error.message);
         } finally {
             setCargando(false);
         }
@@ -1445,12 +1418,12 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
 
                                 {!otpEnviado ? (
                                     <button className="btn-primary" style={{ margin: '0 auto' }} disabled={!terminosAceptados || cargando} onClick={enviarOTP}>
-                                        {cargando ? 'Generando código seguro...' : <><Smartphone size={18}/> Solicitar Código de Firma OTP (WhatsApp)</>}
+                                        {cargando ? 'Generando código seguro...' : <><Smartphone size={18}/> Solicitar Código de Firma OTP (Correo)</>}
                                     </button>
                                 ) : (
                                     <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
                                         <div style={{ background: 'var(--success-bg)', color: 'var(--success-text)', padding: '1rem', borderRadius: 'var(--radius-sm)', marginBottom: '1.5rem', fontWeight: '500' }}>
-                                            ✓ Código de 6 dígitos enviado por WhatsApp al celular reportado.
+                                            ✓ Código de 6 dígitos enviado por correo electrónico.
                                         </div>
                                         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '2rem' }}>
                                             <input type="text" maxLength={6} placeholder="Ej: 123456" value={codigoOTP} onChange={(e) => setCodigoOTP(e.target.value)} className="input-field" style={{ width: '150px', textAlign: 'center', fontSize: '1.25rem', letterSpacing: '0.2em' }} />
@@ -1493,7 +1466,6 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
 
                                 <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                                     <button className="btn-outline" onClick={() => window.location.reload()}>Finalizar y Salir</button>
-                                    <button className="btn-primary" onClick={generarFormularioPDF}><Download size={18}/> Descargar Constancia de Firma OTP</button>
                                 </div>
                             </motion.div>
                         )}

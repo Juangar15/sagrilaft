@@ -19,6 +19,13 @@ export default function DashboardOficial() {
     
     // Estado para Ping-Pong
     const [mostrarPingPong, setMostrarPingPong] = useState(false);
+    const [modalAlert, setModalAlert] = useState({ visible: false, title: '', message: '', link: null });
+    const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+    const showToast = (message, type = 'success') => {
+        setToast({ visible: true, message, type });
+        setTimeout(() => setToast({ visible: false, message: '', type: 'success' }), 4000);
+    };
+    
     const [camposPingPong, setCamposPingPong] = useState({});
     const [observacionPingPong, setObservacionPingPong] = useState('');
     const [activeTab, setActiveTab] = useState('kanban');
@@ -135,26 +142,35 @@ export default function DashboardOficial() {
         });
     };
 
-    const handleCambiarEstado = (nuevoEstado) => {
-        setSolicitudes(prev => prev.map(s => 
-            s.id === solicitudSeleccionada.id ? { ...s, estado_actual: nuevoEstado } : s
-        ));
-        setSolicitudSeleccionada(prev => ({ ...prev, estado_actual: nuevoEstado }));
-        setMostrarPingPong(false);
-        if(nuevoEstado === 'APROBADO_LIMPIO') {
-            alert("Visto Bueno otorgado exitosamente.");
-            setSolicitudSeleccionada(null);
-        } else if(nuevoEstado === 'DEVUELTO_CORRECCION') {
-            alert("Solicitud devuelta al proveedor para corrección. Se ha enviado un correo.");
-            setSolicitudSeleccionada(null);
-        } else {
-            alert(`Estado actualizado a: ${nuevoEstado.replace('_', ' ')}`);
+    const handleCambiarEstado = async (nuevoEstado) => {
+        try {
+            await sagrilaftService.actualizarEstadoSolicitud(solicitudSeleccionada.id, nuevoEstado);
+            setSolicitudSeleccionada({ ...solicitudSeleccionada, estado_actual: nuevoEstado });
+            
+            // Si hay un form de oficial (por ejemplo al aprobar manualmente), lo guardamos
+            if (nuevoEstado === 'APROBADO_LIMPIO' || nuevoEstado === 'APROBADO_RIESGO_CONTROLADO') {
+                await supabase.from('solicitudes_sagrilaft').update({ analisis_oficial: formOficial }).eq('id', solicitudSeleccionada.id);
+            }
+
+            // Refrescar el board
+            const data = await sagrilaftService.obtenerSolicitudes();
+            setSolicitudes(data || []);
+            
+            if (nuevoEstado === 'REVISION_PREVIA') {
+                showToast("Visto Bueno otorgado exitosamente.");
+            } else if (nuevoEstado === 'DEVUELTO_CORRECCION') {
+                showToast("Solicitud devuelta al proveedor para corrección. Se ha enviado un correo.");
+            } else {
+                showToast(`Estado actualizado a: ${nuevoEstado.replace('_', ' ')}`);
+            }
+        } catch (error) {
+            console.error(error);
         }
     };
 
     const handlePingPongSubmit = async () => {
         const seleccionados = Object.keys(camposPingPong).filter(k => camposPingPong[k]);
-        if (seleccionados.length === 0) return alert("Debe seleccionar al menos un campo para devolver.");
+        if (seleccionados.length === 0) return showToast("Debe seleccionar al menos un campo para devolver.", "error");
         
         const payload = {};
         seleccionados.forEach(k => payload[k] = "Información ilegible, incompleta o vencida. Favor actualizar.");
@@ -164,52 +180,60 @@ export default function DashboardOficial() {
                 campos_a_corregir: payload, 
                 observaciones: observacionPingPong 
             });
-            handleCambiarEstado('DEVUELTO_CORRECCION');
+            await handleCambiarEstado('DEVUELTO_CORRECCION');
+            setMostrarPingPong(false);
             if (res && res.enlace_correccion) {
-                alert(`¡Formulario devuelto con éxito!\n\nSi el empleado no recibe correos, envíele este enlace seguro para corregir:\n${res.enlace_correccion}`);
+                setModalAlert({
+                    visible: true,
+                    title: '¡Formulario Devuelto con Éxito!',
+                    message: 'Si el tercero no recibe o no tiene correo electrónico, puede enviarle directamente el siguiente enlace seguro por WhatsApp o cualquier otro medio para que pueda acceder y corregir:',
+                    link: res.enlace_correccion
+                });
+            } else {
+                showToast("Formulario devuelto con éxito.");
             }
         } catch (error) {
-            alert("Error devolviendo solicitud: " + (error.response?.data?.detalle || error.response?.data?.error || error.message));
+            showToast("Error devolviendo solicitud: " + (error.response?.data?.detalle || error.response?.data?.error || error.message), "error");
         }
     };
 
-    const handleVistoBueno = () => {
+    const handleAprobarManualmente = async () => {
+        // Validación obligatoria
         if (formOficial.autenticidad_doc === 'no') {
-            return alert("Debe verificar la autenticidad de los documentos antes de aprobar.");
+            return showToast("Debe verificar la autenticidad de los documentos antes de aprobar.", "error");
         }
-        handleCambiarEstado('APROBADO_LIMPIO');
+        await handleCambiarEstado('APROBADO_LIMPIO');
     };
 
-    const handleTusDatos = async (e, sol) => {
-        e.stopPropagation();
-        setCargandoTusDatos(sol.id);
+    const handleTusDatos = async (e, solicitud) => {
+        e.stopPropagation(); // Evitar que abra la tarjeta
+        setCargandoTusDatos(solicitud.id);
         try {
-            const res = await sagrilaftService.ejecutarTusDatos(sol.id);
-            alert(res.mensaje);
-            // Actualizar estado local
-            setSolicitudes(prev => prev.map(s => 
-                s.id === sol.id ? { ...s, estado_actual: res.resultado.estado, score_riesgo: res.resultado.score, monitor_fuentes: res.resultado.monitor } : s
-            ));
-            setSolicitudSeleccionada(prev => ({ ...prev, estado_actual: res.resultado.estado, score_riesgo: res.resultado.score, monitor_fuentes: res.resultado.monitor }));
+            const res = await sagrilaftService.ejecutarTusDatos(solicitud.id);
+            showToast(res.mensaje);
+            // Refrescar el board
+            const data = await sagrilaftService.obtenerSolicitudes();
+            setSolicitudes(data || []);
         } catch (error) {
-            alert("Error ejecutando TusDatos: " + error.message);
+            showToast("Error ejecutando TusDatos: " + error.message, "error");
         } finally {
             setCargandoTusDatos(null);
         }
     };
 
-    const handleRecargarTusDatos = async (e, sol) => {
+    const handleRetryTusDatos = async (e, solicitud) => {
         e.stopPropagation();
-        setCargandoTusDatos(sol.id);
+        setCargandoTusDatos(solicitud.id);
         try {
-            const res = await sagrilaftService.recargarTusDatos(sol.id);
-            alert(res.mensaje);
-            setSolicitudes(prev => prev.map(s => 
-                s.id === sol.id ? { ...s, estado_actual: res.resultado.estado, monitor_fuentes: res.resultado.monitor } : s
-            ));
-            setSolicitudSeleccionada(prev => ({ ...prev, estado_actual: res.resultado.estado, monitor_fuentes: res.resultado.monitor }));
+            const res = await sagrilaftService.retryTusDatos(solicitud.id);
+            showToast(res.mensaje);
+            // Refrescar la solicitud y el board
+            const { data: solActualizada } = await supabase.from('solicitudes_sagrilaft').select('*').eq('id', solicitud.id).single();
+            setSolicitudSeleccionada(solActualizada);
+            const data = await sagrilaftService.obtenerSolicitudes();
+            setSolicitudes(data || []);
         } catch (error) {
-            alert("Error recargando TusDatos: " + error.message);
+            showToast("Error recargando TusDatos: " + error.message, "error");
         } finally {
             setCargandoTusDatos(null);
         }
@@ -401,6 +425,37 @@ export default function DashboardOficial() {
 
     return (
         <div style={{ minHeight: '100vh', background: 'var(--bg-color)', padding: '2rem' }}>
+            {/* TOAST */}
+            <AnimatePresence>
+                {toast.visible && (
+                    <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }} style={{ position: 'fixed', bottom: '2rem', right: '2rem', background: toast.type === 'error' ? 'var(--danger)' : 'var(--success-text)', color: 'white', padding: '1rem 1.5rem', borderRadius: 'var(--radius-md)', zIndex: 9999, boxShadow: '0 10px 25px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 500 }}>
+                        {toast.message}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* MODAL DE ENLACE SEGURO */}
+            <AnimatePresence>
+                {modalAlert.visible && (
+                    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} style={{ background: 'var(--surface)', padding: '2rem', borderRadius: 'var(--radius-lg)', maxWidth: '500px', width: '90%', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', textAlign: 'center' }}>
+                            <div style={{ background: '#ecfdf5', width: '60px', height: '60px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem auto' }}>
+                                <CheckCircle size={32} color="var(--success-text)" />
+                            </div>
+                            <h3 style={{ margin: '0 0 1rem 0', color: 'var(--text-main)', fontSize: '1.25rem' }}>{modalAlert.title}</h3>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>{modalAlert.message}</p>
+                            
+                            <div style={{ background: 'var(--bg-color)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', wordBreak: 'break-all', userSelect: 'all', color: 'var(--primary)', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
+                                {modalAlert.link}
+                            </div>
+                            
+                            <button className="btn-primary" style={{ width: '100%' }} onClick={() => setModalAlert({...modalAlert, visible: false})}>
+                                Entendido
+                            </button>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
             
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <div>
@@ -771,7 +826,7 @@ export default function DashboardOficial() {
                                             </p>
                                             <button 
                                                 className="btn-outline" 
-                                                onClick={(e) => handleRecargarTusDatos(e, solicitudSeleccionada)}
+                                                onClick={(e) => handleRetryTusDatos(e, solicitudSeleccionada)}
                                                 disabled={cargandoTusDatos === solicitudSeleccionada.id}
                                                 style={{ padding: '0.75rem 2rem', fontSize: '1rem', opacity: cargandoTusDatos === solicitudSeleccionada.id ? 0.7 : 1, borderColor: 'var(--danger)', color: 'var(--danger)' }}
                                             >
@@ -912,7 +967,7 @@ export default function DashboardOficial() {
                                             <button 
                                                 className="btn-primary" 
                                                 style={{ width: '100%', padding: '1rem', background: (solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || solicitudSeleccionada.estado_actual === 'REVISION_PREVIA') ? 'var(--text-muted)' : 'var(--success)', borderColor: (solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || solicitudSeleccionada.estado_actual === 'REVISION_PREVIA') ? 'var(--border)' : 'var(--success)', opacity: (solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || solicitudSeleccionada.estado_actual === 'REVISION_PREVIA') ? 0.5 : 1, cursor: (solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || solicitudSeleccionada.estado_actual === 'REVISION_PREVIA') ? 'not-allowed' : 'pointer' }} 
-                                                onClick={handleVistoBueno}
+                                                onClick={handleAprobarManualmente}
                                                 disabled={solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || solicitudSeleccionada.estado_actual === 'REVISION_PREVIA'}
                                                 title={(solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || solicitudSeleccionada.estado_actual === 'REVISION_PREVIA') ? "Debe ejecutar TusDatos primero" : "Otorgar Visto Bueno"}
                                             >
@@ -928,7 +983,7 @@ export default function DashboardOficial() {
                                                         </button>
                                                     )}
                                                     {solicitudSeleccionada.estado_actual === 'FUENTES_INCOMPLETAS' && (
-                                                        <button className="btn-outline" style={{ padding: '0.75rem', fontSize: '0.85rem', color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={(e) => handleRecargarTusDatos(e, solicitudSeleccionada)}>
+                                                        <button className="btn-outline" style={{ padding: '0.75rem', fontSize: '0.85rem', color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={(e) => handleRetryTusDatos(e, solicitudSeleccionada)}>
                                                             {cargandoTusDatos === solicitudSeleccionada.id ? 'Recargando...' : '♻️ Recargar API'}
                                                         </button>
                                                     )}
