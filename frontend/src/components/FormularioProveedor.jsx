@@ -131,7 +131,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         esg_entorno_libre_discriminacion: 'no',
 
         // Nuevos campos
-        tiene_conflicto_interes: '',
+        tiene_conflicto_interes: 'no',
         familiares_conflicto: [],
         realiza_operaciones_internacionales: '',
         activos_virtuales: '',
