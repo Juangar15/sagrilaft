@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { sagrilaftService } from '../services/api';
+import { supabase } from '../supabaseClient';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Search, Download, Filter, FileText, AlertTriangle, 
-    CheckCircle, Clock, X, Building2, User, Globe, ShieldCheck, Edit3
+    CheckCircle, Clock, X, Building2, User, Globe, ShieldCheck, Edit3, LogOut
 } from 'lucide-react';
 
 export default function DashboardOficial() {
@@ -423,6 +424,14 @@ export default function DashboardOficial() {
                         style={{ padding: '0.75rem 1.5rem', whiteSpace: 'nowrap' }}
                     >
                         ➕ Generar Nueva Invitación
+                    </button>
+                    <button 
+                        onClick={() => supabase.auth.signOut()}
+                        className="btn-outline"
+                        style={{ padding: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem', borderColor: 'var(--danger)', color: 'var(--danger)' }}
+                        title="Cerrar Sesión"
+                    >
+                        <LogOut size={18} />
                     </button>
                 </div>
               </header>

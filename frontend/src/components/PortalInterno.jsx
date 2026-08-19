@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { sagrilaftService } from '../services/api';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link, Mail, CheckCircle, Shield, Building, User, Send, Loader2 } from 'lucide-react';
 
 export default function PortalInterno() {
@@ -13,6 +13,12 @@ export default function PortalInterno() {
     
     const [tab, setTab] = useState('proveedores');
     const [estado, setEstado] = useState({ cargando: false, exito: false, linkGenerado: '', previewUrl: '', error: '' });
+    const [toast, setToast] = useState({ visible: false, message: '' });
+
+    const showToast = (message) => {
+        setToast({ visible: true, message });
+        setTimeout(() => setToast({ visible: false, message: '' }), 3000);
+    };
 
     const handleGenerarLink = async (e) => {
         e.preventDefault();
@@ -42,7 +48,26 @@ export default function PortalInterno() {
     };
 
     return (
-        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-color)', padding: '2rem' }}>
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-body)', padding: '1rem', fontFamily: 'Inter, sans-serif' }}>
+            <AnimatePresence>
+                {toast.visible && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        style={{
+                            position: 'fixed', top: '20px', right: '20px',
+                            background: 'var(--success)', color: 'white',
+                            padding: '1rem 1.5rem', borderRadius: '8px',
+                            boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
+                            zIndex: 9999, display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '500'
+                        }}
+                    >
+                        <CheckCircle size={20} />
+                        {toast.message}
+                    </motion.div>
+                )}
+            </AnimatePresence>
             <motion.div 
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                 className="card glass-panel" 
@@ -206,7 +231,7 @@ export default function PortalInterno() {
                             style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '1rem' }}
                             onClick={() => {
                                 navigator.clipboard.writeText(`${window.location.origin}/onboarding/empleado`);
-                                alert('¡Enlace copiado al portapapeles!');
+                                showToast('¡Enlace copiado al portapapeles!');
                             }}
                         >
                             📋 Copiar Enlace Genérico
