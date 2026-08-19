@@ -8,7 +8,8 @@ export default function PortalInterno() {
         razon_social: '',
         correo: '',
         tipo_vinculacion: 'proveedor',
-        area_solicitante: ''
+        area_solicitante: '',
+        empresa_destino: 'cosechas'
     });
     
     const [tab, setTab] = useState('proveedores');
@@ -165,7 +166,18 @@ export default function PortalInterno() {
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                                    <div>
+                                        <label className="label">Empresa Destino</label>
+                                        <select 
+                                            className="input-field"
+                                            value={formData.empresa_destino}
+                                            onChange={e => setFormData({...formData, empresa_destino: e.target.value})}
+                                        >
+                                            <option value="cosechas">Cosechas</option>
+                                            <option value="selecta">Selecta</option>
+                                        </select>
+                                    </div>
                                     <div>
                                         <label className="label">Tipo de Vinculación</label>
                                         <select 
@@ -174,7 +186,7 @@ export default function PortalInterno() {
                                             onChange={e => setFormData({...formData, tipo_vinculacion: e.target.value})}
                                         >
                                             <option value="proveedor">Proveedor</option>
-                                            <option value="cliente_selecta">Cliente (Selecta)</option>
+                                            <option value="cliente_selecta">Cliente</option>
                                             <option value="franquiciado">Franquiciado</option>
                                             <option value="posible_franquiciado">Posible Franquiciado</option>
                                             <option value="empleado">Empleado</option>

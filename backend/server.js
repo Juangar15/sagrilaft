@@ -87,14 +87,17 @@ if (process.env.SMTP_SERVER) {
 
 // Endpoint para generar invitaciones (Gatekeeper)
 app.post('/api/v1/invitaciones', async (req, res) => {
-    const { razon_social, correo, tipo_vinculacion, area_solicitante } = req.body;
+    const { razon_social, correo, tipo_vinculacion, area_solicitante, empresa_destino } = req.body;
     if (!razon_social || !correo || !tipo_vinculacion || !area_solicitante) {
         return res.status(400).json({ error: "Faltan datos obligatorios" });
     }
 
+    const nombreEmpresaFull = empresa_destino === 'selecta' ? 'SELECTA COMPAÑÍA DE CEREALES S.A.S.' : 'COSECHAS BEBIDAS NATURALES S.A.S.';
+    const aliasEmpresa = empresa_destino === 'selecta' ? 'Selecta Compliance' : 'Cosechas Compliance';
+
     try {
         // Generar token JWT válido por 7 días
-        const token = jwt.sign({ correo, tipo_vinculacion, razon_social }, JWT_SECRET, { expiresIn: '7d' });
+        const token = jwt.sign({ correo, tipo_vinculacion, razon_social, empresa_destino }, JWT_SECRET, { expiresIn: '7d' });
 
         const nuevaInvitacion = {
             id: Date.now().toString(),
@@ -103,6 +106,7 @@ app.post('/api/v1/invitaciones', async (req, res) => {
             correo,
             tipo_vinculacion,
             area_solicitante,
+            empresa_destino,
             fecha_expiracion: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
             usado: false,
             fecha_creacion: new Date().toISOString()
@@ -135,9 +139,9 @@ app.post('/api/v1/invitaciones', async (req, res) => {
 
         // Enviar correo electrónico
         const mailOptions = {
-            from: `"Cosechas y Selecta - SAGRILAFT" <${process.env.SMTP_USER || 'no-reply@cosechas.com'}>`,
+            from: `"${aliasEmpresa}" <${process.env.SMTP_USER || 'no-reply@cosechasexpress.com'}>`,
             to: correo,
-            subject: 'Invitación a Registro de Contrapartes - SAGRILAFT',
+            subject: `Invitación a Registro de Contrapartes - SAGRILAFT ${nombreEmpresaFull}`,
             html: `
                 <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; border: 1px solid #ddd; border-radius: 10px;">
                     <h2 style="color: #1a4f78;">Proceso de Vinculación y Debida Diligencia</h2>
@@ -735,8 +739,11 @@ const otpCache = new Map();
 
 // POST /api/v1/otp/send - Send OTP via Email
 app.post('/api/v1/otp/send', async (req, res) => {
-    const { email } = req.body;
+    const { email, empresa_destino } = req.body;
     if (!email) return res.status(400).json({ error: 'Falta correo electrónico' });
+
+    const nombreEmpresaFull = empresa_destino === 'selecta' ? 'SELECTA COMPAÑÍA DE CEREALES S.A.S.' : 'COSECHAS BEBIDAS NATURALES S.A.S.';
+    const aliasEmpresa = empresa_destino === 'selecta' ? 'Selecta Compliance' : 'Cosechas Compliance';
 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     otpCache.set(email, { code, expiresAt: Date.now() + 15 * 60 * 1000, ip: req.ip });
@@ -745,13 +752,13 @@ app.post('/api/v1/otp/send', async (req, res) => {
         if (!transporter) throw new Error('Servidor de correos no configurado');
         
         await transporter.sendMail({
-            from: `"Cosechas Compliance" <${process.env.SMTP_USER || 'no-reply@cosechasexpress.com'}>`,
+            from: `"${aliasEmpresa}" <${process.env.SMTP_USER || 'no-reply@cosechasexpress.com'}>`,
             to: email,
             subject: 'Código de Firma Electrónica SAGRILAFT',
             html: `
                 <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 500px;">
                     <h2 style="color: #0f172a;">Verificación de Identidad</h2>
-                    <p>Usted ha solicitado la firma electrónica de su vinculación a SELECTA COMPAÑÍA DE CEREALES S.A.S.</p>
+                    <p>Usted ha solicitado la firma electrónica de su vinculación a ${nombreEmpresaFull}</p>
                     <p>Su código de seguridad (OTP) es:</p>
                     <h1 style="background: #f1f5f9; padding: 15px; text-align: center; letter-spacing: 5px; color: #3b82f6; border-radius: 5px;">${code}</h1>
                     <p style="font-size: 0.85rem; color: #64748b;">Este código expirará en 15 minutos. Si no solicitó este código, ignore este mensaje.</p>
@@ -851,16 +858,20 @@ app.post('/api/v1/solicitudes/:id/devolver', async (req, res) => {
         if (transporter && solicitud.datos_formulario && solicitud.datos_formulario.correo_electronico) {
             try {
                 const correoProveedor = solicitud.datos_formulario.correo_electronico;
+                const empresaDestino = solicitud.datos_formulario.empresa_destino;
+                const nombreEmpresaFull = empresaDestino === 'selecta' ? 'SELECTA COMPAÑÍA DE CEREALES S.A.S.' : 'COSECHAS BEBIDAS NATURALES S.A.S.';
+                const aliasEmpresa = empresaDestino === 'selecta' ? 'Selecta Compliance' : 'Cosechas Compliance';
+
                 await transporter.sendMail({
-                    from: `"Cosechas Compliance" <${process.env.SMTP_USER || 'no-reply@cosechasexpress.com'}>`,
+                    from: `"${aliasEmpresa}" <${process.env.SMTP_USER || 'no-reply@cosechasexpress.com'}>`,
                     to: correoProveedor,
-                    subject: 'Acción Requerida: Corrección en su proceso SAGRILAFT',
+                    subject: `Acción Requerida: Corrección en su proceso SAGRILAFT - ${nombreEmpresaFull}`,
                     html: `
                         <div style="font-family: Arial, sans-serif; padding: 20px;">
                             <h2>Estimado/a ${solicitud.razon_social || 'Usuario'},</h2>
-                            <p>El equipo de Cumplimiento de Cosechas ha revisado su formulario y se requiere corregir o adjuntar la siguiente información:</p>
+                            <p>El equipo de Cumplimiento de ${nombreEmpresaFull} ha revisado su formulario y se requiere corregir o adjuntar la siguiente información:</p>
                             <ul style="color: #d97706; background: #fffbeb; padding: 15px; border-radius: 5px;">
-                                ${Object.entries(campos_a_corregir).map(([campo, msg]) => `<li><b>${campo}:</b> ${msg}</li>`).join('')}
+                                ${Object.entries(campos_a_corregir).map(([campo, msg]) => `<li><b>${campo.replace(/_/g, ' ').toUpperCase()}:</b> ${msg}</li>`).join('')}
                             </ul>
                             <p><b>Nota del Oficial:</b> ${observaciones || 'Favor realizar las correcciones indicadas para continuar con su proceso.'}</p>
                             <p>Por favor, utilice el siguiente enlace seguro para acceder a su formulario y subsanar estos datos:</p>
