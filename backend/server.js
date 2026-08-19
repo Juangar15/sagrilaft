@@ -12,6 +12,7 @@ const multer = require('multer');
 const axios = require('axios');
 
 const app = express();
+app.set('trust proxy', true); // Necesario para obtener IP real detrás de Docker/Nginx
 const PORT = process.env.PORT || 3001;
 
 // Configuración R2
@@ -775,9 +776,13 @@ app.post('/api/v1/otp/verify', (req, res) => {
 
     otpCache.delete(email);
 
+    const rawIp = req.headers['x-forwarded-for']?.split(',')[0] || req.ip || req.connection?.remoteAddress || 'Desconocida';
+    const clientIp = rawIp.replace(/^::ffff:/, '').trim();
+
     const auditInfo = {
-        ip: req.ip,
+        ip: clientIp,
         timestamp: new Date().toISOString(),
+        fecha_hora: new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota' }),
         email: email,
         documento: documento || 'No proporcionado',
         nombre_completo: nombre_completo || 'No proporcionado',
