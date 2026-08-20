@@ -383,13 +383,16 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
             }
         }
         if (pasoActual === 3) {
-            if (!d.activos || !d.pasivos || !d.ingresos_mensuales || !d.egresos_mensuales || !d.patrimonio) {
-                showToast("Por favor completa tu perfil financiero (Activos, Pasivos, Patrimonio, Ingresos y Egresos).");
-                return false;
-            }
-            if (Math.abs(Number(d.activos) - (Number(d.pasivos) + Number(d.patrimonio))) > 1) {
-                showToast("La ecuación contable no cuadra: Activos debe ser igual a Pasivos + Patrimonio.");
-                return false;
+            const activos = Number(d.activos) || 0;
+            const pasivos = Number(d.pasivos) || 0;
+            const patrimonio = Number(d.patrimonio) || 0;
+            
+            // Solo validamos la ecuación contable si el usuario ingresó algún valor
+            if (activos > 0 || pasivos > 0 || patrimonio > 0) {
+                if (Math.abs(activos - (pasivos + patrimonio)) > 1) {
+                    showToast("La ecuación contable no cuadra: Activos debe ser igual a Pasivos + Patrimonio.");
+                    return false;
+                }
             }
         }
         if (pasoActual === 12) {
