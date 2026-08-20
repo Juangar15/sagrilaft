@@ -189,7 +189,6 @@ export default function PortalInterno() {
                                             <option value="cliente_selecta">Cliente</option>
                                             <option value="franquiciado">Franquiciado</option>
                                             <option value="posible_franquiciado">Posible Franquiciado</option>
-                                            <option value="empleado">Empleado</option>
                                             <option value="prestacion_servicios">Prestación de Servicios</option>
                                             <option value="contratista">Contratista</option>
                                             <option value="accionista">Accionista</option>

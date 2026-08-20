@@ -65,7 +65,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         nombres: '', primer_apellido: '', segundo_apellido: '',
         tipo_identificacion: 'cc', numero_identificacion: '',
         lugar_expedicion: '', fecha_expedicion: '', 
-        fecha_nacimiento: '', lugar_nacimiento: '', nacionalidad: 'Colombiana',
+        fecha_nacimiento: '', lugar_nacimiento: '', nacionalidad: '',
         correo_electronico: '', estado_civil: '',
         direccion_residencial: '', telefono_celular: '',
         ciudad: '', departamento: '', pais: 'Colombia',
@@ -86,7 +86,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         rep_legal_nombres: '', rep_legal_primer_apellido: '', rep_legal_segundo_apellido: '',
         rep_legal_tipo_id: 'cc', rep_legal_numero_id: '', 
         rep_legal_lugar_expedicion: '', rep_legal_fecha_expedicion: '',
-        rep_legal_fecha_nacimiento: '', rep_legal_lugar_nacimiento: '', rep_legal_nacionalidad: 'Colombiana',
+        rep_legal_fecha_nacimiento: '', rep_legal_lugar_nacimiento: '', rep_legal_nacionalidad: '',
         rep_legal_direccion: '', rep_legal_telefono: '',
 
         // Tributaria
