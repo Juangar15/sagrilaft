@@ -221,6 +221,29 @@ export default function PortalInterno() {
                                 </button>
                             </div>
                         </form>
+
+                        <div style={{ marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)', textAlign: 'center' }}>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                                💡 <b>Enlace de Revisión (Terceros):</b> Si necesitas compartir el formulario con la Oficial de Cumplimiento para su revisión sin generar una invitación formal, puedes usar este enlace público temporal:
+                            </p>
+                            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', alignItems: 'center' }}>
+                                <code style={{ background: 'var(--bg-color)', padding: '0.5rem 1rem', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem', color: 'var(--primary)', border: '1px dashed var(--border)' }}>
+                                    {window.location.origin}/onboarding/proveedor
+                                </code>
+                                <button 
+                                    className="btn-outline" 
+                                    style={{ padding: '0.45rem 1rem', fontSize: '0.85rem' }}
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        navigator.clipboard.writeText(`${window.location.origin}/onboarding/proveedor`);
+                                        showToast('¡Enlace de revisión copiado!');
+                                    }}
+                                >
+                                    📋 Copiar
+                                </button>
+                            </div>
+                        </div>
                     )
                 ) : (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ textAlign: 'center', padding: '1rem' }}>
