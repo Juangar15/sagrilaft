@@ -132,118 +132,120 @@ export default function PortalInterno() {
                             </button>
                         </motion.div>
                     ) : (
-                        <form onSubmit={handleGenerarLink}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                <div>
-                                    <label className="label">Razón Social / Nombre Completo</label>
-                                    <div style={{ position: 'relative' }}>
-                                        <Building size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                                        <input 
-                                            required 
-                                            type="text" 
-                                            className="input-field" 
-                                            style={{ paddingLeft: '2.5rem' }}
-                                            placeholder="Ej. Suministros ABC S.A.S."
-                                            value={formData.razon_social}
-                                            onChange={e => setFormData({...formData, razon_social: e.target.value})}
-                                        />
-                                    </div>
-                                </div>
-                                
-                                <div>
-                                    <label className="label">Correo Electrónico (Notificación)</label>
-                                    <div style={{ position: 'relative' }}>
-                                        <Mail size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                                        <input 
-                                            required 
-                                            type="email" 
-                                            className="input-field" 
-                                            style={{ paddingLeft: '2.5rem' }}
-                                            placeholder="ejemplo@empresa.com"
-                                            value={formData.correo}
-                                            onChange={e => setFormData({...formData, correo: e.target.value})}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                        <>
+                            <form onSubmit={handleGenerarLink}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                     <div>
-                                        <label className="label">Empresa Destino</label>
-                                        <select 
-                                            className="input-field"
-                                            value={formData.empresa_destino}
-                                            onChange={e => setFormData({...formData, empresa_destino: e.target.value})}
-                                        >
-                                            <option value="cosechas">Cosechas</option>
-                                            <option value="selecta">Selecta</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="label">Tipo de Vinculación</label>
-                                        <select 
-                                            className="input-field"
-                                            value={formData.tipo_vinculacion}
-                                            onChange={e => setFormData({...formData, tipo_vinculacion: e.target.value})}
-                                        >
-                                            <option value="proveedor">Proveedor</option>
-                                            <option value="cliente_selecta">Cliente</option>
-                                            <option value="franquiciado">Franquiciado</option>
-                                            <option value="posible_franquiciado">Posible Franquiciado</option>
-                                            <option value="prestacion_servicios">Prestación de Servicios</option>
-                                            <option value="contratista">Contratista</option>
-                                            <option value="accionista">Accionista</option>
-                                        </select>
-                                    </div>
-                                    
-                                    <div>
-                                        <label className="label">Área Solicitante</label>
+                                        <label className="label">Razón Social / Nombre Completo</label>
                                         <div style={{ position: 'relative' }}>
-                                            <User size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                            <Building size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                                             <input 
                                                 required 
                                                 type="text" 
                                                 className="input-field" 
                                                 style={{ paddingLeft: '2.5rem' }}
-                                                placeholder="Ej. Sistemas, Compras"
-                                                value={formData.area_solicitante}
-                                                onChange={e => setFormData({...formData, area_solicitante: e.target.value})}
+                                                placeholder="Ej. Suministros ABC S.A.S."
+                                                value={formData.razon_social}
+                                                onChange={e => setFormData({...formData, razon_social: e.target.value})}
                                             />
                                         </div>
                                     </div>
+                                    
+                                    <div>
+                                        <label className="label">Correo Electrónico (Notificación)</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <Mail size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                            <input 
+                                                required 
+                                                type="email" 
+                                                className="input-field" 
+                                                style={{ paddingLeft: '2.5rem' }}
+                                                placeholder="ejemplo@empresa.com"
+                                                value={formData.correo}
+                                                onChange={e => setFormData({...formData, correo: e.target.value})}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                                        <div>
+                                            <label className="label">Empresa Destino</label>
+                                            <select 
+                                                className="input-field"
+                                                value={formData.empresa_destino}
+                                                onChange={e => setFormData({...formData, empresa_destino: e.target.value})}
+                                            >
+                                                <option value="cosechas">Cosechas</option>
+                                                <option value="selecta">Selecta</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="label">Tipo de Vinculación</label>
+                                            <select 
+                                                className="input-field"
+                                                value={formData.tipo_vinculacion}
+                                                onChange={e => setFormData({...formData, tipo_vinculacion: e.target.value})}
+                                            >
+                                                <option value="proveedor">Proveedor</option>
+                                                <option value="cliente_selecta">Cliente</option>
+                                                <option value="franquiciado">Franquiciado</option>
+                                                <option value="posible_franquiciado">Posible Franquiciado</option>
+                                                <option value="prestacion_servicios">Prestación de Servicios</option>
+                                                <option value="contratista">Contratista</option>
+                                                <option value="accionista">Accionista</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div>
+                                            <label className="label">Área Solicitante</label>
+                                            <div style={{ position: 'relative' }}>
+                                                <User size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                                <input 
+                                                    required 
+                                                    type="text" 
+                                                    className="input-field" 
+                                                    style={{ paddingLeft: '2.5rem' }}
+                                                    placeholder="Ej. Sistemas, Compras"
+                                                    value={formData.area_solicitante}
+                                                    onChange={e => setFormData({...formData, area_solicitante: e.target.value})}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button type="submit" className="btn-primary" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '1rem', marginTop: '1rem' }} disabled={estado.cargando}>
+                                        {estado.cargando ? (
+                                            <><Loader2 size={20} className="spinner" /> Generando link seguro...</>
+                                        ) : (
+                                            <><Send size={20} /> Generar y Enviar Invitación</>
+                                        )}
+                                    </button>
                                 </div>
+                            </form>
 
-                                <button type="submit" className="btn-primary" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '1rem', marginTop: '1rem' }} disabled={estado.cargando}>
-                                    {estado.cargando ? (
-                                        <><Loader2 size={20} className="spinner" /> Generando link seguro...</>
-                                    ) : (
-                                        <><Send size={20} /> Generar y Enviar Invitación</>
-                                    )}
-                                </button>
+                            <div style={{ marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)', textAlign: 'center' }}>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                                    💡 <b>Enlace de Revisión (Terceros):</b> Si necesitas compartir el formulario con la Oficial de Cumplimiento para su revisión sin generar una invitación formal, puedes usar este enlace público temporal:
+                                </p>
+                                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', alignItems: 'center' }}>
+                                    <code style={{ background: 'var(--bg-color)', padding: '0.5rem 1rem', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem', color: 'var(--primary)', border: '1px dashed var(--border)' }}>
+                                        {window.location.origin}/onboarding/proveedor
+                                    </code>
+                                    <button 
+                                        className="btn-outline" 
+                                        style={{ padding: '0.45rem 1rem', fontSize: '0.85rem' }}
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            navigator.clipboard.writeText(`${window.location.origin}/onboarding/proveedor`);
+                                            showToast('¡Enlace de revisión copiado!');
+                                        }}
+                                    >
+                                        📋 Copiar
+                                    </button>
+                                </div>
                             </div>
-                        </form>
-
-                        <div style={{ marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)', textAlign: 'center' }}>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1rem' }}>
-                                💡 <b>Enlace de Revisión (Terceros):</b> Si necesitas compartir el formulario con la Oficial de Cumplimiento para su revisión sin generar una invitación formal, puedes usar este enlace público temporal:
-                            </p>
-                            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', alignItems: 'center' }}>
-                                <code style={{ background: 'var(--bg-color)', padding: '0.5rem 1rem', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem', color: 'var(--primary)', border: '1px dashed var(--border)' }}>
-                                    {window.location.origin}/onboarding/proveedor
-                                </code>
-                                <button 
-                                    className="btn-outline" 
-                                    style={{ padding: '0.45rem 1rem', fontSize: '0.85rem' }}
-                                    type="button"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        navigator.clipboard.writeText(`${window.location.origin}/onboarding/proveedor`);
-                                        showToast('¡Enlace de revisión copiado!');
-                                    }}
-                                >
-                                    📋 Copiar
-                                </button>
-                            </div>
-                        </div>
+                        </>
                     )
                 ) : (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ textAlign: 'center', padding: '1rem' }}>
