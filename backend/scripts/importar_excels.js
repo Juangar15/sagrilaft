@@ -1,5 +1,7 @@
 require('dotenv').config({ path: '../.env' }); // Cargar variables del servidor superior si aplica o en la misma carpeta
 require('dotenv').config();
+global.WebSocket = require('ws'); // Parche necesario para Node.js 20+ con Supabase
+
 const { createClient } = require('@supabase/supabase-js');
 const xlsx = require('xlsx');
 const path = require('path');
