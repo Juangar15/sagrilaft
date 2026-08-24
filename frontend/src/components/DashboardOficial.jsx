@@ -958,9 +958,16 @@ export default function DashboardOficial() {
                                     ) : solicitudSeleccionada.estado_actual === 'FUENTES_INCOMPLETAS' ? (
                                         <div style={{ textAlign: 'center', padding: '2rem', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid var(--danger)', borderRadius: 'var(--radius-sm)' }}>
                                             <h4 style={{ color: 'var(--danger)', marginBottom: '0.5rem' }}>⚠️ Consulta Incompleta</h4>
-                                            <p style={{ color: 'var(--text-main)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-                                                TusDatos reportó que algunas fuentes externas estaban caídas al momento de la consulta (ej. Policía, Procuraduría, etc).
+                                            <p style={{ color: 'var(--text-main)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                                                TusDatos reportó que algunas fuentes externas estaban caídas al momento de la consulta:
                                             </p>
+                                            <div style={{ textAlign: 'left', marginBottom: '1.5rem', maxHeight: '150px', overflowY: 'auto', background: '#fff', padding: '1rem', border: '1px solid var(--border)', borderRadius: '4px', fontSize: '0.85rem' }}>
+                                                <ul style={{ margin: 0, paddingLeft: '1.2rem', color: 'var(--text-muted)' }}>
+                                                    {solicitudSeleccionada.datos_formulario?.monitor_fuentes?.fuentes_caidas?.map((fuente, idx) => (
+                                                        <li key={idx} style={{ paddingBottom: '0.3rem' }}>{fuente}</li>
+                                                    )) || <li>Fuentes caídas no detalladas en el reporte.</li>}
+                                                </ul>
+                                            </div>
                                             <button 
                                                 className="btn-outline" 
                                                 onClick={(e) => handleRetryTusDatos(e, solicitudSeleccionada)}
@@ -973,25 +980,46 @@ export default function DashboardOficial() {
                                     ) : (
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '0.9rem' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem', borderBottom: '1px dashed var(--border)' }}>
-                                                <span>DIAN (RUT):</span>
-                                                <span style={{ fontWeight: 'bold', color: solicitudSeleccionada.score_riesgo >= 90 ? 'var(--danger)' : 'var(--success-text)' }}>
-                                                    {solicitudSeleccionada.score_riesgo >= 90 ? '❌ INACTIVO / CAÍDA' : '✅ OK'}
+                                                <span>Estado General TusDatos:</span>
+                                                <span style={{ fontWeight: 'bold', color: 'var(--success-text)' }}>
+                                                    {solicitudSeleccionada.datos_formulario?.monitor_fuentes?.estado_fuentes || '✅ COMPLETADO'}
                                                 </span>
                                             </div>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem', borderBottom: '1px dashed var(--border)' }}>
-                                                <span>Listas Restrictivas (OFAC, ONU):</span>
-                                                <span style={{ fontWeight: 'bold', color: solicitudSeleccionada.score_riesgo >= 90 ? 'var(--danger)' : 'var(--success-text)' }}>
-                                                    {solicitudSeleccionada.score_riesgo >= 90 ? '⚠️ ALERTA ENCONTRADA' : '✅ SIN HALLAZGOS'}
+                                                <span>Listas Restrictivas (ONU, OFAC, etc):</span>
+                                                <span style={{ fontWeight: 'bold', color: solicitudSeleccionada.datos_formulario?.monitor_fuentes?.listas_restrictivas === 'ALERTA' ? 'var(--danger)' : 'var(--success-text)' }}>
+                                                    {solicitudSeleccionada.datos_formulario?.monitor_fuentes?.listas_restrictivas === 'ALERTA' ? '⚠️ ALERTA ENCONTRADA' : '✅ SIN HALLAZGOS'}
                                                 </span>
                                             </div>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem', borderBottom: '1px dashed var(--border)' }}>
-                                                <span>Procuraduría / Contraloría / Policía:</span>
-                                                <span style={{ fontWeight: 'bold', color: 'var(--success-text)' }}>✅ SIN ANTECEDENTES</span>
+                                                <span>Procuraduría / Policía / Antecedentes:</span>
+                                                <span style={{ fontWeight: 'bold', color: solicitudSeleccionada.datos_formulario?.monitor_fuentes?.antecedentes_judiciales === 'ALERTA' ? 'var(--danger)' : 'var(--success-text)' }}>
+                                                    {solicitudSeleccionada.datos_formulario?.monitor_fuentes?.antecedentes_judiciales === 'ALERTA' ? '❌ CON HALLAZGOS' : '✅ SIN ANTECEDENTES'}
+                                                </span>
                                             </div>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem', borderBottom: '1px dashed var(--border)' }}>
-                                                <span>Documentación y Financiero:</span>
+                                                <span>Verificación RUT / Documentos:</span>
                                                 <span style={{ fontWeight: 'bold', color: 'var(--success-text)' }}>✅ VERIFICADO</span>
                                             </div>
+                                            
+                                            {/* Panel expandible de detalles (si hay fuentes_detalladas) */}
+                                            {solicitudSeleccionada.datos_formulario?.monitor_fuentes?.fuentes_detalladas && (
+                                                <div style={{ gridColumn: '1 / -1', marginTop: '1rem' }}>
+                                                    <details style={{ background: '#f8fafc', padding: '1rem', borderRadius: '4px', border: '1px solid var(--border)' }}>
+                                                        <summary style={{ fontWeight: 'bold', cursor: 'pointer', color: 'var(--primary)' }}>Ver Desglose de Bases de Datos Consultadas</summary>
+                                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '1rem', maxHeight: '200px', overflowY: 'auto' }}>
+                                                            {Object.entries(solicitudSeleccionada.datos_formulario.monitor_fuentes.fuentes_detalladas).map(([fuente, valor], idx) => (
+                                                                <div key={idx} style={{ fontSize: '0.8rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.2rem' }}>
+                                                                    <span style={{ color: 'var(--text-muted)' }}>{fuente}: </span>
+                                                                    <strong style={{ color: valor === 'Error' || valor === 'Página no disponible' ? 'var(--danger)' : valor === true ? 'var(--danger)' : 'var(--text-main)' }}>
+                                                                        {valor === true ? '🚨 HALLAZGO / SÍ' : valor === false ? 'No / Limpio' : valor}
+                                                                    </strong>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </details>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 
