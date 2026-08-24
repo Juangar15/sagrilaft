@@ -27,13 +27,13 @@ const s3Client = new S3Client({
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-async function uploadFileToR2(buffer, filename, folder) {
+async function uploadFileToR2(buffer, filename, folder, mimetype = 'application/pdf') {
     const key = `${folder}/${Date.now()}-${filename}`;
     await s3Client.send(new PutObjectCommand({
         Bucket: process.env.R2_BUCKET_NAME,
         Key: key,
         Body: buffer,
-        ContentType: 'application/pdf'
+        ContentType: mimetype
     }));
     return `https://${process.env.R2_PUBLIC_URL}/${key}`;
 }
@@ -369,7 +369,7 @@ app.post('/api/v1/onboarding', upload.any(), async (req, res) => {
         if (req.files && req.files.length > 0) {
             for (const file of req.files) {
                 if (process.env.R2_ACCOUNT_ID) {
-                    const url = await uploadFileToR2(file.buffer, file.originalname, `recepcion/${nit}`);
+                    const url = await uploadFileToR2(file.buffer, file.originalname, `recepcion/${nit}`, file.mimetype);
                     archivosSubidos[file.fieldname] = url;
                 } else {
                     // Fallback a guardado local
