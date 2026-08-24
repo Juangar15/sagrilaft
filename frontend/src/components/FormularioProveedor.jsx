@@ -644,18 +644,20 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                     </div>
                                 )}
                                 <div style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: 'var(--radius-md)', textAlign: 'left', marginBottom: '2rem', border: '1px solid var(--border)' }}>
-                                    <label style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start', cursor: 'pointer' }}>
-                                        <input type="checkbox" checked={terminosAceptados} onChange={(e) => setTerminosAceptados(e.target.checked)} style={{ marginTop: '0.25rem' }} />
-                                        <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                                            <b>6. AUTORIZACIÓN PARA EL TRATAMIENTO DE DATOS PERSONALES</b><br/><br/>
-                                            Dando cumplimiento a lo dispuesto en la Ley 1581 de 2012 "Por el cual se dictan disposiciones generales para la protección de datos personales" y de conformidad con lo señalado en el Decreto 1377 de 2013, con la firma de este documento manifiesto que he sido informado por {nombreEmpresaFull} de lo siguiente:<br/><br/>
-                                            <ol style={{ margin: '0 0 1rem 1.5rem', padding: 0 }}>
-                                                <li>{nombreEmpresaFull} actuará como responsable del tratamiento de los datos personales de los cuales soy titular y podrá recolectar, usar y tratar dichos datos conforme a su política de privacidad.</li>
-                                                <li>Garantiza la confidencialidad, libertad, seguridad, veracidad, transparencia, acceso y circulación restringida de los datos personales.</li>
-                                                <li>Es de carácter facultativo responder preguntas que traten sobre Datos Sensibles o sobre menores de edad.</li>
-                                                <li>Me han informado la posibilidad que tengo de acceder en cualquier momento a los datos suministrados, así como de solicitar la corrección, actualización o supresión, en los términos establecidos por la Ley 1581 de 2012, dirigiendo una comunicación escrita al responsable de tratamiento a la {direccionEmpresa}, con los siguientes datos: nombre y apellidos, domicilio a efectos de notificaciones, petición en que se concreta la solicitud, fecha, firma de la persona interesada. Para mi comodidad, puedo ejercer estos mismos derechos a través del correo electrónico: {correoEmpresa}; así como el derecho a revocar la autorización otorgada para el tratamiento de datos personales.</li>
-                                                <li>Autorizo a {nombreEmpresaFull}, a consultar y verificar mis datos en las centrales de información y/o bases de datos públicas, especialmente en las listas establecidas para el control y prevención de Lavado de Activos y la Financiación de Terrorismo.</li>
-                                            </ol>
+                                    <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+                                        <b>6. AUTORIZACIÓN PARA EL TRATAMIENTO DE DATOS PERSONALES</b><br/><br/>
+                                        Dando cumplimiento a lo dispuesto en la Ley 1581 de 2012 "Por el cual se dictan disposiciones generales para la protección de datos personales" y de conformidad con lo señalado en el Decreto 1377 de 2013, con la firma de este documento manifiesto que he sido informado por {nombreEmpresaFull} de lo siguiente:<br/><br/>
+                                        <ol style={{ margin: '0 0 1rem 1.5rem', padding: 0 }}>
+                                            <li>{nombreEmpresaFull} actuará como responsable del tratamiento de los datos personales de los cuales soy titular y podrá recolectar, usar y tratar dichos datos conforme a su política de privacidad.</li>
+                                            <li>Garantiza la confidencialidad, libertad, seguridad, veracidad, transparencia, acceso y circulación restringida de los datos personales.</li>
+                                            <li>Es de carácter facultativo responder preguntas que traten sobre Datos Sensibles o sobre menores de edad.</li>
+                                            <li>Me han informado la posibilidad que tengo de acceder en cualquier momento a los datos suministrados, así como de solicitar la corrección, actualización o supresión, en los términos establecidos por la Ley 1581 de 2012, dirigiendo una comunicación escrita al responsable de tratamiento a la {direccionEmpresa}, con los siguientes datos: nombre y apellidos, domicilio a efectos de notificaciones, petición en que se concreta la solicitud, fecha, firma de la persona interesada. Para mi comodidad, puedo ejercer estos mismos derechos a través del correo electrónico: {correoEmpresa}; así como el derecho a revocar la autorización otorgada para el tratamiento de datos personales.</li>
+                                            <li>Autorizo a {nombreEmpresaFull}, a consultar y verificar mis datos en las centrales de información y/o bases de datos públicas, especialmente en las listas establecidas para el control y prevención de Lavado de Activos y la Financiación de Terrorismo.</li>
+                                        </ol>
+                                    </div>
+                                    <label style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start', cursor: 'pointer', background: 'rgba(59, 130, 246, 0.05)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                                        <input type="checkbox" checked={terminosAceptados} onChange={(e) => setTerminosAceptados(e.target.checked)} style={{ marginTop: '0.2rem', width: '18px', height: '18px', flexShrink: 0 }} />
+                                        <span style={{ fontSize: '0.9rem', color: 'var(--text-main)', fontWeight: '500' }}>
                                             En señal de aceptación de lo anterior, consiento y autorizo a {nombreEmpresaFull} para tratar mis datos personales, para los fines relacionados con su objeto social y en especial para fines legales, contractuales y misionales, conforme a su política de tratamiento de datos.
                                         </span>
                                     </label>
@@ -1340,8 +1342,12 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                             const file = e.target.files[0];
                                             if (!file) return;
 
-                                            if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
-                                                return showToast('Por seguridad legal, solo se permiten documentos en formato PDF.');
+                                            const isIdentificacion = doc.id === 'identificacion' || doc.id === 'cedula_rep_legal';
+                                            const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+                                            const isImage = file.type.startsWith('image/');
+
+                                            if (!isPdf && !(isIdentificacion && isImage)) {
+                                                return showToast(isIdentificacion ? 'Para la cédula, solo se permiten documentos en formato PDF o Imágenes (JPG/PNG).' : 'Por seguridad legal, solo se permiten documentos en formato PDF.');
                                             }
 
                                             if (doc.requiereFecha) {
@@ -1355,6 +1361,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                         };
 
                                         const disabledUpload = esCorreccion && !camposACorregir[doc.id];
+                                        const isIdentificacion = doc.id === 'identificacion' || doc.id === 'cedula_rep_legal';
 
                                         return (
                                             <div key={doc.id} style={{ 
@@ -1394,8 +1401,8 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                                         )}
                                                         {!disabledUpload && (
                                                             <label className="btn-outline" style={{ marginTop: '0.5rem', cursor: 'pointer', display: 'inline-block' }}>
-                                                                Seleccionar Archivo (Solo PDF)
-                                                                <input type="file" style={{ display: 'none' }} accept=".pdf,application/pdf" onChange={handleUpload} />
+                                                                Seleccionar Archivo ({isIdentificacion ? 'PDF o Imagen' : 'Solo PDF'})
+                                                                <input type="file" style={{ display: 'none' }} accept={isIdentificacion ? ".pdf,application/pdf,image/*" : ".pdf,application/pdf"} onChange={handleUpload} />
                                                             </label>
                                                         )}
                                                     </>
