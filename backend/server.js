@@ -834,6 +834,45 @@ app.post('/api/v1/solicitudes/:id/calcular-riesgo', async (req, res) => {
     }
 });
 
+// ==========================================
+// MÓDULO DE CONFIGURACIÓN Y JURISDICCIONES
+// ==========================================
+
+// Obtener todas las jurisdicciones
+app.get('/api/v1/jurisdicciones', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('sagrilaft_jurisdicciones')
+            .select('*')
+            .order('departamento', { ascending: true })
+            .order('municipio', { ascending: true });
+        if (error) throw error;
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: "Error obteniendo jurisdicciones" });
+    }
+});
+
+// Actualizar una jurisdicción (nivel de riesgo o porcentaje)
+app.put('/api/v1/jurisdicciones/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { nivel_riesgo, porcentaje } = req.body;
+        
+        const { data, error } = await supabase
+            .from('sagrilaft_jurisdicciones')
+            .update({ nivel_riesgo, porcentaje })
+            .eq('id', id)
+            .select()
+            .single();
+            
+        if (error) throw error;
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: "Error actualizando jurisdicción" });
+    }
+});
+
 // GET /api/v1/solicitudes/token/:token - Recuperar Formulario para Proveedor (Ping-Pong)
 app.get('/api/v1/solicitudes/token/:token', async (req, res) => {
     try {

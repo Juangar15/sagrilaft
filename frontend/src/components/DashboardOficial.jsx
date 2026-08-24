@@ -57,7 +57,7 @@ export default function DashboardOficial() {
         nombre_oficial: 'Oficial Demo'
     });
     const [resultadoRiesgo, setResultadoRiesgo] = useState(null);
-
+    const [jurisdicciones, setJurisdicciones] = useState([]);
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -79,6 +79,15 @@ export default function DashboardOficial() {
                 }));
                 setSolicitudes(mappedSol);
                 setMatrizRiesgos(matrizConEventos);
+
+                // Fetch Jurisdicciones
+                try {
+                    const resJur = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/jurisdicciones`);
+                    if(resJur.ok) {
+                        const dataJur = await resJur.json();
+                        setJurisdicciones(dataJur);
+                    }
+                } catch(e) { console.error("Error cargando jurisdicciones"); }
             } catch (error) {
                 console.error("Error al cargar datos:", error);
             } finally {
@@ -244,6 +253,21 @@ export default function DashboardOficial() {
         } catch (error) {
             console.error(error);
             showToast("Error al simular riesgo", "error");
+        }
+    };
+
+    const actualizarJurisdiccion = async (id, nivel_riesgo, porcentaje) => {
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/jurisdicciones/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nivel_riesgo, porcentaje })
+            });
+            if (!res.ok) throw new Error('Error al actualizar');
+            setJurisdicciones(prev => prev.map(j => j.id === id ? { ...j, nivel_riesgo, porcentaje } : j));
+            showToast("Jurisdicción actualizada exitosamente");
+        } catch (error) {
+            showToast("Error actualizando jurisdicción", "error");
         }
     };
 
@@ -546,7 +570,13 @@ export default function DashboardOficial() {
                     onClick={() => setActiveTab('matriz')}
                     style={{ padding: '0.75rem 1.5rem', background: 'transparent', border: 'none', borderBottom: activeTab === 'matriz' ? '2px solid var(--primary)' : '2px solid transparent', color: activeTab === 'matriz' ? 'var(--primary)' : 'var(--text-muted)', cursor: 'pointer', fontWeight: 'bold' }}
                 >
-                    Configuración de Matriz de Riesgo
+                    Matriz de Riesgo Documental
+                </button>
+                <button 
+                    onClick={() => setActiveTab('jurisdicciones')}
+                    style={{ padding: '0.75rem 1.5rem', background: 'transparent', border: 'none', borderBottom: activeTab === 'jurisdicciones' ? '2px solid var(--primary)' : '2px solid transparent', color: activeTab === 'jurisdicciones' ? 'var(--primary)' : 'var(--text-muted)', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                    Jurisdicciones (Regiones)
                 </button>
             </div>
 
@@ -703,6 +733,56 @@ export default function DashboardOficial() {
                                 {matrizRiesgos.length === 0 && (
                                     <tr><td colSpan="5" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No hay riesgos configurados. Inserte desde la base de datos o cree uno nuevo.</td></tr>
                                 )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+
+            {/* VISTA 3: Jurisdicciones */}
+            {activeTab === 'jurisdicciones' && (
+                <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', alignItems: 'center' }}>
+                        <h2 style={{ fontSize: '1.25rem', color: 'var(--text-main)' }}>Niveles de Riesgo por Jurisdicción</h2>
+                    </div>
+                    <div className="card glass-panel" style={{ padding: 0, overflowX: 'auto', maxHeight: '70vh' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+                            <thead style={{ background: 'var(--bg-color)', borderBottom: '2px solid var(--border)', position: 'sticky', top: 0, zIndex: 5 }}>
+                                <tr>
+                                    <th style={{ padding: '1rem' }}>Departamento</th>
+                                    <th style={{ padding: '1rem' }}>Municipio</th>
+                                    <th style={{ padding: '1rem' }}>Código Postal</th>
+                                    <th style={{ padding: '1rem' }}>Nivel de Riesgo</th>
+                                    <th style={{ padding: '1rem' }}>Porcentaje (Pts)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {jurisdicciones.map(j => (
+                                    <tr key={j.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                                        <td style={{ padding: '1rem', fontWeight: 'bold' }}>{j.departamento}</td>
+                                        <td style={{ padding: '1rem' }}>{j.municipio}</td>
+                                        <td style={{ padding: '1rem' }}>{j.codigo_postal}</td>
+                                        <td style={{ padding: '1rem' }}>
+                                            <select 
+                                                value={j.nivel_riesgo} 
+                                                onChange={(e) => actualizarJurisdiccion(j.id, e.target.value, j.porcentaje)}
+                                                style={{ padding: '0.3rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                                            >
+                                                <option value="BAJO">BAJO</option>
+                                                <option value="MEDIO">MEDIO</option>
+                                                <option value="ALTO">ALTO</option>
+                                            </select>
+                                        </td>
+                                        <td style={{ padding: '1rem' }}>
+                                            <input 
+                                                type="number" 
+                                                value={j.porcentaje} 
+                                                onChange={(e) => actualizarJurisdiccion(j.id, j.nivel_riesgo, parseFloat(e.target.value) || 0)}
+                                                style={{ padding: '0.3rem', borderRadius: '4px', border: '1px solid #ccc', width: '70px' }}
+                                            />
+                                        </td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
                     </div>
