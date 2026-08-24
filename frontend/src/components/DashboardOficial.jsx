@@ -684,8 +684,18 @@ export default function DashboardOficial() {
                 <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', alignItems: 'center' }}>
                         <h2 style={{ fontSize: '1.25rem', color: 'var(--text-main)' }}>Plantilla Maestra de Riesgos Documental</h2>
+                        <button className="btn-outline" onClick={() => {
+                            const csvContent = "data:text/csv;charset=utf-8," + "Codigo,Evento,Fuente,Causas,FxF,Tratamiento\n" + 
+                                matrizRiesgos.map(r => `"${r.codigo_riesgo}","${r.evento_riesgo?.replace(/"/g, '""')}","${r.fuente_riesgo}","${r.causas?.replace(/"/g, '""')}","${(r.escala_frecuencia || 0) * (r.escala_impacto || 0)}","${r.tratamiento}"`).join("\n");
+                            const encodedUri = encodeURI(csvContent);
+                            const link = document.createElement("a");
+                            link.setAttribute("href", encodedUri);
+                            link.setAttribute("download", "Matriz_Riesgos.csv");
+                            document.body.appendChild(link);
+                            link.click();
+                        }}>📥 Exportar CSV</button>
                     </div>
-                    <div className="card glass-panel" style={{ padding: 0, overflowX: 'auto', maxHeight: '70vh' }}>
+                    <div className="card glass-panel" style={{ padding: 0, overflow: 'auto', maxHeight: '70vh' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem', tableLayout: 'fixed' }}>
                             <thead style={{ background: 'var(--bg-color)', borderBottom: '2px solid var(--border)', position: 'sticky', top: 0, zIndex: 5 }}>
                                 <tr>
@@ -750,7 +760,7 @@ export default function DashboardOficial() {
                             link.click();
                         }}>📥 Exportar CSV</button>
                     </div>
-                    <div className="card glass-panel" style={{ padding: 0, overflowX: 'auto', maxHeight: '70vh' }}>
+                    <div className="card glass-panel" style={{ padding: 0, overflow: 'auto', maxHeight: '70vh' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
                             <thead style={{ background: 'var(--bg-color)', borderBottom: '2px solid var(--border)', position: 'sticky', top: 0, zIndex: 5 }}>
                                 <tr>
