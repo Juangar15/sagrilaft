@@ -211,7 +211,7 @@ app.get('/api/health', (req, res) => {
 app.get('/api/v1/matriz-riesgos', async (req, res) => {
     try {
         const { data, error } = await supabase
-            .from('matriz_riesgos_master')
+            .from('sagrilaft_matriz')
             .select('*')
             .order('id', { ascending: true });
 

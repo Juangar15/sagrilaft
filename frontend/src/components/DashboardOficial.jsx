@@ -683,55 +683,48 @@ export default function DashboardOficial() {
             {activeTab === 'matriz' && (
                 <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', alignItems: 'center' }}>
-                        <h2 style={{ fontSize: '1.25rem', color: 'var(--text-main)' }}>Plantilla Maestra de Riesgos</h2>
-                        <button className="btn-primary" onClick={() => setModalRiesgoOpen(true)}>+ Nuevo Riesgo</button>
+                        <h2 style={{ fontSize: '1.25rem', color: 'var(--text-main)' }}>Plantilla Maestra de Riesgos Documental</h2>
                     </div>
-                    <div className="card glass-panel" style={{ padding: 0, overflowX: 'auto' }}>
+                    <div className="card glass-panel" style={{ padding: 0, overflowX: 'auto', maxHeight: '70vh' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
-                            <thead style={{ background: 'var(--bg-color)', borderBottom: '2px solid var(--border)' }}>
+                            <thead style={{ background: 'var(--bg-color)', borderBottom: '2px solid var(--border)', position: 'sticky', top: 0, zIndex: 5 }}>
                                 <tr>
                                     <th style={{ padding: '1rem' }}>Código</th>
                                     <th style={{ padding: '1rem' }}>Evento de Riesgo</th>
-                                    <th style={{ padding: '1rem' }}>Categoría</th>
-                                    <th style={{ padding: '1rem' }}>Score Base (F x I)</th>
-                                    <th style={{ padding: '1rem' }}>Área Responsable</th>
-                                    <th style={{ padding: '1rem' }}>Eventos (Año)</th>
+                                    <th style={{ padding: '1rem' }}>Fuente / Causas</th>
+                                    <th style={{ padding: '1rem' }}>Score Inherente (F x I)</th>
+                                    <th style={{ padding: '1rem' }}>Tratamiento</th>
+                                    <th style={{ padding: '1rem' }}>Controles</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {matrizRiesgos.map(r => {
-                                    const eventos = r.eventos_ocurridos || 0;
-                                    let frecActual = r.escala_frecuencia_inherente;
-                                    if (eventos >= 1 && eventos <= 2) frecActual = Math.max(frecActual, 2);
-                                    if (eventos >= 3 && eventos <= 5) frecActual = Math.max(frecActual, 3);
-                                    if (eventos >= 6 && eventos <= 10) frecActual = Math.max(frecActual, 4);
-                                    if (eventos > 10) frecActual = 5;
-                                    const inherenteActual = frecActual * r.escala_impacto_inherente;
+                                    const inherente = (r.escala_frecuencia || 0) * (r.escala_impacto || 0);
                                     
                                     return (
                                     <tr key={r.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                                        <td style={{ padding: '1rem', fontWeight: 'bold' }}>{r.codigo}</td>
+                                        <td style={{ padding: '1rem', fontWeight: 'bold' }}>{r.codigo_riesgo}</td>
                                         <td style={{ padding: '1rem' }}>{r.evento_riesgo}</td>
-                                        <td style={{ padding: '1rem' }}><span className="badge badge-neutral">{r.categoria_detonante}</span></td>
-                                        <td style={{ padding: '1rem' }}>
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Original: {r.escala_frecuencia_inherente} x {r.escala_impacto_inherente} = {r.escala_frecuencia_inherente * r.escala_impacto_inherente}</div>
-                                            <div style={{ color: frecActual > r.escala_frecuencia_inherente ? 'var(--danger)' : 'var(--text-main)', fontWeight: 'bold' }}>
-                                                Actualizado: {frecActual} x {r.escala_impacto_inherente} = {inherenteActual}
+                                        <td style={{ padding: '1rem', fontSize: '0.8rem', maxWidth: '300px' }}>
+                                            <b>Fuente:</b> {r.fuente_riesgo}<br/>
+                                            <b>Causas:</b> {r.causas}
+                                        </td>
+                                        <td style={{ padding: '1rem', textAlign: 'center' }}>
+                                            <div style={{ color: 'var(--text-main)', fontWeight: 'bold' }}>
+                                                {r.escala_frecuencia} x {r.escala_impacto} = {inherente}
                                             </div>
                                         </td>
-                                        <td style={{ padding: '1rem' }}>{r.area_responsable}</td>
                                         <td style={{ padding: '1rem' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                <button className="btn-outline" style={{ padding: '0.2rem 0.5rem', minWidth: '30px' }} onClick={() => actualizarEventos(r.id, -1)}>-</button>
-                                                <span style={{ fontWeight: 'bold', minWidth: '20px', textAlign: 'center' }}>{eventos}</span>
-                                                <button className="btn-outline" style={{ padding: '0.2rem 0.5rem', minWidth: '30px' }} onClick={() => actualizarEventos(r.id, 1)}>+</button>
-                                            </div>
+                                            <span className={`badge ${r.tratamiento === 'MITIGAR' ? 'badge-success' : 'badge-neutral'}`}>{r.tratamiento}</span>
+                                        </td>
+                                        <td style={{ padding: '1rem', fontSize: '0.8rem', maxWidth: '300px' }}>
+                                            {r.descripcion_controles}
                                         </td>
                                     </tr>
                                     );
                                 })}
                                 {matrizRiesgos.length === 0 && (
-                                    <tr><td colSpan="5" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No hay riesgos configurados. Inserte desde la base de datos o cree uno nuevo.</td></tr>
+                                    <tr><td colSpan="6" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>Cargando matriz...</td></tr>
                                 )}
                             </tbody>
                         </table>
@@ -744,6 +737,16 @@ export default function DashboardOficial() {
                 <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', alignItems: 'center' }}>
                         <h2 style={{ fontSize: '1.25rem', color: 'var(--text-main)' }}>Niveles de Riesgo por Jurisdicción</h2>
+                        <button className="btn-outline" onClick={() => {
+                            const csvContent = "data:text/csv;charset=utf-8," + "Departamento,Municipio,Codigo Postal,Nivel de Riesgo,Porcentaje\n" + 
+                                jurisdicciones.map(j => `${j.departamento},${j.municipio},${j.codigo_postal},${j.nivel_riesgo},${j.porcentaje}`).join("\n");
+                            const encodedUri = encodeURI(csvContent);
+                            const link = document.createElement("a");
+                            link.setAttribute("href", encodedUri);
+                            link.setAttribute("download", "Jurisdicciones.csv");
+                            document.body.appendChild(link);
+                            link.click();
+                        }}>📥 Exportar CSV</button>
                     </div>
                     <div className="card glass-panel" style={{ padding: 0, overflowX: 'auto', maxHeight: '70vh' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
@@ -764,7 +767,7 @@ export default function DashboardOficial() {
                                         <td style={{ padding: '1rem' }}>{j.codigo_postal}</td>
                                         <td style={{ padding: '1rem' }}>
                                             <select 
-                                                value={j.nivel_riesgo} 
+                                                value={(j.nivel_riesgo || 'BAJO').toUpperCase()} 
                                                 onChange={(e) => actualizarJurisdiccion(j.id, e.target.value, j.porcentaje)}
                                                 style={{ padding: '0.3rem', borderRadius: '4px', border: '1px solid #ccc' }}
                                             >
