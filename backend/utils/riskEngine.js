@@ -1,5 +1,4 @@
-const { createClient } = require('@supabase/supabase-js');
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const supabase = require('../supabase');
 
 /**
  * Calcula el nivel de riesgo consolidado cruzando los datos del formulario, 
