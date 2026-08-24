@@ -686,15 +686,15 @@ export default function DashboardOficial() {
                         <h2 style={{ fontSize: '1.25rem', color: 'var(--text-main)' }}>Plantilla Maestra de Riesgos Documental</h2>
                     </div>
                     <div className="card glass-panel" style={{ padding: 0, overflowX: 'auto', maxHeight: '70vh' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem', tableLayout: 'fixed' }}>
                             <thead style={{ background: 'var(--bg-color)', borderBottom: '2px solid var(--border)', position: 'sticky', top: 0, zIndex: 5 }}>
                                 <tr>
-                                    <th style={{ padding: '1rem' }}>Código</th>
-                                    <th style={{ padding: '1rem' }}>Evento de Riesgo</th>
-                                    <th style={{ padding: '1rem' }}>Fuente / Causas</th>
-                                    <th style={{ padding: '1rem' }}>Score Inherente (F x I)</th>
-                                    <th style={{ padding: '1rem' }}>Tratamiento</th>
-                                    <th style={{ padding: '1rem' }}>Controles</th>
+                                    <th style={{ padding: '1rem', width: '10%' }}>Código</th>
+                                    <th style={{ padding: '1rem', width: '20%' }}>Evento de Riesgo</th>
+                                    <th style={{ padding: '1rem', width: '25%' }}>Fuente / Causas</th>
+                                    <th style={{ padding: '1rem', width: '10%', textAlign: 'center' }}>F x I</th>
+                                    <th style={{ padding: '1rem', width: '10%' }}>Trat.</th>
+                                    <th style={{ padding: '1rem', width: '25%' }}>Controles</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -702,22 +702,24 @@ export default function DashboardOficial() {
                                     const inherente = (r.escala_frecuencia || 0) * (r.escala_impacto || 0);
                                     
                                     return (
-                                    <tr key={r.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                                    <tr key={r.id} style={{ borderBottom: '1px solid var(--border)', verticalAlign: 'top' }}>
                                         <td style={{ padding: '1rem', fontWeight: 'bold' }}>{r.codigo_riesgo}</td>
-                                        <td style={{ padding: '1rem' }}>{r.evento_riesgo}</td>
-                                        <td style={{ padding: '1rem', fontSize: '0.8rem', maxWidth: '300px' }}>
-                                            <b>Fuente:</b> {r.fuente_riesgo}<br/>
-                                            <b>Causas:</b> {r.causas}
+                                        <td style={{ padding: '1rem', whiteSpace: 'pre-wrap' }}>{r.evento_riesgo}</td>
+                                        <td style={{ padding: '1rem', whiteSpace: 'pre-wrap' }}>
+                                            <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>Fuente:</span> {r.fuente_riesgo}<br/><br/>
+                                            <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>Causas:</span><br/>{r.causas}
                                         </td>
                                         <td style={{ padding: '1rem', textAlign: 'center' }}>
-                                            <div style={{ color: 'var(--text-main)', fontWeight: 'bold' }}>
-                                                {r.escala_frecuencia} x {r.escala_impacto} = {inherente}
+                                            <div style={{ background: '#f1f5f9', padding: '0.5rem', borderRadius: '4px', fontWeight: 'bold' }}>
+                                                {inherente}
                                             </div>
                                         </td>
                                         <td style={{ padding: '1rem' }}>
-                                            <span className={`badge ${r.tratamiento === 'MITIGAR' ? 'badge-success' : 'badge-neutral'}`}>{r.tratamiento}</span>
+                                            <span style={{ fontSize: '0.75rem', padding: '0.3rem', borderRadius: '4px', background: r.tratamiento === 'MITIGAR' ? '#dcfce7' : '#fef3c7', color: r.tratamiento === 'MITIGAR' ? '#16a34a' : '#d97706', fontWeight: 'bold' }}>
+                                                {r.tratamiento}
+                                            </span>
                                         </td>
-                                        <td style={{ padding: '1rem', fontSize: '0.8rem', maxWidth: '300px' }}>
+                                        <td style={{ padding: '1rem', whiteSpace: 'pre-wrap' }}>
                                             {r.descripcion_controles}
                                         </td>
                                     </tr>
