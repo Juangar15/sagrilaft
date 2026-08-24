@@ -802,6 +802,38 @@ app.post('/api/v1/otp/verify', (req, res) => {
 });
 
 // Arrancar el servidor
+// Importar motor de riesgos
+const { calcularRiesgoConsolidado } = require('./utils/riskEngine');
+
+// POST /api/v1/solicitudes/:id/calcular-riesgo - Simular Riesgo
+app.post('/api/v1/solicitudes/:id/calcular-riesgo', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { alertas_manuales, calificacion_oficial } = req.body;
+
+        // 1. Obtener la solicitud
+        const { data: sol, error } = await supabase
+            .from('solicitudes_sagrilaft')
+            .select('datos_formulario')
+            .eq('id', id)
+            .single();
+
+        if (error || !sol) return res.status(404).json({ error: "Solicitud no encontrada" });
+
+        // 2. Ejecutar motor de riesgos
+        const resultado = await calcularRiesgoConsolidado(
+            sol.datos_formulario, 
+            alertas_manuales || [], 
+            calificacion_oficial || 'Bajo'
+        );
+
+        res.json(resultado);
+    } catch (error) {
+        console.error("Error calculando riesgo:", error);
+        res.status(500).json({ error: "Error calculando riesgo" });
+    }
+});
+
 // GET /api/v1/solicitudes/token/:token - Recuperar Formulario para Proveedor (Ping-Pong)
 app.get('/api/v1/solicitudes/token/:token', async (req, res) => {
     try {

@@ -52,8 +52,11 @@ export default function DashboardOficial() {
         canales_denuncia: 'no',
         oficial_cumplimiento: 'no',
         observaciones: '',
+        calificacion_oficial: 'Bajo',
+        alertas_manuales: [],
         nombre_oficial: 'Oficial Demo'
     });
+    const [resultadoRiesgo, setResultadoRiesgo] = useState(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -149,7 +152,12 @@ export default function DashboardOficial() {
             
             // Si hay un form de oficial (por ejemplo al aprobar manualmente), lo guardamos
             if (nuevoEstado === 'APROBADO_LIMPIO' || nuevoEstado === 'APROBADO_RIESGO_CONTROLADO') {
-                await supabase.from('solicitudes_sagrilaft').update({ analisis_oficial: formOficial }).eq('id', solicitudSeleccionada.id);
+                await supabase.from('solicitudes_sagrilaft').update({ 
+                    analisis_oficial: formOficial,
+                    calificacion_oficial: formOficial.calificacion_oficial,
+                    alertas_manuales: formOficial.alertas_manuales,
+                    desglose_riesgo: resultadoRiesgo
+                }).eq('id', solicitudSeleccionada.id);
             }
 
             // Refrescar el board
@@ -203,6 +211,40 @@ export default function DashboardOficial() {
             return showToast("Debe verificar la autenticidad de los documentos antes de aprobar.", "error");
         }
         await handleCambiarEstado('APROBADO_LIMPIO');
+    };
+
+    const toggleAlertaManual = (alerta) => {
+        setFormOficial(prev => {
+            const existe = prev.alertas_manuales.includes(alerta);
+            return {
+                ...prev,
+                alertas_manuales: existe ? prev.alertas_manuales.filter(a => a !== alerta) : [...prev.alertas_manuales, alerta]
+            };
+        });
+    };
+
+    const handleSimularRiesgo = async (e) => {
+        if(e) e.preventDefault();
+        try {
+            const token = localStorage.getItem('token');
+            const url = `${import.meta.env.VITE_API_URL}/api/v1/solicitudes/${solicitudSeleccionada.id}/calcular-riesgo`;
+            const payload = {
+                calificacion_oficial: formOficial.calificacion_oficial,
+                alertas_manuales: formOficial.alertas_manuales
+            };
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(payload)
+            });
+            if(!response.ok) throw new Error('Error en simulación');
+            const data = await response.json();
+            setResultadoRiesgo(data);
+            showToast("Simulación de riesgo completada", "success");
+        } catch (error) {
+            console.error(error);
+            showToast("Error al simular riesgo", "error");
+        }
     };
 
     const handleTusDatos = async (e, solicitud) => {
@@ -943,6 +985,57 @@ export default function DashboardOficial() {
                                         <textarea className="input-field" rows="3" placeholder="Observaciones adicionales sobre la debida diligencia..." value={formOficial.observaciones} onChange={e => setFormOficial({...formOficial, observaciones: e.target.value})}></textarea>
                                     </div>
 
+                                </div>
+
+                                {/* NUEVO PANEL DE RIESGO CUALITATIVO */}
+                                <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid #e2e8f0', marginBottom: '1.5rem' }}>
+                                    <h4 style={{ margin: '0 0 1rem 0', color: '#0f172a' }}>1. Evaluación Cualitativa (Oficial)</h4>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                                        <div>
+                                            <label className="label">Calificación Inicial del Oficial</label>
+                                            <select className="input-field" value={formOficial.calificacion_oficial} onChange={e => setFormOficial({...formOficial, calificacion_oficial: e.target.value})}>
+                                                <option value="Bajo">BAJO</option>
+                                                <option value="Medio">MEDIO</option>
+                                                <option value="Alto">ALTO</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="label">Señales de Alerta Manuales Observadas</label>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '150px', overflowY: 'auto', background: '#fff', padding: '0.5rem', border: '1px solid #e2e8f0', borderRadius: '4px' }}>
+                                                {['Renuencia a entregar información', 'Información incongruente', 'Documentos ilegibles o alterados', 'Desconoce riesgo LA/FT', 'Renuencia a actualizar datos'].map(alerta => (
+                                                    <label key={alerta} style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                                        <input type="checkbox" checked={formOficial.alertas_manuales.includes(alerta)} onChange={() => toggleAlertaManual(alerta)} />
+                                                        {alerta}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button className="btn-outline" style={{ width: '100%', padding: '0.75rem', fontWeight: 'bold' }} onClick={handleSimularRiesgo}>
+                                        ⚡ Simular Motor de Riesgo Consolidado
+                                    </button>
+
+                                    {resultadoRiesgo && (
+                                        <div style={{ marginTop: '1.5rem', padding: '1rem', background: '#fff', border: '1px dashed #94a3b8', borderRadius: '8px' }}>
+                                            <h5 style={{ margin: '0 0 0.5rem 0', display: 'flex', justifyContent: 'space-between' }}>
+                                                <span>Reporte de Riesgo Consolidado</span>
+                                                <span style={{ padding: '0.3rem 0.6rem', borderRadius: '15px', background: resultadoRiesgo.nivel_riesgo_final === 'ALTO' ? '#fee2e2' : resultadoRiesgo.nivel_riesgo_final === 'MEDIO' ? '#fef3c7' : '#dcfce7', color: resultadoRiesgo.nivel_riesgo_final === 'ALTO' ? '#dc2626' : resultadoRiesgo.nivel_riesgo_final === 'MEDIO' ? '#d97706' : '#16a34a', fontSize: '0.8rem' }}>
+                                                    RIESGO {resultadoRiesgo.nivel_riesgo_final}
+                                                </span>
+                                            </h5>
+                                            <ul style={{ fontSize: '0.85rem', color: '#475569', paddingLeft: '1.2rem', marginBottom: '1rem' }}>
+                                                {resultadoRiesgo.desglose.map((item, idx) => (
+                                                    <li key={idx} style={{ marginBottom: '0.5rem' }}>
+                                                        <b>[+] {item.categoria}</b>: {item.detalle} 
+                                                        <span style={{ float: 'right', fontWeight: 'bold' }}>+{item.puntos} pts</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                            <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '0.5rem', textAlign: 'right', fontWeight: 'bold' }}>
+                                                PUNTAJE FINAL: {resultadoRiesgo.puntaje_total}/100
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Bloque de Firma y Aprobación */}

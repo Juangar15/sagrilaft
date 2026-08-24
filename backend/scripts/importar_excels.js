@@ -26,6 +26,9 @@ async function importarJurisdicciones() {
             };
         }).filter(r => r.departamento && r.municipio); // Filtrar filas vacías
 
+        // Primero borramos la tabla jurisdicciones para evitar duplicados
+        await supabase.from('sagrilaft_jurisdicciones').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
         // Subir en lotes para evitar límites de API
         const batchSize = 100;
         for (let i = 0; i < inserts.length; i += batchSize) {
@@ -43,7 +46,7 @@ async function importarJurisdicciones() {
 async function importarMatriz() {
     console.log("\nImportando Matriz de Riesgos...");
     try {
-        const filePath = path.join(require('os').homedir(), 'Desktop', 'Matriz SAGRILAFT - SELECTA COMPANIA DE CEREALES SAS 2025.xlsx');
+        const filePath = path.join(require('os').homedir(), 'Desktop', 'Matriz SAGRILAFT - SELECTA COMPAÑIA DE CEREALES SAS 2025.xlsx');
         const workbook = xlsx.readFile(filePath);
         const sheetName = workbook.SheetNames.find(n => n.includes('SAGRILAFT')) || workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
@@ -66,24 +69,43 @@ async function importarMatriz() {
         const headers = data[headerIndex];
         let inserts = [];
 
-        for (let i = headerIndex + 1; i < data.length; i++) {
+        for (let i = headerIndex + 2; i < data.length; i++) { // saltamos la fila secundaria de encabezados
             const row = data[i];
-            if (!row || !row[headers.indexOf('CODIGO RIESGO')]) continue; // Saltar vacías
+            if (!row || !row[1]) continue; // Saltar si no hay CODIGO RIESGO en índice 1
+
+            const safe = (idx) => row[idx] ? row[idx].toString().trim() : '';
+            const safeNum = (idx) => parseFloat(row[idx]) || 0;
+
+            // Determinar Tratamiento (Índices 9 y 10 basados en la estructura del Excel)
+            let tratamiento = '';
+            if (safe(9).toUpperCase() === 'X') tratamiento = 'EVITAR';
+            else if (safe(10).toUpperCase() === 'X') tratamiento = 'MITIGAR';
 
             inserts.push({
-                codigo_riesgo: row[headers.indexOf('CODIGO RIESGO')] || '',
-                evento_riesgo: row[headers.indexOf('EVENTO DE RIESGO')] || '',
-                fuente_riesgo: row[headers.indexOf('FUENTE DE RIESGO')] || '',
-                causas: row[headers.indexOf('CAUSAS DEL RIESGO INHERENTE')] || '',
-                senales_alerta: row[headers.indexOf('SEÑALES DE ALERTA')] || '',
-                riesgo_asociado: row[headers.indexOf('RIESGO ASOCIADO')] || '',
-                escala_frecuencia: parseFloat(row[headers.indexOf('ESCALA DE FRECUENCIA (Calificación) ')]) || 0,
-                escala_impacto: parseFloat(row[headers.indexOf('ESCALA DE IMPACTO')]) || 0,
-                riesgo_inherente: parseFloat(row[headers.indexOf('RIESGO INHERENTE')]) || 0,
-                tratamiento: row[headers.indexOf('TRATAMIENTO DEL RIESGO')] || row[headers.indexOf('MITIGAR')] || '',
-                tipo_control: row[headers.indexOf('TIPO DE CONTROL')] || ''
+                codigo_riesgo: safe(0),
+                evento_riesgo: safe(1),
+                fuente_riesgo: safe(2),
+                causas: safe(3),
+                senales_alerta: safe(4),
+                riesgo_asociado: safe(5),
+                escala_frecuencia: safeNum(6),
+                escala_impacto: safeNum(7),
+                riesgo_inherente: safeNum(8),
+                tratamiento: tratamiento,
+                descripcion_controles: safe(15),
+                tipo_control: safe(16),
+                clase_control: safe(17),
+                frecuencia_control: safe(18),
+                area_responsable: safe(19),
+                escala_frecuencia_residual: safeNum(20),
+                escala_impacto_residual: safeNum(21),
+                riesgo_residual: safeNum(22),
+                monitoreo: safe(23)
             });
         }
+
+        // Primero borramos la tabla matriz para volverla a subir limpia
+        await supabase.from('sagrilaft_matriz').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
         const { error } = await supabase.from('sagrilaft_matriz').insert(inserts);
         if (error) throw error;
