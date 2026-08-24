@@ -758,7 +758,7 @@ app.post('/api/v1/otp/send', async (req, res) => {
             html: `
                 <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 500px;">
                     <h2 style="color: #0f172a;">Verificación de Identidad</h2>
-                    <p>Usted ha solicitado la firma electrónica de su vinculación a ${nombreEmpresaFull}</p>
+                    <p>Usted ha solicitado la firma electrónica de su formato de vinculación a ${nombreEmpresaFull}</p>
                     <p>Su código de seguridad (OTP) es:</p>
                     <h1 style="background: #f1f5f9; padding: 15px; text-align: center; letter-spacing: 5px; color: #3b82f6; border-radius: 5px;">${code}</h1>
                     <p style="font-size: 0.85rem; color: #64748b;">Este código expirará en 15 minutos. Si no solicitó este código, ignore este mensaje.</p>
