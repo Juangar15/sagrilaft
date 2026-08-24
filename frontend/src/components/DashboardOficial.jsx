@@ -1022,8 +1022,8 @@ export default function DashboardOficial() {
                                                             {Object.entries(solicitudSeleccionada.datos_formulario.monitor_fuentes.fuentes_detalladas).map(([fuente, valor], idx) => (
                                                                 <div key={idx} style={{ fontSize: '0.8rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.2rem' }}>
                                                                     <span style={{ color: 'var(--text-muted)' }}>{fuente}: </span>
-                                                                    <strong style={{ color: valor === 'Error' || valor === 'Página no disponible' ? 'var(--danger)' : valor === true ? 'var(--danger)' : 'var(--text-main)' }}>
-                                                                        {valor === true ? '🚨 HALLAZGO / SÍ' : valor === false ? 'No / Limpio' : valor}
+                                                                    <strong style={{ color: valor === 'Error' || valor === 'Página no disponible' ? 'var(--danger)' : valor === true ? 'var(--danger)' : !valor && valor !== false ? 'var(--text-muted)' : 'var(--text-main)' }}>
+                                                                        {valor === true ? '🚨 HALLAZGO / SÍ' : valor === false ? 'No / Limpio' : (valor === '' || valor === null ? 'N/A (No aplica)' : valor)}
                                                                     </strong>
                                                                 </div>
                                                             ))}
