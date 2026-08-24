@@ -955,38 +955,40 @@ export default function DashboardOficial() {
                                                 {cargandoTusDatos === solicitudSeleccionada.id ? 'Consultando (aprox 1 min)...' : '🚀 Ejecutar Consulta (TusDatos)'}
                                             </button>
                                         </div>
-                                    ) : solicitudSeleccionada.estado_actual === 'FUENTES_INCOMPLETAS' ? (
-                                        <div style={{ textAlign: 'center', padding: '2rem', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid var(--danger)', borderRadius: 'var(--radius-sm)' }}>
-                                            <h4 style={{ color: 'var(--danger)', marginBottom: '0.5rem' }}>⚠️ Consulta Incompleta</h4>
-                                            <p style={{ color: 'var(--text-main)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                                                TusDatos reportó que algunas fuentes externas estaban caídas al momento de la consulta:
-                                            </p>
-                                            <div style={{ textAlign: 'left', marginBottom: '1.5rem', maxHeight: '150px', overflowY: 'auto', background: '#fff', padding: '1rem', border: '1px solid var(--border)', borderRadius: '4px', fontSize: '0.85rem' }}>
-                                                <ul style={{ margin: 0, paddingLeft: '1.2rem', color: 'var(--text-muted)' }}>
-                                                    {(() => {
-                                                        const detalladas = solicitudSeleccionada.datos_formulario?.monitor_fuentes?.fuentes_detalladas;
-                                                        if (!detalladas) return <li>Fuentes caídas no detalladas en el reporte.</li>;
-                                                        const caidas = Object.entries(detalladas)
-                                                            .filter(([k, v]) => v === 'Error' || v === 'Página no disponible' || v === 'Inactivo')
-                                                            .map(([k, v]) => k);
-                                                        
-                                                        if (caidas.length === 0) return <li>No se detectaron fuentes caídas específicas.</li>;
-                                                        return caidas.map((fuente, idx) => (
-                                                            <li key={idx} style={{ paddingBottom: '0.3rem' }}>{fuente}</li>
-                                                        ));
-                                                    })()}
-                                                </ul>
-                                            </div>
-                                            <button 
-                                                className="btn-outline" 
-                                                onClick={(e) => handleRetryTusDatos(e, solicitudSeleccionada)}
-                                                disabled={cargandoTusDatos === solicitudSeleccionada.id}
-                                                style={{ padding: '0.75rem 2rem', fontSize: '1rem', opacity: cargandoTusDatos === solicitudSeleccionada.id ? 0.7 : 1, borderColor: 'var(--danger)', color: 'var(--danger)' }}
-                                            >
-                                                {cargandoTusDatos === solicitudSeleccionada.id ? 'Recargando fuentes caídas...' : '♻️ Recargar Fuentes Caídas (Gratis)'}
-                                            </button>
-                                        </div>
                                     ) : (
+                                        <>
+                                        {solicitudSeleccionada.estado_actual === 'FUENTES_INCOMPLETAS' && (
+                                            <div style={{ textAlign: 'center', padding: '2rem', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid var(--danger)', borderRadius: 'var(--radius-sm)', marginBottom: '1.5rem' }}>
+                                                <h4 style={{ color: 'var(--danger)', marginBottom: '0.5rem' }}>⚠️ Consulta Incompleta</h4>
+                                                <p style={{ color: 'var(--text-main)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                                                    TusDatos reportó que algunas fuentes externas estaban caídas al momento de la consulta:
+                                                </p>
+                                                <div style={{ textAlign: 'left', marginBottom: '1.5rem', maxHeight: '150px', overflowY: 'auto', background: '#fff', padding: '1rem', border: '1px solid var(--border)', borderRadius: '4px', fontSize: '0.85rem' }}>
+                                                    <ul style={{ margin: 0, paddingLeft: '1.2rem', color: 'var(--text-muted)' }}>
+                                                        {(() => {
+                                                            const detalladas = solicitudSeleccionada.datos_formulario?.monitor_fuentes?.fuentes_detalladas;
+                                                            if (!detalladas) return <li>Fuentes caídas no detalladas en el reporte.</li>;
+                                                            const caidas = Object.entries(detalladas)
+                                                                .filter(([k, v]) => v === 'Error' || v === 'Página no disponible' || v === 'Inactivo')
+                                                                .map(([k, v]) => k);
+                                                            
+                                                            if (caidas.length === 0) return <li>No se detectaron fuentes caídas específicas.</li>;
+                                                            return caidas.map((fuente, idx) => (
+                                                                <li key={idx} style={{ paddingBottom: '0.3rem' }}>{fuente}</li>
+                                                            ));
+                                                        })()}
+                                                    </ul>
+                                                </div>
+                                                <button 
+                                                    className="btn-outline" 
+                                                    onClick={(e) => handleRetryTusDatos(e, solicitudSeleccionada)}
+                                                    disabled={cargandoTusDatos === solicitudSeleccionada.id}
+                                                    style={{ padding: '0.75rem 2rem', fontSize: '1rem', opacity: cargandoTusDatos === solicitudSeleccionada.id ? 0.7 : 1, borderColor: 'var(--danger)', color: 'var(--danger)' }}
+                                                >
+                                                    {cargandoTusDatos === solicitudSeleccionada.id ? 'Recargando fuentes caídas...' : '♻️ Recargar Fuentes Caídas (Gratis)'}
+                                                </button>
+                                            </div>
+                                        )}
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '0.9rem' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem', borderBottom: '1px dashed var(--border)' }}>
                                                 <span>Estado General TusDatos:</span>
@@ -1030,6 +1032,7 @@ export default function DashboardOficial() {
                                                 </div>
                                             )}
                                         </div>
+                                        </>
                                     )}
 
                                     {solicitudSeleccionada.monitor_fuentes && solicitudSeleccionada.monitor_fuentes.fuentes_detalladas && (
