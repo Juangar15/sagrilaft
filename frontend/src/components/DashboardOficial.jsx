@@ -963,9 +963,18 @@ export default function DashboardOficial() {
                                             </p>
                                             <div style={{ textAlign: 'left', marginBottom: '1.5rem', maxHeight: '150px', overflowY: 'auto', background: '#fff', padding: '1rem', border: '1px solid var(--border)', borderRadius: '4px', fontSize: '0.85rem' }}>
                                                 <ul style={{ margin: 0, paddingLeft: '1.2rem', color: 'var(--text-muted)' }}>
-                                                    {solicitudSeleccionada.datos_formulario?.monitor_fuentes?.fuentes_caidas?.map((fuente, idx) => (
-                                                        <li key={idx} style={{ paddingBottom: '0.3rem' }}>{fuente}</li>
-                                                    )) || <li>Fuentes caídas no detalladas en el reporte.</li>}
+                                                    {(() => {
+                                                        const detalladas = solicitudSeleccionada.datos_formulario?.monitor_fuentes?.fuentes_detalladas;
+                                                        if (!detalladas) return <li>Fuentes caídas no detalladas en el reporte.</li>;
+                                                        const caidas = Object.entries(detalladas)
+                                                            .filter(([k, v]) => v === 'Error' || v === 'Página no disponible' || v === 'Inactivo')
+                                                            .map(([k, v]) => k);
+                                                        
+                                                        if (caidas.length === 0) return <li>No se detectaron fuentes caídas específicas.</li>;
+                                                        return caidas.map((fuente, idx) => (
+                                                            <li key={idx} style={{ paddingBottom: '0.3rem' }}>{fuente}</li>
+                                                        ));
+                                                    })()}
                                                 </ul>
                                             </div>
                                             <button 

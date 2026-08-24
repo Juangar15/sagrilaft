@@ -59,8 +59,13 @@ export const sagrilaftService = {
         return response.data;
     },
 
-    ejecutarTusDatos: async (solicitudId) => {
-        const response = await api.post(`/solicitudes/${solicitudId}/tusdatos`);
+    ejecutarTusDatos: async (id) => {
+        const response = await api.post(`/solicitudes/${id}/tusdatos`);
+        return response.data;
+    },
+
+    retryTusDatos: async (id) => {
+        const response = await api.post(`/solicitudes/${id}/tusdatos/retry`);
         return response.data;
     },
 
