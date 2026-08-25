@@ -1366,17 +1366,18 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                         const needsCorrection = camposACorregir[doc.id] || camposACorregir[`archivo_${doc.id}`] || camposACorregir[baseId] || camposACorregir[`archivo_${baseId}`];
                                         const disabledUpload = esCorreccion && !needsCorrection;
                                         const isIdentificacion = doc.id.includes('identificacion') || doc.id.includes('cedula_rep_legal');
+                                        const isLoaded = formData.archivos_cargados[doc.id] || (doc.id.includes('_frontal') && formData.archivos_cargados[baseId]);
 
                                         return (
                                             <div key={doc.id} style={{ 
-                                                border: `2px dashed ${formData.archivos_cargados[doc.id] ? 'var(--success)' : (isExpired ? 'var(--danger)' : 'var(--border)')}`, 
+                                                border: `2px dashed ${isLoaded ? 'var(--success)' : (isExpired ? 'var(--danger)' : 'var(--border)')}`, 
                                                 borderRadius: 'var(--radius-md)', padding: '1.5rem', textAlign: 'center',
-                                                background: formData.archivos_cargados[doc.id] ? 'var(--success-bg)' : 'var(--surface)', transition: '0.3s',
+                                                background: isLoaded ? 'var(--success-bg)' : 'var(--surface)', transition: '0.3s',
                                                 display: 'flex', flexDirection: 'column', gap: '1rem', justifyContent: 'center',
                                                 ...(disabledUpload ? {opacity: 0.7} : {}),
                                                 ...(needsCorrection ? {border: '2px solid #ef4444', background: '#fef2f2'} : {})
                                             }}>
-                                                {formData.archivos_cargados[doc.id] ? (
+                                                {isLoaded ? (
                                                     <>
                                                         <CheckCircle size={32} color="var(--success-text)" style={{ margin: '0 auto' }}/>
                                                         <div style={{color:'var(--success-text)', fontWeight:600}}>{doc.label} Cargado</div>
@@ -1384,7 +1385,10 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                                         {!disabledUpload && (
                                                             <button className="btn-outline" style={{ marginTop: '0.5rem', padding: '0.3rem 0.5rem', fontSize: '0.8rem' }} onClick={() => {
                                                                 const n = {...archivosFisicos}; delete n[doc.id]; setArchivosFisicos(n);
-                                                                const m = {...formData.archivos_cargados}; delete m[doc.id]; setFormData({...formData, archivos_cargados: m});
+                                                                const m = {...formData.archivos_cargados}; 
+                                                                delete m[doc.id]; 
+                                                                if (doc.id.includes('_frontal')) delete m[baseId];
+                                                                setFormData({...formData, archivos_cargados: m});
                                                             }}>Eliminar</button>
                                                         )}
                                                     </>
@@ -1429,7 +1433,10 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                             reqs = ['rut', 'cc_comercio', 'cedula_rep_legal_frontal', 'balance_empresa', 'composicion_accionaria'];
                                         }
                                         
-                                        const faltantes = reqs.filter(r => !formData.archivos_cargados[r]);
+                                        const faltantes = reqs.filter(r => {
+                                            const baseId = r.replace('_frontal', '');
+                                            return !formData.archivos_cargados[r] && !formData.archivos_cargados[baseId];
+                                        });
                                         if (faltantes.length > 0) return showToast("Faltan documentos obligatorios por cargar.");
                                         setPaso(10);
                                     }}>Continuar a Firma <ArrowRight size={18}/></button>
