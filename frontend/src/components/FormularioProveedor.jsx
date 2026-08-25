@@ -1362,7 +1362,8 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                             setFormData({...formData, archivos_cargados: {...formData.archivos_cargados, [doc.id]: true}});
                                         };
 
-                                        const disabledUpload = esCorreccion && !camposACorregir[doc.id];
+                                        const needsCorrection = camposACorregir[doc.id] || camposACorregir[`archivo_${doc.id}`];
+                                        const disabledUpload = esCorreccion && !needsCorrection;
                                         const isIdentificacion = doc.id.includes('identificacion') || doc.id.includes('cedula_rep_legal');
 
                                         return (
@@ -1372,7 +1373,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                                 background: formData.archivos_cargados[doc.id] ? 'var(--success-bg)' : 'var(--surface)', transition: '0.3s',
                                                 display: 'flex', flexDirection: 'column', gap: '1rem', justifyContent: 'center',
                                                 ...(disabledUpload ? {opacity: 0.7} : {}),
-                                                ...(camposACorregir[doc.id] ? {border: '2px solid #ef4444', background: '#fef2f2'} : {})
+                                                ...(needsCorrection ? {border: '2px solid #ef4444', background: '#fef2f2'} : {})
                                             }}>
                                                 {formData.archivos_cargados[doc.id] ? (
                                                     <>
