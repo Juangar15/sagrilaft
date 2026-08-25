@@ -970,6 +970,8 @@ export default function DashboardOficial() {
                                     </div>
                                 )}
 
+                                {solicitudSeleccionada.estado_actual !== 'DEVUELTO_CORRECCION' && (
+                                <>
                                 <div style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: 'var(--radius-md)', marginBottom: '2rem', border: '1px solid var(--border)' }}>
                                     <h4 style={{ margin: '0 0 1rem 0', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                         <Globe size={18} /> Monitor de Fuentes (TusDatos)
@@ -1087,8 +1089,6 @@ export default function DashboardOficial() {
                                     )}
                                 </div>
 
-                                {solicitudSeleccionada.estado_actual !== 'DEVUELTO_CORRECCION' && (
-                                <>
                                 <h4 style={{ marginBottom: '1rem', color: 'var(--text-main)' }}>Sección 2: Lista de Verificación Manual</h4>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '2rem' }}>
                                     
