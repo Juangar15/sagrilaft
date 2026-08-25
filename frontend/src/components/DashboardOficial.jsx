@@ -850,6 +850,25 @@ export default function DashboardOficial() {
                             {/* Body Modal */}
                             <div style={{ padding: '2rem' }}>
                                 
+                                {solicitudSeleccionada.estado_actual === 'DEVUELTO_CORRECCION' && (
+                                    <div style={{ background: '#fffbeb', border: '1px solid #f59e0b', padding: '1.5rem', borderRadius: '8px', marginBottom: '2rem' }}>
+                                        <h4 style={{ color: '#d97706', margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <Clock size={20} /> Solicitud Devuelta al Usuario (Ping-Pong)
+                                        </h4>
+                                        <p style={{ color: '#92400e', fontSize: '0.9rem', marginBottom: '1rem' }}>Esta solicitud se encuentra temporalmente bloqueada a la espera de que el usuario envíe las correcciones.</p>
+                                        {solicitudSeleccionada.campos_a_corregir && (
+                                            <div style={{ background: '#fef3c7', padding: '1rem', borderRadius: '4px', fontSize: '0.85rem', color: '#92400e' }}>
+                                                <strong style={{ display: 'block', marginBottom: '0.5rem' }}>El usuario debe corregir lo siguiente:</strong>
+                                                <ul style={{ margin: 0, paddingLeft: '1.5rem' }}>
+                                                    {Object.keys(solicitudSeleccionada.campos_a_corregir).map(campo => (
+                                                        <li key={campo}>{campo.replace('archivo_', 'Archivo: ').replace(/_/g, ' ').toUpperCase()}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
                                 {/* Mostrar datos reales si existen */}
                                 {solicitudSeleccionada.datos_formulario && (
                                     <div style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: 'var(--radius-md)', marginBottom: '2rem', border: '1px solid var(--border)' }}>
@@ -1068,6 +1087,8 @@ export default function DashboardOficial() {
                                     )}
                                 </div>
 
+                                {solicitudSeleccionada.estado_actual !== 'DEVUELTO_CORRECCION' && (
+                                <>
                                 <h4 style={{ marginBottom: '1rem', color: 'var(--text-main)' }}>Sección 2: Lista de Verificación Manual</h4>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '2rem' }}>
                                     
@@ -1265,6 +1286,8 @@ export default function DashboardOficial() {
                                         </div>
                                     )}
                                 </div>
+                                </>
+                                )}
 
                             </div>
                         </motion.div>
