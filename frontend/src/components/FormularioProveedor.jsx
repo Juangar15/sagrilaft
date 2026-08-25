@@ -1362,7 +1362,8 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                             setFormData({...formData, archivos_cargados: {...formData.archivos_cargados, [doc.id]: true}});
                                         };
 
-                                        const needsCorrection = camposACorregir[doc.id] || camposACorregir[`archivo_${doc.id}`];
+                                        const baseId = doc.id.replace('_frontal', '').replace('_reversa', '');
+                                        const needsCorrection = camposACorregir[doc.id] || camposACorregir[`archivo_${doc.id}`] || camposACorregir[baseId] || camposACorregir[`archivo_${baseId}`];
                                         const disabledUpload = esCorreccion && !needsCorrection;
                                         const isIdentificacion = doc.id.includes('identificacion') || doc.id.includes('cedula_rep_legal');
 
