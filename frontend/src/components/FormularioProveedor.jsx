@@ -1303,17 +1303,20 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
 
                                 <div className="form-grid form-grid-2" style={{ marginBottom: "1.5rem" }}>
                                     {(isInternalRole ? [
-                                        { id: 'identificacion', label: 'Cédula de Ciudadanía' }
+                                        { id: 'identificacion_frontal', label: 'Cédula (Frente o PDF)' },
+                                        { id: 'identificacion_reversa', label: 'Cédula (Reverso - Si es foto)' }
                                     ] : formData.tipo_persona === 'natural' ? [
                                         { id: 'rut', label: 'RUT' },
-                                        { id: 'identificacion', label: 'Cédula de Ciudadanía' },
+                                        { id: 'identificacion_frontal', label: 'Cédula (Frente o PDF)' },
+                                        { id: 'identificacion_reversa', label: 'Cédula (Reverso - Si es foto)' },
                                         { id: 'certificacion_bancaria', label: 'Certificación Bancaria (Opcional)' },
                                         { id: 'certificado_naturales', label: 'Certificado Personas Naturales' },
                                         { id: 'formato_pep', label: 'Formato de PEPs' }
                                     ] : [
                                         { id: 'rut', label: 'RUT' },
                                         { id: 'cc_comercio', label: 'Cámara de Comercio', requiereFecha: true, maxDays: 30, errorMsg: 'vencido (>30 días)' },
-                                        { id: 'cedula_rep_legal', label: 'Cédula Representante Legal' },
+                                        { id: 'cedula_rep_legal_frontal', label: 'Cédula Rep. Legal (Frente o PDF)' },
+                                        { id: 'cedula_rep_legal_reversa', label: 'Cédula Rep. Legal (Reverso - Si es foto)' },
                                         { id: 'certificacion_bancaria', label: 'Certificado Bancario (Opcional)' },
                                         { id: 'balance_empresa', label: 'Balance de la Empresa', requiereFecha: true, tipoValidacion: 'corte_anterior', errorMsg: 'debe ser de Dic del año anterior' },
                                         { id: 'composicion_accionaria', label: 'Composición Accionaria', requiereFecha: true, maxDays: 90, errorMsg: 'vencida (>3 meses)' }
@@ -1341,7 +1344,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                             const file = e.target.files[0];
                                             if (!file) return;
 
-                                            const isIdentificacion = doc.id === 'identificacion' || doc.id === 'cedula_rep_legal';
+                                            const isIdentificacion = doc.id.includes('identificacion') || doc.id.includes('cedula_rep_legal');
                                             const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
                                             const isImage = file.type.startsWith('image/');
 
@@ -1360,7 +1363,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                         };
 
                                         const disabledUpload = esCorreccion && !camposACorregir[doc.id];
-                                        const isIdentificacion = doc.id === 'identificacion' || doc.id === 'cedula_rep_legal';
+                                        const isIdentificacion = doc.id.includes('identificacion') || doc.id.includes('cedula_rep_legal');
 
                                         return (
                                             <div key={doc.id} style={{ 
@@ -1417,11 +1420,11 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                         // Validación de que todos están cargados (menos el bancario)
                                         let reqs = [];
                                         if (isInternalRole) {
-                                            reqs = ['identificacion']; // Solo cédula obligatoria para empleados
+                                            reqs = ['identificacion_frontal']; // Frontal o PDF completo
                                         } else if (formData.tipo_persona === 'natural') {
-                                            reqs = ['rut', 'identificacion', 'certificado_naturales', 'formato_pep'];
+                                            reqs = ['rut', 'identificacion_frontal', 'certificado_naturales', 'formato_pep'];
                                         } else {
-                                            reqs = ['rut', 'cc_comercio', 'cedula_rep_legal', 'balance_empresa', 'composicion_accionaria'];
+                                            reqs = ['rut', 'cc_comercio', 'cedula_rep_legal_frontal', 'balance_empresa', 'composicion_accionaria'];
                                         }
                                         
                                         const faltantes = reqs.filter(r => !formData.archivos_cargados[r]);
