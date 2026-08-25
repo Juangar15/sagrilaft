@@ -610,6 +610,19 @@ export default function DashboardOficial() {
                     </div>
                 </div>
 
+                <div className="glass-panel" style={{ padding: '1rem', background: 'rgba(245, 158, 11, 0.05)', borderRadius: 'var(--radius-md)', border: '1px solid #f59e0b', minWidth: '280px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '2px solid #f59e0b' }}>
+                        <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Clock size={16} /> Devueltos (Ping-Pong)
+                        </h3>
+                        <span className="badge badge-neutral" style={{ background: '#f59e0b', color: 'white' }}>{filtrarPorEstado('DEVUELTO_CORRECCION').length}</span>
+                    </div>
+                    <div>
+                        {filtrarPorEstado('DEVUELTO_CORRECCION').map(sol => <TarjetaRadicado key={sol.id} sol={sol} badgeClase="badge-warning" />)}
+                        {filtrarPorEstado('DEVUELTO_CORRECCION').length === 0 && <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', padding: '1rem 0' }}>Nadie pendiente.</p>}
+                    </div>
+                </div>
+
                 <div className="glass-panel" style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.05)', borderRadius: 'var(--radius-md)', border: '1px solid var(--danger)', minWidth: '280px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '2px solid var(--danger)' }}>
                         <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
