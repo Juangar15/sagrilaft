@@ -733,6 +733,103 @@ app.post('/api/v1/solicitudes/:id/tusdatos/retry', async (req, res) => {
         console.error("Error en Retry TusDatos:", error);
         return res.status(500).json({ error: "Fallo al recargar TusDatos", detalle: error.message });
     }
+});// POST /api/v1/solicitudes/:id/tusdatos/sync - Sync with Portal
+app.post('/api/v1/solicitudes/:id/tusdatos/sync', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const { data: solicitud, error: errSol } = await supabase.from('solicitudes_sagrilaft').select('*').eq('id', id).single();
+        if (errSol || !solicitud) return res.status(404).json({ error: "Solicitud no encontrada" });
+
+        const reporteId = solicitud.datos_formulario?.reporte_id_tusdatos || solicitud.datos_formulario?.jobid_tusdatos;
+        if (!reporteId) return res.status(400).json({ error: "No hay un identificador de reporte previo para sincronizar." });
+
+        const isTestEnv = process.env.TUSDATOS_TEST_ENV !== 'false';
+        const baseUrl = isTestEnv ? 'http://docs.tusdatos.co/api' : 'https://dash-board.tusdatos.co/api';
+        const user = isTestEnv ? 'pruebas' : process.env.TUSDATOS_USERNAME;
+        const pass = isTestEnv ? 'password' : process.env.TUSDATOS_PASSWORD;
+
+        if (!user || !pass) return res.status(500).json({ error: "Credenciales no configuradas." });
+
+        console.log(`📡 Sincronizando instantáneamente con portal TusDatos para solicitud ${id}, reporte: ${reporteId}`);
+
+        const authHeader = pass.startsWith('api_td_') 
+            ? `Bearer ${pass}` 
+            : `Basic ${Buffer.from(`${user}:${pass}`).toString('base64')}`;
+            
+        const headers = { 'Authorization': authHeader, 'Content-Type': 'application/json' };
+
+        // Obtener el JSON completo del reporte actualizado directamente del portal
+        const syncRes = await axios.get(`${baseUrl}/report_json/${reporteId}`, { headers });
+        const finalData = syncRes.data;
+        const errores_retry = finalData.errores || [];
+
+        const fuentes_viejas = solicitud.datos_formulario?.monitor_fuentes?.fuentes_detalladas || {};
+        const fuentes_mergeadas = { ...fuentes_viejas };
+        
+        Object.keys(fuentes_mergeadas).forEach(fuente => {
+            if (fuentes_mergeadas[fuente] === 'Error' || fuentes_mergeadas[fuente] === 'Página no disponible') {
+                const normFuente = fuente.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+                let sigueCaida = false;
+                
+                for (let errSlug of errores_retry) {
+                    const normSlug = errSlug.toLowerCase().replace(/[^a-z0-9]/g, "");
+                    if (
+                        (normSlug === 'rut' && normFuente.includes('rut')) ||
+                        (normSlug === 'rucom' && normFuente.includes('rucom')) ||
+                        (normSlug === 'europol' && normFuente.includes('europol')) ||
+                        (normSlug === 'colpsic' && normFuente.includes('psicologos')) ||
+                        (normSlug === 'cpqcol' && normFuente.includes('quimica')) ||
+                        (normSlug === 'cpbiol' && normFuente.includes('biologia')) ||
+                        (normSlug === 'anec' && normFuente.includes('enfermeras')) ||
+                        (normSlug === 'registraduria' && normFuente.includes('registraduria') && !normFuente.includes('defunciones')) ||
+                        (normSlug === 'defuncionesregistraduria' && normFuente.includes('defunciones')) ||
+                        (normFuente.includes(normSlug)) || 
+                        (normSlug.includes(normFuente))
+                    ) {
+                        sigueCaida = true;
+                        break;
+                    }
+                }
+                
+                if (!sigueCaida) {
+                    fuentes_mergeadas[fuente] = false; // Se arregló
+                }
+            }
+        });
+
+        let newFormulario = { ...solicitud.datos_formulario };
+        
+        const remainingErrors = Object.values(fuentes_mergeadas).filter(v => v === 'Error' || v === 'Página no disponible').length;
+        const fuentes_caidas = remainingErrors > 0;
+        
+        // Mantener la lógica de estado general y score del original
+        const coincidencia_api = finalData.hallazgo; 
+        const scoreFinal = coincidencia_api ? 95 : 5;
+        let estadoGeneral = coincidencia_api ? "ALERTA_CRITICA" : "APROBADO_LIMPIO";
+        if (fuentes_caidas) estadoGeneral = "FUENTES_INCOMPLETAS";
+
+        newFormulario.monitor_fuentes = {
+            ...newFormulario.monitor_fuentes,
+            estado_fuentes: fuentes_caidas ? 'FUENTES_CAIDAS' : 'OK',
+            fuentes_detalladas: fuentes_mergeadas,
+            raw_tusdatos: 'Resultados sincronizados instantáneamente con el portal TusDatos'
+        };
+
+        await supabase.from('solicitudes_sagrilaft').update({
+            estado_actual: estadoGeneral,
+            score_riesgo: scoreFinal,
+            datos_formulario: newFormulario
+        }).eq('id', id);
+
+        return res.status(200).json({ 
+            mensaje: "Sincronización completada.", 
+            resultado: { estado: estadoGeneral, monitor: newFormulario.monitor_fuentes } 
+        });
+
+    } catch (error) {
+        console.error("Error en Sync TusDatos:", error);
+        return res.status(500).json({ error: "Fallo al sincronizar TusDatos", detalle: error.message });
+    }
 });
 
 const otpCache = new Map();
