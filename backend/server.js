@@ -8,6 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { generarEvidenciaPDF } = require('./utils/pdfGenerator');
 const multer = require('multer');
 const axios = require('axios');
 
@@ -543,14 +544,15 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
         newFormulario.reporte_id_tusdatos = finalData.id;
         
         try {
-            console.log("Descargando PDF de TusDatos...");
-            const pdfRes = await axios.get(`${baseUrl}/report_pdf/${finalData.id}`, { headers, responseType: 'arraybuffer' });
-            const pdfUrl = await uploadFileToR2(Buffer.from(pdfRes.data), `TusDatos_${nit}.pdf`, `recepcion/${nit}`);
+            console.log("Generando PDF Nativo de Evidencias (Debida Diligencia)...");
+            // Para la solicitud nueva, pasamos finalData original ya que contiene todo
+            const pdfBuffer = await generarEvidenciaPDF(solicitud.datos_formulario, finalData, solicitud.datos_formulario.empresa_destino);
+            const pdfUrl = await uploadFileToR2(pdfBuffer, `TusDatos_${nit}.pdf`, `recepcion/${nit}`);
             if (!newFormulario.archivos_cargados) newFormulario.archivos_cargados = {};
             newFormulario.archivos_cargados.reporte_tusdatos = pdfUrl;
-            console.log("PDF de TusDatos guardado en:", pdfUrl);
+            console.log("PDF de Evidencias Nativo guardado en:", pdfUrl);
         } catch (pdfErr) {
-            console.error("No se pudo descargar el PDF de TusDatos:", pdfErr.message);
+            console.error("No se pudo generar el PDF de Evidencias:", pdfErr.message);
         }
 
         coincidencia_api = finalData.hallazgo; // boolean que indica si encontró reportes negativos
@@ -711,18 +713,6 @@ app.post('/api/v1/solicitudes/:id/tusdatos/retry', async (req, res) => {
         
         newFormulario.reporte_id_tusdatos = finalData.id;
 
-        try {
-            console.log("Actualizando PDF de TusDatos post-retry...");
-            const pdfRes = await axios.get(`${baseUrl}/report_pdf/${finalData.id}`, { headers, responseType: 'arraybuffer' });
-            const nit = solicitud.nit_cedula;
-            const pdfUrl = await uploadFileToR2(Buffer.from(pdfRes.data), `TusDatos_${nit}_Retry.pdf`, `recepcion/${nit}`);
-            if (!newFormulario.archivos_cargados) newFormulario.archivos_cargados = {};
-            newFormulario.archivos_cargados.reporte_tusdatos = pdfUrl;
-            console.log("PDF de TusDatos (Retry) guardado en:", pdfUrl);
-        } catch (pdfErr) {
-            console.error("No se pudo actualizar el PDF de TusDatos:", pdfErr.message);
-        }
-
         // 3. Sincronizar con el estado real del reporte para evitar falsos positivos
         const syncRes = await axios.get(`${baseUrl}/report_json/${finalData.id}`, { headers });
         const realData = syncRes.data;
@@ -773,6 +763,24 @@ app.post('/api/v1/solicitudes/:id/tusdatos/retry', async (req, res) => {
         };
         
         newFormulario.monitor_fuentes = monitorFuentesRetry;
+
+        try {
+            console.log("Generando PDF Nativo de Evidencias (Retry)...");
+            // Pasamos un objeto 'finalData' adaptado con los resultados mergeados para el PDF
+            const adaptedData = {
+                id: finalData.id,
+                hallazgo: finalData.hallazgo,
+                results: fuentes_mergeadas
+            };
+            const nit = solicitud.nit_cedula || solicitud.datos_formulario?.nit_cedula;
+            const pdfBuffer = await generarEvidenciaPDF(solicitud.datos_formulario, adaptedData, solicitud.datos_formulario.empresa_destino);
+            const pdfUrl = await uploadFileToR2(pdfBuffer, `TusDatos_${nit}_Retry.pdf`, `recepcion/${nit}`);
+            if (!newFormulario.archivos_cargados) newFormulario.archivos_cargados = {};
+            newFormulario.archivos_cargados.reporte_tusdatos = pdfUrl;
+            console.log("PDF de Evidencias Nativo (Retry) guardado en:", pdfUrl);
+        } catch (pdfErr) {
+            console.error("No se pudo generar el PDF Nativo de Evidencias en Retry:", pdfErr.message);
+        }
 
         await supabase.from('solicitudes_sagrilaft').update({
             estado_actual: estadoGeneral,
