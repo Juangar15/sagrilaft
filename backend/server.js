@@ -544,8 +544,8 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
         
         try {
             console.log("Descargando PDF de TusDatos...");
-            const pdfRes = await axios.get(`${baseUrl}/download_pdf/${finalData.id}`, { headers, responseType: 'arraybuffer' });
-            const pdfUrl = await uploadFileToR2(Buffer.from(pdfRes.data), `TusDatos_${nit}.pdf`, `sagrilaft/tusdatos`);
+            const pdfRes = await axios.get(`${baseUrl}/report_pdf/${finalData.id}`, { headers, responseType: 'arraybuffer' });
+            const pdfUrl = await uploadFileToR2(Buffer.from(pdfRes.data), `TusDatos_${nit}.pdf`, `recepcion/${nit}`);
             if (!newFormulario.archivos_cargados) newFormulario.archivos_cargados = {};
             newFormulario.archivos_cargados.reporte_tusdatos = pdfUrl;
             console.log("PDF de TusDatos guardado en:", pdfUrl);
@@ -713,9 +713,9 @@ app.post('/api/v1/solicitudes/:id/tusdatos/retry', async (req, res) => {
 
         try {
             console.log("Actualizando PDF de TusDatos post-retry...");
-            const pdfRes = await axios.get(`${baseUrl}/download_pdf/${finalData.id}`, { headers, responseType: 'arraybuffer' });
+            const pdfRes = await axios.get(`${baseUrl}/report_pdf/${finalData.id}`, { headers, responseType: 'arraybuffer' });
             const nit = solicitud.nit_cedula;
-            const pdfUrl = await uploadFileToR2(Buffer.from(pdfRes.data), `TusDatos_${nit}_Retry.pdf`, `sagrilaft/tusdatos`);
+            const pdfUrl = await uploadFileToR2(Buffer.from(pdfRes.data), `TusDatos_${nit}_Retry.pdf`, `recepcion/${nit}`);
             if (!newFormulario.archivos_cargados) newFormulario.archivos_cargados = {};
             newFormulario.archivos_cargados.reporte_tusdatos = pdfUrl;
             console.log("PDF de TusDatos (Retry) guardado en:", pdfUrl);
