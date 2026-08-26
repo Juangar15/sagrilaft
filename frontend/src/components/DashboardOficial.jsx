@@ -961,6 +961,16 @@ export default function DashboardOficial() {
                                                     <h5 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-main)', borderBottom: '2px solid var(--border)', paddingBottom: '0.25rem' }}>Archivos Adjuntos (Cloudflare R2)</h5>
                                                     {Object.entries(solicitudSeleccionada.datos_formulario.archivos_cargados).map(([k, v]) => {
                                                         const urlLink = <a href={v} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 'bold' }}>Ver Documento 📄</a>;
+                                                        if (k === 'reporte_tusdatos') {
+                                                            return (
+                                                                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.4rem 0', borderBottom: '1px solid var(--border)', alignItems: 'center' }}>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                        <strong style={{ color: 'var(--text-main)' }}>Documento: REPORTE TUSDATOS (PDF Oficial)</strong>
+                                                                    </div>
+                                                                    <span>{urlLink}</span>
+                                                                </div>
+                                                            );
+                                                        }
                                                         return renderCampoRevisable(`Documento: ${k.replace(/_/g, ' ').toUpperCase()}`, urlLink, `archivo_${k}`);
                                                     })}
                                                 </div>

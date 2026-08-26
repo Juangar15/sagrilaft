@@ -541,8 +541,17 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
         }
 
         newFormulario.reporte_id_tusdatos = finalData.id;
-        // The update will happen later at line 555!
-        // But wait, line 555 updates 'datos_formulario'. Let's make sure it updates the DB.
+        
+        try {
+            console.log("Descargando PDF de TusDatos...");
+            const pdfRes = await axios.get(`${baseUrl}/download_pdf/${finalData.id}`, { headers, responseType: 'arraybuffer' });
+            const pdfUrl = await uploadFileToR2(Buffer.from(pdfRes.data), `TusDatos_${nit}.pdf`, `sagrilaft/tusdatos`);
+            if (!newFormulario.archivos_cargados) newFormulario.archivos_cargados = {};
+            newFormulario.archivos_cargados.reporte_tusdatos = pdfUrl;
+            console.log("PDF de TusDatos guardado en:", pdfUrl);
+        } catch (pdfErr) {
+            console.error("No se pudo descargar el PDF de TusDatos:", pdfErr.message);
+        }
 
         coincidencia_api = finalData.hallazgo; // boolean que indica si encontró reportes negativos
         monitorFuentes = {
@@ -702,18 +711,65 @@ app.post('/api/v1/solicitudes/:id/tusdatos/retry', async (req, res) => {
         
         newFormulario.reporte_id_tusdatos = finalData.id;
 
-        // Simplificado: actualizamos solo estado, requerirá lógica de matriz si quisiéramos actualizar scores, pero asumamos que el score cambia
-        const estadoGeneral = fuentes_caidas ? "FUENTES_INCOMPLETAS" : "APROBADO_LIMPIO"; // Simplificado para prueba
+        try {
+            console.log("Actualizando PDF de TusDatos post-retry...");
+            const pdfRes = await axios.get(`${baseUrl}/download_pdf/${finalData.id}`, { headers, responseType: 'arraybuffer' });
+            const nit = solicitud.nit_cedula;
+            const pdfUrl = await uploadFileToR2(Buffer.from(pdfRes.data), `TusDatos_${nit}_Retry.pdf`, `sagrilaft/tusdatos`);
+            if (!newFormulario.archivos_cargados) newFormulario.archivos_cargados = {};
+            newFormulario.archivos_cargados.reporte_tusdatos = pdfUrl;
+            console.log("PDF de TusDatos (Retry) guardado en:", pdfUrl);
+        } catch (pdfErr) {
+            console.error("No se pudo actualizar el PDF de TusDatos:", pdfErr.message);
+        }
 
-        // Mezclar las fuentes viejas con las nuevas que acaban de llegar del retry
+        // 3. Sincronizar con el estado real del reporte para evitar falsos positivos
+        const syncRes = await axios.get(`${baseUrl}/report_json/${finalData.id}`, { headers });
+        const realData = syncRes.data;
+        const errores_retry = realData.errores || [];
+
         const fuentes_viejas = solicitud.datos_formulario?.monitor_fuentes?.fuentes_detalladas || {};
-        const fuentes_nuevas = finalData.results || {};
-        const fuentes_mergeadas = { ...fuentes_viejas, ...fuentes_nuevas };
+        const fuentes_mergeadas = { ...fuentes_viejas };
+        
+        Object.keys(fuentes_mergeadas).forEach(fuente => {
+            if (fuentes_mergeadas[fuente] === 'Error' || fuentes_mergeadas[fuente] === 'Página no disponible') {
+                const normFuente = fuente.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+                let sigueCaida = false;
+                
+                for (let errSlug of errores_retry) {
+                    const normSlug = errSlug.toLowerCase().replace(/[^a-z0-9]/g, "");
+                    if (
+                        (normSlug === 'rut' && normFuente.includes('rut')) ||
+                        (normSlug === 'rucom' && normFuente.includes('rucom')) ||
+                        (normSlug === 'europol' && normFuente.includes('europol')) ||
+                        (normSlug === 'colpsic' && normFuente.includes('psicologos')) ||
+                        (normSlug === 'cpqcol' && normFuente.includes('quimica')) ||
+                        (normSlug === 'cpbiol' && normFuente.includes('biologia')) ||
+                        (normSlug === 'anec' && normFuente.includes('enfermeras')) ||
+                        (normSlug === 'registraduria' && normFuente.includes('registraduria') && !normFuente.includes('defunciones')) ||
+                        (normSlug === 'defuncionesregistraduria' && normFuente.includes('defunciones')) ||
+                        (normFuente.includes(normSlug)) || 
+                        (normSlug.includes(normFuente))
+                    ) {
+                        sigueCaida = true;
+                        break;
+                    }
+                }
+                
+                if (!sigueCaida) {
+                    fuentes_mergeadas[fuente] = false; // Se arregló
+                }
+            }
+        });
+
+        const remainingErrors = Object.values(fuentes_mergeadas).filter(v => v === 'Error' || v === 'Página no disponible').length;
+        fuentes_caidas = remainingErrors > 0;
+        const estadoGeneral = fuentes_caidas ? "FUENTES_INCOMPLETAS" : "APROBADO_LIMPIO"; // Simplificado para prueba
 
         const monitorFuentesRetry = {
             estado_fuentes: fuentes_caidas ? 'FUENTES_CAIDAS' : 'OK',
             fuentes_detalladas: fuentes_mergeadas,
-            raw_tusdatos: 'Resultados (Retry) procesados exitosamente vía Producción'
+            raw_tusdatos: 'Resultados (Retry) procesados y sincronizados con Portal'
         };
         
         newFormulario.monitor_fuentes = monitorFuentesRetry;
