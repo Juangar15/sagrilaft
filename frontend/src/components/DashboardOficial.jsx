@@ -1387,6 +1387,105 @@ export default function DashboardOficial() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* MODAL CHECKLIST APROBACIÓN FINAL */}
+            <AnimatePresence>
+                {showModalAprobacion && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+                        <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} style={{ maxWidth: '800px', width: '100%', maxHeight: '90vh', overflowY: 'auto', background: 'var(--surface, #fff)', borderRadius: 'var(--radius-lg, 8px)', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+                            <div style={{ background: 'var(--bg-color, #f8fafc)', padding: '1.5rem', borderBottom: '1px solid var(--border, #e2e8f0)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 10 }}>
+                                <h3 style={{ margin: 0, fontSize: '1.25rem' }}>Formulario de Verificación (Oficial de Cumplimiento)</h3>
+                                <button type="button" onClick={() => setShowModalAprobacion(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
+                            </div>
+                            
+                            <form onSubmit={submitAprobacionDefinitiva} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <p style={{ fontSize: '0.9rem', color: 'var(--text-light)', marginBottom: '1rem' }}>
+                                    Al otorgar este Visto Bueno, el sistema empaquetará los documentos aportados, el reporte de TusDatos y este formulario de verificación en una carpeta segura según el nivel de riesgo en Cloudflare.
+                                </p>
+
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                                    <thead>
+                                        <tr style={{ background: 'var(--primary)', color: 'white' }}>
+                                            <th style={{ padding: '0.75rem', border: '1px solid #ccc', textAlign: 'left' }}>Descripción</th>
+                                            <th style={{ padding: '0.75rem', border: '1px solid #ccc', width: '120px' }}>Respuesta</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {[
+                                            { key: 'doc_completa', text: '1. ¿Fue entregada la documentación completa por parte de la contraparte?' },
+                                            { key: 'verifico_listas', text: '2. ¿Se hizo verificación de las listas restrictivas?' },
+                                            { key: 'autenticidad', text: '3. ¿Se verificó autenticidad de documento?' },
+                                            { key: 'proc_rep', text: '4. ¿Se verificó en la procuraduría el representante legal, los socios?' },
+                                            { key: 'contra_rep', text: '5. ¿Se verificó en la contraloría el representante legal, los socios?' },
+                                            { key: 'poli_rep', text: '6. ¿Se verificó en la policía el representante legal, los socios?' },
+                                            { key: 'info_fin', text: '7. ¿Se hizo verificación de la información financiera?' },
+                                            { key: 'visita', text: '8. ¿Se debe realizar visita?' },
+                                            { key: 'minero', text: '9. ¿La empresa pertenece al sector minero energético?' }
+                                        ].map(item => (
+                                            <tr key={item.key}>
+                                                <td style={{ padding: '0.5rem', border: '1px solid #ccc' }}>{item.text}</td>
+                                                <td style={{ padding: '0.5rem', border: '1px solid #ccc' }}>
+                                                    <select required className="input-field" value={formAprobacion[item.key]} onChange={e => setFormAprobacion({...formAprobacion, [item.key]: e.target.value})}>
+                                                        <option value="">Seleccione...</option>
+                                                        <option value="SI">Sí</option>
+                                                        <option value="NO">No</option>
+                                                        <option value="NA">N/A</option>
+                                                    </select>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+
+                                {formAprobacion.minero === 'SI' && (
+                                    <div style={{ background: '#f8fafc', padding: '1rem', border: '1px solid #ccc', marginTop: '1rem' }}>
+                                        <h5 style={{ margin: '0 0 1rem 0' }}>Información adicional sector minero</h5>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                                            {[
+                                                { key: 'rucon', text: '¿Tiene RUCON?' },
+                                                { key: 'sarlaft', text: '¿Tiene SARLAFT?' },
+                                                { key: 'sagrilaft', text: '¿Tiene SAGRILAFT?' }
+                                            ].map(item => (
+                                                <div key={item.key}>
+                                                    <label style={{ fontSize: '0.85rem' }}>{item.text}</label>
+                                                    <select required className="input-field" value={formAprobacion[item.key]} onChange={e => setFormAprobacion({...formAprobacion, [item.key]: e.target.value})}>
+                                                        <option value="">Seleccione...</option>
+                                                        <option value="SI">Sí</option>
+                                                        <option value="NO">No</option>
+                                                        <option value="NA">N/A</option>
+                                                    </select>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    <div>
+                                        <label className="label">Dictamen Final del Oficial</label>
+                                        <select className="input-field" value={formAprobacion.decision_final} onChange={e => setFormAprobacion({...formAprobacion, decision_final: e.target.value})}>
+                                            <option value="ACEPTADO">Aceptado - Otorgar Visto Bueno</option>
+                                            <option value="RECHAZADO">Rechazado - Denegar Visto Bueno</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="label">Observaciones Adicionales</label>
+                                        <textarea className="input-field" rows="2" value={formAprobacion.observaciones} onChange={e => setFormAprobacion({...formAprobacion, observaciones: e.target.value})}></textarea>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', justifyContent: 'flex-end' }}>
+                                    <button type="button" className="btn-outline" onClick={() => setShowModalAprobacion(false)}>Cancelar</button>
+                                    <button type="submit" className={formAprobacion.decision_final === 'ACEPTADO' ? 'btn-success' : 'btn-danger'} disabled={cargando}>
+                                        {cargando ? 'Procesando y empaquetando...' : (formAprobacion.decision_final === 'ACEPTADO' ? 'Aprobar y Empaquetar Expediente' : 'Rechazar y Empaquetar Expediente')}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
         </div>
     );
 }
