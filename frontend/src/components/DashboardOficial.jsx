@@ -246,14 +246,6 @@ export default function DashboardOficial() {
         }
     };
 
-    const handleAprobarManualmente = async () => {
-        // Validación obligatoria
-        if (formOficial.autenticidad_doc === 'no') {
-            return showToast("Debe verificar la autenticidad de los documentos antes de aprobar.", "error");
-        }
-        await handleCambiarEstado('APROBADO_LIMPIO');
-    };
-
     const toggleAlertaManual = (alerta) => {
         setFormOficial(prev => {
             const existe = prev.alertas_manuales.includes(alerta);
