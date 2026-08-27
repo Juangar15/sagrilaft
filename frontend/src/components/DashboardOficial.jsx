@@ -1216,9 +1216,11 @@ export default function DashboardOficial() {
                                                             {cargandoTusDatos === solicitudSeleccionada.id ? 'Recargando...' : '♻️ Recargar API'}
                                                         </button>
                                                     )}
+                                                    {Object.values(camposPingPong).some(v => v) && (
                                                     <button className="btn-outline" style={{ padding: '0.75rem', fontSize: '0.85rem', color: '#f59e0b', borderColor: '#f59e0b' }} onClick={() => setMostrarPingPong(true)}>
                                                         ↩️ Devolver (Ping-Pong)
                                                     </button>
+                                                    )}
                                                     <button className="btn-outline" style={{ padding: '0.75rem', fontSize: '0.85rem', color: '#8b5cf6', borderColor: '#8b5cf6' }} onClick={() => handleCambiarEstado('ESPERA_EXTENDIDO')}>
                                                         🌍 Análisis Extendido
                                                     </button>
@@ -1476,7 +1478,7 @@ export default function DashboardOficial() {
 
                                 <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', justifyContent: 'flex-end' }}>
                                     <button type="button" className="btn-outline" onClick={() => setShowModalAprobacion(false)}>Cancelar</button>
-                                    <button type="submit" className={formAprobacion.decision_final === 'ACEPTADO' ? 'btn-success' : 'btn-danger'} disabled={cargando}>
+                                    <button type="submit" style={{ padding: '0.75rem 1.5rem', background: formAprobacion.decision_final === 'ACEPTADO' ? '#10b981' : '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: cargando ? 'not-allowed' : 'pointer', fontWeight: 'bold' }} disabled={cargando}>
                                         {cargando ? 'Procesando y empaquetando...' : (formAprobacion.decision_final === 'ACEPTADO' ? 'Aprobar y Empaquetar Expediente' : 'Rechazar y Empaquetar Expediente')}
                                     </button>
                                 </div>
