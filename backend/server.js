@@ -1105,9 +1105,12 @@ app.post('/api/v1/solicitudes/:id/aprobar_definitivo', async (req, res) => {
         archivosActualizados.formulario_verificacion_oficial = pdfUrl;
 
         // Actualizamos BD
+        let datosFormularioActualizados = sol.datos_formulario || {};
+        datosFormularioActualizados.analisis_oficial = formAprobacion;
+
         const { error } = await supabase.from('solicitudes_sagrilaft').update({ 
             estado_actual: estadoFinal,
-            analisis_oficial: formAprobacion,
+            datos_formulario: datosFormularioActualizados,
             archivos_cargados: archivosActualizados
         }).eq('id', id);
         
