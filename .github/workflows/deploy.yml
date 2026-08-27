@@ -17,4 +17,6 @@ jobs:
           key: ${{ secrets.VPS }}
           script: |
             cd /opt/sagrilaft
+            git fetch origin
+            git reset --hard origin/main
             bash deploy.sh
