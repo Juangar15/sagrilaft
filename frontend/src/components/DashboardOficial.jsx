@@ -28,6 +28,14 @@ export default function DashboardOficial() {
     
     const [camposPingPong, setCamposPingPong] = useState({});
     const [observacionPingPong, setObservacionPingPong] = useState('');
+    
+    // Checklist de aprobación final
+    const [showModalAprobacion, setShowModalAprobacion] = useState(false);
+    const [formAprobacion, setFormAprobacion] = useState({
+        doc_completa: '', verifico_listas: '', autenticidad: '', proc_rep: '', contra_rep: '',
+        poli_rep: '', info_fin: '', visita: '', minero: '', rucon: '', sarlaft: '', sagrilaft: '',
+        observaciones: '', decision_final: 'ACEPTADO'
+    });
     const [activeTab, setActiveTab] = useState('kanban');
     const [filtroTipo, setFiltroTipo] = useState('todos'); // 'todos', 'proveedores', 'empleados'
     const [modalRiesgoOpen, setModalRiesgoOpen] = useState(false);
@@ -152,6 +160,30 @@ export default function DashboardOficial() {
             
             return nuevaMatriz;
         });
+    };
+
+    const handleAprobarManualmente = () => {
+        // En lugar de aprobar ciegamente, abrimos el checklist final
+        setShowModalAprobacion(true);
+    };
+
+    const submitAprobacionDefinitiva = async (e) => {
+        e.preventDefault();
+        try {
+            setCargando(true);
+            const res = await sagrilaftService.aprobarDefinitivo(solicitudSeleccionada.id, formAprobacion);
+            showToast(res.mensaje || "Aprobación definitiva registrada con éxito.");
+            
+            // Cerrar modales y refrescar
+            setShowModalAprobacion(false);
+            setSolicitudSeleccionada(null);
+            const data = await sagrilaftService.obtenerSolicitudes();
+            setSolicitudes(data || []);
+        } catch (error) {
+            showToast("Error en aprobación: " + (error.response?.data?.error || error.message), "error");
+        } finally {
+            setCargando(false);
+        }
     };
 
     const handleCambiarEstado = async (nuevoEstado) => {
@@ -1097,73 +1129,6 @@ export default function DashboardOficial() {
                                             </div>
                                         </div>
                                     )}
-                                </div>
-
-                                <h4 style={{ marginBottom: '1rem', color: 'var(--text-main)' }}>Sección 2: Lista de Verificación Manual</h4>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '2rem' }}>
-                                    
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span>¿Se verificó la autenticidad de los documentos aportados (Lectura de PDFs)?</span>
-                                        <select className="input-field" style={{ width: '150px' }} value={formOficial.autenticidad_doc} onChange={e => setFormOficial({...formOficial, autenticidad_doc: e.target.value})}>
-                                            <option value="no">NO</option><option value="si">SÍ</option>
-                                        </select>
-                                    </div>
-
-                                    {/* CONDICIONAL: EMPRESA VS EMPLEADO */}
-                                    {solicitudSeleccionada.tipo_vinculacion !== 'empleado' && solicitudSeleccionada.tipo_vinculacion !== 'contratista' ? (
-                                    <>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span>¿La empresa pertenece al sector minero energético?</span>
-                                            <select className="input-field" style={{ width: '150px' }} value={formOficial.sector_minero} onChange={e => setFormOficial({...formOficial, sector_minero: e.target.value})}>
-                                                <option value="no">NO</option><option value="si">SÍ</option>
-                                            </select>
-                                        </div>
-
-                                        {/* Sub-formulario si es sector minero */}
-                                        <AnimatePresence>
-                                            {formOficial.sector_minero === 'si' && (
-                                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: 'hidden' }}>
-                                                <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '1.5rem', borderRadius: 'var(--radius-md)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                                                    {['rucon', 'sarlaft', 'sagrilaft', 'politicas_corrupcion', 'comite_etica', 'canales_denuncia', 'oficial_cumplimiento'].map(campo => (
-                                                        <div key={campo} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                            <span style={{ fontSize: '0.85rem' }}>¿Tiene {campo.replace('_', ' ').toUpperCase()}?</span>
-                                                            <select className="input-field" style={{ width: '100px', padding: '0.25rem' }} value={formOficial[campo]} onChange={e => setFormOficial({...formOficial, [campo]: e.target.value})}>
-                                                                <option value="no">NO</option><option value="si">SÍ</option>
-                                                            </select>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </motion.div>
-                                            )}
-                                        </AnimatePresence>
-                                    </>
-                                    ) : (
-                                    <>
-                                        {/* FLUJO DE EMPLEADOS */}
-                                        <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                                            <h5 style={{ margin: '0 0 0.5rem 0', color: 'var(--primary)' }}>Resumen Núcleo Familiar y PEPs</h5>
-                                            <p style={{ margin: 0, fontSize: '0.85rem' }}>Familiares declarados: <b>{solicitudSeleccionada.familiares?.length || 0}</b></p>
-                                        </div>
-                                        
-                                        {solicitudSeleccionada.conflicto_interes_declara === 'si' && (
-                                            <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-                                                <h5 style={{ margin: '0 0 0.5rem 0', color: 'var(--danger)' }}>⚠️ ALERTA: Conflicto de Interés Declarado</h5>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
-                                                    <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>¿Aprobado por el Comité de Ética para contratación?</span>
-                                                    <select className="input-field" style={{ width: '150px' }} value={formOficial.comite_etica} onChange={e => setFormOficial({...formOficial, comite_etica: e.target.value})}>
-                                                        <option value="no">NO</option><option value="si">SÍ</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </>
-                                    )}
-
-                                    <div>
-                                        <label className="label">Observaciones del Oficial:</label>
-                                        <textarea className="input-field" rows="3" placeholder="Observaciones adicionales sobre la debida diligencia..." value={formOficial.observaciones} onChange={e => setFormOficial({...formOficial, observaciones: e.target.value})}></textarea>
-                                    </div>
-
                                 </div>
 
                                 {/* NUEVO PANEL DE RIESGO CUALITATIVO */}

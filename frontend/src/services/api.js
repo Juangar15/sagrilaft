@@ -59,6 +59,16 @@ export const sagrilaftService = {
         return response.data;
     },
 
+    actualizarEstadoSolicitud: async (id, estado) => {
+        const response = await api.post(`/solicitudes/${id}/cambiar_estado`, { estado });
+        return response.data;
+    },
+
+    aprobarDefinitivo: async (id, payload) => {
+        const response = await api.post(`/solicitudes/${id}/aprobar_definitivo`, payload);
+        return response.data;
+    },
+
     ejecutarTusDatos: async (id) => {
         const response = await api.post(`/solicitudes/${id}/tusdatos`);
         return response.data;

@@ -1034,6 +1034,43 @@ app.put('/api/v1/jurisdicciones/:id', async (req, res) => {
     }
 });
 
+// POST /api/v1/solicitudes/:id/cambiar_estado
+app.post('/api/v1/solicitudes/:id/cambiar_estado', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { estado } = req.body;
+        const { data, error } = await supabase.from('solicitudes_sagrilaft').update({ estado_actual: estado }).eq('id', id).select();
+        if (error) throw error;
+        res.json({ mensaje: 'Estado actualizado', data });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/v1/solicitudes/:id/aprobar_definitivo
+app.post('/api/v1/solicitudes/:id/aprobar_definitivo', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const formAprobacion = req.body;
+        // Recuperar solicitud
+        const { data: sol, error: errSol } = await supabase.from('solicitudes_sagrilaft').select('*').eq('id', id).single();
+        if (errSol) throw errSol;
+
+        const estadoFinal = formAprobacion.decision_final === 'ACEPTADO' ? 'APROBADO_LIMPIO' : 'RECHAZADO';
+        
+        // Aquí actualizamos el estado y guardamos el form en la BD
+        const { error } = await supabase.from('solicitudes_sagrilaft').update({ 
+            estado_actual: estadoFinal,
+            analisis_oficial: formAprobacion 
+        }).eq('id', id);
+        
+        if (error) throw error;
+        res.json({ mensaje: `Aprobación definitiva registrada exitosamente. Estado: ${estadoFinal}` });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // GET /api/v1/solicitudes/token/:token - Recuperar Formulario para Proveedor (Ping-Pong)
 app.get('/api/v1/solicitudes/token/:token', async (req, res) => {
     try {
