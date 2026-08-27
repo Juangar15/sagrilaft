@@ -14,11 +14,12 @@ async function calcularRiesgoConsolidado(datos_formulario, alertas_manuales = []
     let desglose = [];
 
     // 1. EVALUAR JURISDICCIÓN (Riesgo Geográfico)
-    let dpto = datos_formulario.departamento || '';
-    let mun = datos_formulario.municipio || '';
+    let dpto = datos_formulario.departamento || datos_formulario.departamento_empresa || '';
+    let mun = datos_formulario.municipio || datos_formulario.ciudad || datos_formulario.municipio_empresa || datos_formulario.ciudad_empresa || '';
     
     // Normalizar para la búsqueda
     const buscarJurisdiccion = async () => {
+        if (!dpto.trim() && !mun.trim()) return null; // No buscar si están vacíos para evitar falsos positivos
         const { data } = await supabase
             .from('sagrilaft_jurisdicciones')
             .select('*')
