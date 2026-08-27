@@ -1093,8 +1093,10 @@ app.post('/api/v1/solicitudes/:id/aprobar_definitivo', async (req, res) => {
 
         // 2. "Empaquetar": Mover/Copiar los archivos anteriores a la nueva carpeta
         let archivosActualizados = {};
-        if (sol.archivos_cargados) {
-            for (const [key, url] of Object.entries(sol.archivos_cargados)) {
+        let archivosAnteriores = sol.datos_formulario?.archivos_cargados || {};
+        
+        if (Object.keys(archivosAnteriores).length > 0) {
+            for (const [key, url] of Object.entries(archivosAnteriores)) {
                 const filename = url.split('/').pop();
                 const newUrl = await copyFileInR2(url, folderR2, filename);
                 archivosActualizados[key] = newUrl;
@@ -1107,11 +1109,11 @@ app.post('/api/v1/solicitudes/:id/aprobar_definitivo', async (req, res) => {
         // Actualizamos BD
         let datosFormularioActualizados = sol.datos_formulario || {};
         datosFormularioActualizados.analisis_oficial = formAprobacion;
+        datosFormularioActualizados.archivos_cargados = archivosActualizados;
 
         const { error } = await supabase.from('solicitudes_sagrilaft').update({ 
             estado_actual: estadoFinal,
-            datos_formulario: datosFormularioActualizados,
-            archivos_cargados: archivosActualizados
+            datos_formulario: datosFormularioActualizados
         }).eq('id', id);
         
         if (error) throw error;
