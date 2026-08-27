@@ -7,7 +7,7 @@ const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, PutObjectCommand, CopyObjectCommand } = require('@aws-sdk/client-s3');
 const { generarEvidenciaPDF } = require('./utils/pdfGenerator');
 const { generarFormularioFinalPDF } = require('./utils/pdfFinalGenerator');
 const multer = require('multer');
@@ -1048,31 +1048,80 @@ app.post('/api/v1/solicitudes/:id/cambiar_estado', async (req, res) => {
     }
 });
 
+// Función auxiliar para copiar en S3/R2
+async function copyFileInR2(sourceUrl, destinationFolder, filename) {
+    if (!sourceUrl || !sourceUrl.includes(process.env.R2_PUBLIC_URL)) return sourceUrl;
+    const urlObj = new URL(sourceUrl);
+    const sourceKey = urlObj.pathname.substring(1);
+    const destKey = `${destinationFolder}/${filename}`;
+    
+    try {
+        await s3Client.send(new CopyObjectCommand({
+            Bucket: process.env.R2_BUCKET_NAME,
+            CopySource: `${process.env.R2_BUCKET_NAME}/${sourceKey}`,
+            Key: destKey
+        }));
+        return `https://${process.env.R2_PUBLIC_URL}/${destKey}`;
+    } catch (err) {
+        console.error("Error copiando archivo en R2:", err.message);
+        return sourceUrl;
+    }
+}
+
 // POST /api/v1/solicitudes/:id/aprobar_definitivo
 app.post('/api/v1/solicitudes/:id/aprobar_definitivo', async (req, res) => {
     try {
         const { id } = req.params;
         const formAprobacion = req.body;
-        // Recuperar solicitud
         const { data: sol, error: errSol } = await supabase.from('solicitudes_sagrilaft').select('*').eq('id', id).single();
         if (errSol) throw errSol;
 
         const estadoFinal = formAprobacion.decision_final === 'ACEPTADO' ? 'APROBADO_LIMPIO' : 'RECHAZADO';
         
-        // Aquí actualizamos el estado y guardamos el form en la BD
+        // Determinar Semaforo (Semaforización)
+        let colorSemaforo = 'verde';
+        if (sol.score_riesgo >= 30 && sol.score_riesgo < 70) colorSemaforo = 'amarillo';
+        if (sol.score_riesgo >= 70) colorSemaforo = 'rojo';
+        
+        const carpetaDecision = estadoFinal === 'APROBADO_LIMPIO' ? 'aceptados' : 'rechazados';
+        const nit = sol.nit_cedula;
+        const folderR2 = `expedientes/${carpetaDecision}/${colorSemaforo}/${nit}`;
+
+        // 1. Generar el PDF del Formulario Final de Verificación
+        const pdfBuffer = await generarFormularioFinalPDF(sol, formAprobacion);
+        const pdfUrl = await uploadFileToR2(pdfBuffer, `Formulario_Verificacion_${nit}.pdf`, folderR2, 'application/pdf');
+
+        // 2. "Empaquetar": Mover/Copiar los archivos anteriores a la nueva carpeta
+        let archivosActualizados = {};
+        if (sol.archivos_cargados) {
+            for (const [key, url] of Object.entries(sol.archivos_cargados)) {
+                const filename = url.split('/').pop();
+                const newUrl = await copyFileInR2(url, folderR2, filename);
+                archivosActualizados[key] = newUrl;
+            }
+        }
+        
+        // Agregar el formulario final al listado
+        archivosActualizados.formulario_verificacion_oficial = pdfUrl;
+
+        // Actualizamos BD
         const { error } = await supabase.from('solicitudes_sagrilaft').update({ 
             estado_actual: estadoFinal,
-            analisis_oficial: formAprobacion 
+            analisis_oficial: formAprobacion,
+            archivos_cargados: archivosActualizados
         }).eq('id', id);
         
         if (error) throw error;
-        res.json({ mensaje: `Aprobación definitiva registrada exitosamente. Estado: ${estadoFinal}` });
+        res.json({ 
+            mensaje: 'Expediente empaquetado y decisión final registrada correctamente.',
+            url_formulario: pdfUrl,
+            semaforo: colorSemaforo
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// GET /api/v1/solicitudes/token/:token - Recuperar Formulario para Proveedor (Ping-Pong)
 app.get('/api/v1/solicitudes/token/:token', async (req, res) => {
     try {
         const { data: solicitud, error } = await supabase
