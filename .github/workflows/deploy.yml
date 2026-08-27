@@ -1,0 +1,20 @@
+name: Deploy Sagrilaft to VPS
+
+on:
+  push:
+    branches:
+      - main # O master, dependiendo de cómo se llame tu rama principal
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ejecutar script de despliegue en el VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 2.25.69.176
+          username: root
+          key: ${{ secrets.VPS }}
+          script: |
+            cd /opt/sagrilaft
+            bash deploy.sh
