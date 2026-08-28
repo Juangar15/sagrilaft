@@ -864,8 +864,9 @@ export default function DashboardOficial() {
                                 </thead>
                                 <tbody>
                                     {jurisdicciones.map((j, idx) => {
-                                        const isBajo = j.nivel_riesgo === 'BAJO';
-                                        const isMedio = j.nivel_riesgo === 'MEDIO';
+                                        const upperNivel = (j.nivel_riesgo || 'BAJO').toUpperCase();
+                                        const isBajo = upperNivel === 'BAJO';
+                                        const isMedio = upperNivel === 'MEDIO';
                                         
                                         // User request: Distinct colors for MEDIO and ALTO
                                         const bgColor = isBajo ? '#10b981' : isMedio ? '#eab308' : '#ef4444'; // Emerald for Low, Yellow for Med, Red for High
@@ -902,7 +903,7 @@ export default function DashboardOficial() {
                                                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                                                 }}>
                                                     {isBajo ? <CheckCircle size={12}/> : <AlertTriangle size={12}/>}
-                                                    {j.nivel_riesgo || 'BAJO'}
+                                                    {upperNivel}
                                                 </span>
                                             </td>
                                         </tr>
