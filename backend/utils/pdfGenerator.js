@@ -67,23 +67,31 @@ async function generarEvidenciaPDF(solicitud, finalData, empresa_destino) {
             const tableRows = [];
             for (const [fuente, valor] of Object.entries(fuentes_detalladas)) {
                 let resultadoStr = '';
-                let detalle = '';
+                let detalles = [];
 
-                // Extract dict details if exists
                 if (valor === true && finalData.dict_hallazgos) {
                     for (const cat of ['altos', 'medios', 'bajos', 'infos']) {
-                        const match = (finalData.dict_hallazgos[cat] || []).find(i => 
+                        const items = finalData.dict_hallazgos[cat] || [];
+                        const matches = items.filter(i => 
                             i.codigo === fuente || 
                             i.fuente === fuente || 
                             fuente.includes(i.codigo) || 
                             i.codigo.includes(fuente.split('_')[0])
                         );
-                        if (match) {
-                            detalle = match.hallazgo + (match.descripcion ? ' - ' + match.descripcion : '');
-                            break;
-                        }
+                        
+                        matches.forEach(match => {
+                            let texto = match.hallazgo || '';
+                            if (match.descripcion && match.descripcion !== texto) {
+                                texto += texto ? ' - ' + match.descripcion : match.descripcion;
+                            }
+                            if (texto && texto.trim() !== '') {
+                                detalles.push(texto.trim());
+                            }
+                        });
                     }
                 }
+                
+                const detalle = [...new Set(detalles)].join(' | ');
 
                 if (valor === false) resultadoStr = 'No registra / Limpio';
                 else if (valor === true) resultadoStr = 'SÍ REGISTRA (Hallazgo)' + (detalle ? `\nDetalle: ${detalle}` : '');

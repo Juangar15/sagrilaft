@@ -1088,47 +1088,45 @@ export default function DashboardOficial() {
                                                         <summary style={{ fontWeight: 'bold', cursor: 'pointer', color: 'var(--primary)' }}>Ver Desglose de Bases de Datos Consultadas</summary>
                                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '1rem', maxHeight: '200px', overflowY: 'auto' }}>
                                                             {Object.entries(solicitudSeleccionada.datos_formulario.monitor_fuentes.fuentes_detalladas).map(([fuente, valor], idx) => {
-    let detalleHallazgo = '';
-    let foundCodes = [];
+    let detalles = [];
     const dict = solicitudSeleccionada.datos_formulario.monitor_fuentes.dict_hallazgos;
-    if (dict) {
+    if (dict && valor === true) {
         for (const cat of ['altos', 'medios', 'bajos', 'infos']) {
             const items = dict[cat] || [];
-            items.forEach(i => foundCodes.push(i.codigo));
-            const match = items.find(i => 
+            // Find all matching items for this source
+            const matches = items.filter(i => 
                 i.codigo === fuente || 
                 i.fuente === fuente || 
                 fuente.includes(i.codigo) || 
                 i.codigo.includes(fuente.split('_')[0])
             );
-            if (match && valor === true) {
-                detalleHallazgo = match.hallazgo + (match.descripcion ? ' - ' + match.descripcion : '');
-                break;
-            }
+            
+            matches.forEach(match => {
+                let texto = match.hallazgo || '';
+                if (match.descripcion && match.descripcion !== texto) {
+                    texto += texto ? ' - ' + match.descripcion : match.descripcion;
+                }
+                if (texto && texto.trim() !== '') {
+                    detalles.push(texto.trim());
+                }
+            });
         }
     }
+    
+    // De-duplicate and join
+    const detalleHallazgo = [...new Set(detalles)].join(' | ');
 
     return (
     <div key={idx} style={{ fontSize: '0.8rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem', paddingTop: '0.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <span style={{ color: 'var(--text-muted)' }}>{fuente.replace(/_/g, ' ')}: </span>
+            <span style={{ color: 'var(--text-muted)', textTransform: 'capitalize' }}>{fuente.replace(/_/g, ' ')}: </span>
             <strong style={{ color: valor === 'Error' || valor === 'Página no disponible' ? 'var(--danger)' : valor === true ? 'var(--danger)' : !valor && valor !== false ? 'var(--text-muted)' : 'var(--text-main)', textAlign: 'right', maxWidth: '50%' }}>
-                {valor === true ? '🚨 HALLAZGO' : valor === false ? 'No / Limpio' : (valor === '' || valor === null ? 'No registra en la fuente' : valor)}
+                {valor === true ? '🚨 HALLAZGO' + (detalleHallazgo ? '' : ' (Ver PDF)') : valor === false ? 'No / Limpio' : (valor === '' || valor === null ? 'No registra en la fuente' : valor)}
             </strong>
         </div>
         {detalleHallazgo && (
             <div style={{ color: '#475569', fontSize: '0.75rem', marginTop: '0.4rem', background: '#f1f5f9', padding: '0.4rem', borderRadius: '4px' }}>
                 <i>Detalle técnico:</i> {detalleHallazgo}
-            </div>
-        )}
-        {!detalleHallazgo && valor === true && dict && (
-            <div style={{ color: '#ef4444', fontSize: '0.65rem', marginTop: '0.4rem' }}>
-                (Detalle no encontrado en el diccionario. Códigos del dict: {foundCodes.join(', ')})
-            </div>
-        )}
-        {!detalleHallazgo && valor === true && !dict && (
-            <div style={{ color: '#ef4444', fontSize: '0.65rem', marginTop: '0.4rem' }}>
-                (No hay diccionario de hallazgos disponible. Recargue la solicitud.)
             </div>
         )}
     </div>
@@ -1147,43 +1145,51 @@ export default function DashboardOficial() {
                                             <h5 style={{ margin: '0 0 1rem 0', color: 'var(--text-main)', fontSize: '1rem' }}>📋 Resultados Detallados por Fuente</h5>
                                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.8rem', maxHeight: '300px', overflowY: 'auto', paddingRight: '1rem' }}>
                                                 {Object.entries(solicitudSeleccionada.monitor_fuentes.fuentes_detalladas).map(([fuente, resultado]) => {
-                                                    let detalleHallazgo = '';
-                                                    const dict = solicitudSeleccionada.monitor_fuentes.dict_hallazgos;
-                                                    if (dict && resultado === true) {
-                                                        for (const cat of ['altos', 'medios', 'bajos', 'infos']) {
-                                                            const items = dict[cat] || [];
-                                                            const match = items.find(i => 
+    let detalles = [];
+    const dict = solicitudSeleccionada.monitor_fuentes.dict_hallazgos;
+    if (dict && resultado === true) {
+        for (const cat of ['altos', 'medios', 'bajos', 'infos']) {
+            const items = dict[cat] || [];
+            const matches = items.filter(i => 
                 i.codigo === fuente || 
                 i.fuente === fuente || 
                 fuente.includes(i.codigo) || 
                 i.codigo.includes(fuente.split('_')[0])
             );
-                                                            if (match) {
-                                                                detalleHallazgo = match.hallazgo;
-                                                                break;
-                                                            }
-                                                        }
-                                                    }
-                                                    
-                                                    return (
-                                                    <div key={fuente} style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg-body)', padding: '0.5rem', borderRadius: '4px' }}>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                            <span style={{ textTransform: 'capitalize' }}>{fuente.replace(/_/g, ' ')}</span>
-                                                            <span style={{ 
-                                                                fontWeight: 'bold', 
-                                                                color: resultado === 'Error' ? 'var(--danger)' : resultado === true ? '#f59e0b' : 'var(--success-text)' 
-                                                            }}>
-                                                                {resultado === 'Error' ? '⛔ ERROR / CAÍDA' : resultado === true ? '🚨 HALLAZGO' : '✅ LIMPIO'}
-                                                            </span>
-                                                        </div>
-                                                        {detalleHallazgo && (
-                                                            <div style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '0.4rem', fontStyle: 'italic' }}>
-                                                                {detalleHallazgo}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    );
-                                                })}
+            
+            matches.forEach(match => {
+                let texto = match.hallazgo || '';
+                if (match.descripcion && match.descripcion !== texto) {
+                    texto += texto ? ' - ' + match.descripcion : match.descripcion;
+                }
+                if (texto && texto.trim() !== '') {
+                    detalles.push(texto.trim());
+                }
+            });
+        }
+    }
+    
+    const detalleHallazgo = [...new Set(detalles)].join(' | ');
+    
+    return (
+    <div key={fuente} style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg-body)', padding: '0.5rem', borderRadius: '4px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ textTransform: 'capitalize' }}>{fuente.replace(/_/g, ' ')}</span>
+            <span style={{ 
+                fontWeight: 'bold', 
+                color: resultado === 'Error' ? 'var(--danger)' : resultado === true ? '#f59e0b' : 'var(--success-text)' 
+            }}>
+                {resultado === 'Error' ? '⛔ ERROR / CAÍDA' : resultado === true ? '🚨 HALLAZGO' : '✅ LIMPIO'}
+            </span>
+        </div>
+        {detalleHallazgo && (
+            <div style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '0.4rem', fontStyle: 'italic' }}>
+                {detalleHallazgo}
+            </div>
+        )}
+    </div>
+    );
+})}
                                             </div>
                                         </div>
                                     )}
