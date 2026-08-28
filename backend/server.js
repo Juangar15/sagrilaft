@@ -536,6 +536,7 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
             if (finalData.id) {
                 const reportRes = await axios.get(`${baseUrl}/report_json/${finalData.id}`, { headers });
                 dict_hallazgos = reportRes.data?.dict_hallazgos || null;
+                finalData.dict_hallazgos = dict_hallazgos;
             }
         } catch (err) {
             console.error("Error obteniendo report_json detallado de TusDatos:", err.message);

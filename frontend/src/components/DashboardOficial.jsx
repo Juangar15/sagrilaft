@@ -1088,35 +1088,52 @@ export default function DashboardOficial() {
                                                         <summary style={{ fontWeight: 'bold', cursor: 'pointer', color: 'var(--primary)' }}>Ver Desglose de Bases de Datos Consultadas</summary>
                                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '1rem', maxHeight: '200px', overflowY: 'auto' }}>
                                                             {Object.entries(solicitudSeleccionada.datos_formulario.monitor_fuentes.fuentes_detalladas).map(([fuente, valor], idx) => {
-                                                                let detalleHallazgo = '';
-                                                                const dict = solicitudSeleccionada.datos_formulario.monitor_fuentes.dict_hallazgos;
-                                                                if (dict && valor === true) {
-                                                                    for (const cat of ['altos', 'medios', 'bajos', 'infos']) {
-                                                                        const items = dict[cat] || [];
-                                                                        const match = items.find(i => i.codigo === fuente);
-                                                                        if (match) {
-                                                                            detalleHallazgo = match.hallazgo + (match.descripcion ? ' - ' + match.descripcion : '');
-                                                                            break;
-                                                                        }
-                                                                    }
-                                                                }
+    let detalleHallazgo = '';
+    let foundCodes = [];
+    const dict = solicitudSeleccionada.datos_formulario.monitor_fuentes.dict_hallazgos;
+    if (dict) {
+        for (const cat of ['altos', 'medios', 'bajos', 'infos']) {
+            const items = dict[cat] || [];
+            items.forEach(i => foundCodes.push(i.codigo));
+            const match = items.find(i => 
+                i.codigo === fuente || 
+                i.fuente === fuente || 
+                fuente.includes(i.codigo) || 
+                i.codigo.includes(fuente.split('_')[0])
+            );
+            if (match && valor === true) {
+                detalleHallazgo = match.hallazgo + (match.descripcion ? ' - ' + match.descripcion : '');
+                break;
+            }
+        }
+    }
 
-                                                                return (
-                                                                <div key={idx} style={{ fontSize: '0.8rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem', paddingTop: '0.5rem' }}>
-                                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                                                        <span style={{ color: 'var(--text-muted)' }}>{fuente.replace(/_/g, ' ')}: </span>
-                                                                        <strong style={{ color: valor === 'Error' || valor === 'Página no disponible' ? 'var(--danger)' : valor === true ? 'var(--danger)' : !valor && valor !== false ? 'var(--text-muted)' : 'var(--text-main)', textAlign: 'right', maxWidth: '50%' }}>
-                                                                            {valor === true ? '🚨 HALLAZGO' : valor === false ? 'No / Limpio' : (valor === '' || valor === null ? 'No registra en la fuente' : valor)}
-                                                                        </strong>
-                                                                    </div>
-                                                                    {detalleHallazgo && (
-                                                                        <div style={{ color: '#475569', fontSize: '0.75rem', marginTop: '0.4rem', background: '#f1f5f9', padding: '0.4rem', borderRadius: '4px' }}>
-                                                                            <i>Detalle técnico:</i> {detalleHallazgo}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                                );
-                                                            })}
+    return (
+    <div key={idx} style={{ fontSize: '0.8rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem', paddingTop: '0.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <span style={{ color: 'var(--text-muted)' }}>{fuente.replace(/_/g, ' ')}: </span>
+            <strong style={{ color: valor === 'Error' || valor === 'Página no disponible' ? 'var(--danger)' : valor === true ? 'var(--danger)' : !valor && valor !== false ? 'var(--text-muted)' : 'var(--text-main)', textAlign: 'right', maxWidth: '50%' }}>
+                {valor === true ? '🚨 HALLAZGO' : valor === false ? 'No / Limpio' : (valor === '' || valor === null ? 'No registra en la fuente' : valor)}
+            </strong>
+        </div>
+        {detalleHallazgo && (
+            <div style={{ color: '#475569', fontSize: '0.75rem', marginTop: '0.4rem', background: '#f1f5f9', padding: '0.4rem', borderRadius: '4px' }}>
+                <i>Detalle técnico:</i> {detalleHallazgo}
+            </div>
+        )}
+        {!detalleHallazgo && valor === true && dict && (
+            <div style={{ color: '#ef4444', fontSize: '0.65rem', marginTop: '0.4rem' }}>
+                (Detalle no encontrado en el diccionario. Códigos del dict: {foundCodes.join(', ')})
+            </div>
+        )}
+        {!detalleHallazgo && valor === true && !dict && (
+            <div style={{ color: '#ef4444', fontSize: '0.65rem', marginTop: '0.4rem' }}>
+                (No hay diccionario de hallazgos disponible. Recargue la solicitud.)
+            </div>
+        )}
+    </div>
+    );
+})}
                                                         </div>
                                                     </details>
                                                 </div>
@@ -1135,7 +1152,12 @@ export default function DashboardOficial() {
                                                     if (dict && resultado === true) {
                                                         for (const cat of ['altos', 'medios', 'bajos', 'infos']) {
                                                             const items = dict[cat] || [];
-                                                            const match = items.find(i => i.codigo === fuente);
+                                                            const match = items.find(i => 
+                i.codigo === fuente || 
+                i.fuente === fuente || 
+                fuente.includes(i.codigo) || 
+                i.codigo.includes(fuente.split('_')[0])
+            );
                                                             if (match) {
                                                                 detalleHallazgo = match.hallazgo;
                                                                 break;

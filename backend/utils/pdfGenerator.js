@@ -29,12 +29,18 @@ async function generarEvidenciaPDF(solicitud, finalData, empresa_destino) {
             
             doc.fontSize(10).font('Helvetica');
             const fechaActual = new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota' });
+            const identificacion = solicitud.numero_identificacion || solicitud.nit || solicitud.nit_cedula || 'N/A';
+            let nombre = solicitud.nombre_razon_social || solicitud.razon_social || 'N/A';
+            if (nombre === 'N/A' && solicitud.nombres) {
+                nombre = solicitud.nombres + (solicitud.apellidos ? ' ' + solicitud.apellidos : '');
+            }
+
             const metadata = [
                 `Fecha y Hora de Consulta: ${fechaActual}`,
                 `Proveedor Tecnológico: TusDatos.co (vía integración API)`,
-                `ID de Reporte (Trazabilidad): ${finalData.id || 'N/A'}`,
-                `Sujeto Consultado: ${solicitud.razon_social || solicitud.nombre_representante || 'N/A'}`,
-                `Identificación: ${solicitud.nit_cedula || 'N/A'}`
+                `ID de Reporte (Trazabilidad): ${finalData.id || finalData.jobid || 'N/A'}`,
+                `Sujeto Consultado: ${nombre}`,
+                `Identificación: ${identificacion}`
             ];
             
             metadata.forEach(line => doc.text(line, { indent: 15 }));
@@ -61,11 +67,40 @@ async function generarEvidenciaPDF(solicitud, finalData, empresa_destino) {
             const tableRows = [];
             for (const [fuente, valor] of Object.entries(fuentes_detalladas)) {
                 let resultadoStr = '';
+                let detalle = '';
+
+                // Extract dict details if exists
+                if (valor === true && finalData.dict_hallazgos) {
+                    for (const cat of ['altos', 'medios', 'bajos', 'infos']) {
+                        const match = (finalData.dict_hallazgos[cat] || []).find(i => 
+                            i.codigo === fuente || 
+                            i.fuente === fuente || 
+                            fuente.includes(i.codigo) || 
+                            i.codigo.includes(fuente.split('_')[0])
+                        );
+                        if (match) {
+                            detalle = match.hallazgo + (match.descripcion ? ' - ' + match.descripcion : '');
+                            break;
+                        }
+                    }
+                }
+
                 if (valor === false) resultadoStr = 'No registra / Limpio';
-                else if (valor === true) resultadoStr = 'SÍ REGISTRA (Hallazgo)';
+                else if (valor === true) resultadoStr = 'SÍ REGISTRA (Hallazgo)' + (detalle ? `\nDetalle: ${detalle}` : '');
+                else if (valor === 'Error' || valor === 'Página no disponible') resultadoStr = valor;
+                else if (valor === null || valor === '') resultadoStr = 'No registra / Limpio';
                 else resultadoStr = String(valor);
 
-                tableRows.push([fuente, resultadoStr]);
+                const mapNombres = {
+                    libretamilitar: 'Libreta Militar', personeria_bogota: 'Personería de Bogotá',
+                    reputacional: 'Análisis Reputacional', contaduria: 'Contaduría General de la Nación',
+                    cidob: 'CIDOB Peps nivel mundial', defunciones_registraduria: 'Defunciones Registraduría',
+                    juzgados_tyba: 'Juzgados Tyba - Justicia XXI', policia: 'Policía Nacional de Colombia',
+                    ofac: 'Offshore Leaks Database / OFAC', rut: 'Registro Único Tributario (RUT)'
+                };
+                const nombreFuente = mapNombres[fuente] || fuente.replace(/_/g, ' ').toUpperCase();
+
+                tableRows.push([nombreFuente, resultadoStr]);
             }
 
             const tableArray = {
