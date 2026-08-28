@@ -604,7 +604,20 @@ export default function DashboardOficial() {
                 </button>
             </div>
 
+            
             {/* VISTA 1: Tablero Kanban */}
+            <style>{`
+                .kanban-container::-webkit-scrollbar { height: 8px; }
+                .kanban-container::-webkit-scrollbar-track { background: transparent; }
+                .kanban-container::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 4px; }
+                .kanban-container::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.25); }
+
+                .kanban-column-content::-webkit-scrollbar { width: 6px; }
+                .kanban-column-content::-webkit-scrollbar-track { background: transparent; }
+                .kanban-column-content::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
+                .kanban-column-content::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
+            `}</style>
+
             {activeTab === 'kanban' && (
             <>
                 <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', background: 'rgba(255,255,255,0.4)', padding: '0.5rem', borderRadius: 'var(--radius-lg)', width: 'fit-content' }}>
@@ -619,99 +632,97 @@ export default function DashboardOficial() {
                     </button>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1.5rem', alignItems: 'start', overflowX: 'auto' }}>
-                
-                <div className="glass-panel" style={{ padding: '1rem', background: 'rgba(255,255,255,0.4)', borderRadius: 'var(--radius-md)', border: 'none', minWidth: '280px' }}>
+                <div className="kanban-container" style={{ display: 'flex', gap: '1.5rem', alignItems: 'start', overflowX: 'auto', paddingBottom: '1rem', minHeight: 'calc(100vh - 240px)', height: 'calc(100vh - 240px)' }}>
+                <div className="glass-panel" style={{ padding: '1rem', background: 'rgba(255,255,255,0.4)', borderRadius: 'var(--radius-md)', border: 'none', minWidth: '320px', maxWidth: '320px', display: 'flex', flexDirection: 'column', maxHeight: '100%' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '2px solid var(--border)' }}>
                         <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <FileText size={16} /> Revisión Previa
                         </h3>
                         <span className="badge badge-neutral">{filtrarPorEstado('REVISION_PREVIA').length}</span>
                     </div>
-                    <div>
+                    <div className="kanban-column-content" style={{ overflowY: 'auto', flex: 1, paddingRight: '0.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         {filtrarPorEstado('REVISION_PREVIA').map(sol => <TarjetaRadicado key={sol.id} sol={sol} />)}
                         {filtrarPorEstado('REVISION_PREVIA').length === 0 && <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', padding: '1rem 0' }}>No hay solicitudes.</p>}
                     </div>
                 </div>
 
-                <div className="glass-panel" style={{ padding: '1rem', background: 'rgba(245, 158, 11, 0.05)', borderRadius: 'var(--radius-md)', border: '1px solid #f59e0b', minWidth: '280px' }}>
+                <div className="glass-panel" style={{ padding: '1rem', background: 'rgba(245, 158, 11, 0.05)', borderRadius: 'var(--radius-md)', border: '1px solid #f59e0b', minWidth: '320px', maxWidth: '320px', display: 'flex', flexDirection: 'column', maxHeight: '100%' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '2px solid #f59e0b' }}>
                         <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <Clock size={16} /> Devueltos (Ping-Pong)
                         </h3>
                         <span className="badge badge-neutral" style={{ background: '#f59e0b', color: 'white' }}>{filtrarPorEstado('DEVUELTO_CORRECCION').length}</span>
                     </div>
-                    <div>
+                    <div className="kanban-column-content" style={{ overflowY: 'auto', flex: 1, paddingRight: '0.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         {filtrarPorEstado('DEVUELTO_CORRECCION').map(sol => <TarjetaRadicado key={sol.id} sol={sol} badgeClase="badge-warning" />)}
                         {filtrarPorEstado('DEVUELTO_CORRECCION').length === 0 && <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', padding: '1rem 0' }}>Nadie pendiente.</p>}
                     </div>
                 </div>
 
-                <div className="glass-panel" style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.05)', borderRadius: 'var(--radius-md)', border: '1px solid var(--danger)', minWidth: '280px' }}>
+                <div className="glass-panel" style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.05)', borderRadius: 'var(--radius-md)', border: '1px solid var(--danger)', minWidth: '320px', maxWidth: '320px', display: 'flex', flexDirection: 'column', maxHeight: '100%' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '2px solid var(--danger)' }}>
                         <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <AlertTriangle size={16} /> Fuentes Incompletas
                         </h3>
                         <span className="badge badge-neutral" style={{ background: 'var(--danger)', color: 'white' }}>{filtrarPorEstado('FUENTES_INCOMPLETAS').length}</span>
                     </div>
-                    <div>
+                    <div className="kanban-column-content" style={{ overflowY: 'auto', flex: 1, paddingRight: '0.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         {filtrarPorEstado('FUENTES_INCOMPLETAS').map(sol => <TarjetaRadicado key={sol.id} sol={sol} badgeClase="badge-warning" />)}
                         {filtrarPorEstado('FUENTES_INCOMPLETAS').length === 0 && <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', padding: '1rem 0' }}>No hay solicitudes.</p>}
                     </div>
                 </div>
 
-                <div className="glass-panel" style={{ padding: '1rem', background: 'rgba(255,255,255,0.4)', borderRadius: 'var(--radius-md)', border: 'none', minWidth: '280px' }}>
+                <div className="glass-panel" style={{ padding: '1rem', background: 'rgba(255,255,255,0.4)', borderRadius: 'var(--radius-md)', border: 'none', minWidth: '320px', maxWidth: '320px', display: 'flex', flexDirection: 'column', maxHeight: '100%' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '2px solid var(--border)' }}>
                         <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', color: 'var(--warning-text)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <Filter size={16} /> Revisión Manual
                         </h3>
                         <span className="badge badge-neutral">{filtrarPorEstado('REVISION_MANUAL').length}</span>
                     </div>
-                    <div>
+                    <div className="kanban-column-content" style={{ overflowY: 'auto', flex: 1, paddingRight: '0.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         {filtrarPorEstado('REVISION_MANUAL').map(sol => <TarjetaRadicado key={sol.id} sol={sol} />)}
                         {filtrarPorEstado('REVISION_MANUAL').length === 0 && <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', padding: '1rem 0' }}>No hay solicitudes.</p>}
                     </div>
                 </div>
-
-                <div className="glass-panel" style={{ padding: '1rem', background: 'rgba(255,255,255,0.4)', borderRadius: 'var(--radius-md)', border: 'none' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '2px solid var(--border)' }}>
-                        <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', color: 'var(--success-text)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <CheckCircle size={16} /> Aprobados Limpios
-                        </h3>
-                        <span className="badge badge-neutral">{filtrarPorEstado('APROBADO_LIMPIO').length}</span>
-                    </div>
-                    <div>
-                        {filtrarPorEstado('APROBADO_LIMPIO').map(sol => <TarjetaRadicado key={sol.id} sol={sol} />)}
-                        {filtrarPorEstado('APROBADO_LIMPIO').length === 0 && <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', padding: '1rem 0' }}>No hay solicitudes.</p>}
-                    </div>
-                </div>
-
-                <div className="glass-panel" style={{ padding: '1rem', background: 'rgba(255,255,255,0.4)', borderRadius: 'var(--radius-md)', border: 'none' }}>
+                
+                <div className="glass-panel" style={{ padding: '1rem', background: 'rgba(255,255,255,0.4)', borderRadius: 'var(--radius-md)', border: 'none', minWidth: '320px', maxWidth: '320px', display: 'flex', flexDirection: 'column', maxHeight: '100%' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '2px solid var(--border)' }}>
                         <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <AlertTriangle size={16} /> Alertas Críticas
                         </h3>
                         <span className="badge badge-neutral">{filtrarPorEstado('ALERTA_CRITICA').length}</span>
                     </div>
-                    <div>
+                    <div className="kanban-column-content" style={{ overflowY: 'auto', flex: 1, paddingRight: '0.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         {filtrarPorEstado('ALERTA_CRITICA').map(sol => <TarjetaRadicado key={sol.id} sol={sol} />)}
                         {filtrarPorEstado('ALERTA_CRITICA').length === 0 && <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', padding: '1rem 0' }}>No hay alertas críticas.</p>}
                     </div>
                 </div>
 
-                <div className="glass-panel" style={{ padding: '1rem', background: 'rgba(255,255,255,0.4)', borderRadius: 'var(--radius-md)', border: 'none', minWidth: '280px' }}>
+                <div className="glass-panel" style={{ padding: '1rem', background: 'rgba(255,255,255,0.4)', borderRadius: 'var(--radius-md)', border: 'none', minWidth: '320px', maxWidth: '320px', display: 'flex', flexDirection: 'column', maxHeight: '100%' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '2px solid var(--border)' }}>
                         <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', color: '#8b5cf6', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <Clock size={16} /> Análisis Extendido
                         </h3>
                         <span className="badge badge-neutral">{filtrarPorEstado('ESPERA_EXTENDIDO').length}</span>
                     </div>
-                    <div>
+                    <div className="kanban-column-content" style={{ overflowY: 'auto', flex: 1, paddingRight: '0.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         {filtrarPorEstado('ESPERA_EXTENDIDO').map(sol => <TarjetaRadicado key={sol.id} sol={sol} />)}
                         {filtrarPorEstado('ESPERA_EXTENDIDO').length === 0 && <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', padding: '1rem 0' }}>No hay solicitudes.</p>}
                     </div>
                 </div>
 
+                <div className="glass-panel" style={{ padding: '1rem', background: 'rgba(255,255,255,0.4)', borderRadius: 'var(--radius-md)', border: 'none', minWidth: '320px', maxWidth: '320px', display: 'flex', flexDirection: 'column', maxHeight: '100%' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '2px solid var(--border)' }}>
+                        <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', color: 'var(--success-text)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <CheckCircle size={16} /> Aprobados Limpios
+                        </h3>
+                        <span className="badge badge-neutral">{filtrarPorEstado('APROBADO_LIMPIO').length}</span>
+                    </div>
+                    <div className="kanban-column-content" style={{ overflowY: 'auto', flex: 1, paddingRight: '0.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        {filtrarPorEstado('APROBADO_LIMPIO').map(sol => <TarjetaRadicado key={sol.id} sol={sol} />)}
+                        {filtrarPorEstado('APROBADO_LIMPIO').length === 0 && <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', padding: '1rem 0' }}>No hay solicitudes.</p>}
+                    </div>
+                </div>
             </div>
             </>
             )}
