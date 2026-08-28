@@ -281,16 +281,23 @@ export default function DashboardOficial() {
         }
     };
 
-    const actualizarJurisdiccion = async (id, nivel_riesgo, porcentaje) => {
+    const actualizarJurisdiccion = async (id, val) => {
         try {
+            const porcentaje = parseFloat(val) || 0;
+            let nivel_riesgo = 'BAJO';
+            if (porcentaje > 11.11 && porcentaje <= 22.22) nivel_riesgo = 'MEDIO';
+            else if (porcentaje > 22.22) nivel_riesgo = 'ALTO';
+
+            setJurisdicciones(prev => prev.map(j => j.id === id ? { ...j, nivel_riesgo, porcentaje } : j));
+
             const res = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/jurisdicciones/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ nivel_riesgo, porcentaje })
             });
             if (!res.ok) throw new Error('Error al actualizar');
-            setJurisdicciones(prev => prev.map(j => j.id === id ? { ...j, nivel_riesgo, porcentaje } : j));
-            showToast("Jurisdicción actualizada exitosamente");
+            
+            // showToast("Jurisdicción actualizada", "success"); // Removed to avoid spamming toast on blur
         } catch (error) {
             showToast("Error actualizando jurisdicción", "error");
         }
@@ -697,10 +704,14 @@ export default function DashboardOficial() {
             )}
             
             {activeTab === 'matriz' && (
-                <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', alignItems: 'center' }}>
-                        <h2 style={{ fontSize: '1.25rem', color: 'var(--text-main)' }}>Plantilla Maestra de Riesgos Documental</h2>
-                        <button className="btn-outline" onClick={() => {
+
+                <div style={{ animation: 'fadeIn 0.3s ease' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', alignItems: 'center' }}>
+                        <div>
+                            <h2 style={{ fontSize: '1.25rem', color: 'var(--text-main)', margin: '0 0 0.25rem 0' }}>Matriz de Riesgo Documental</h2>
+                            <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.85rem' }}>Visualización y gestión de riesgos, causas y controles.</p>
+                        </div>
+                        <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1rem' }} onClick={() => {
                             const csvContent = "data:text/csv;charset=utf-8," + "Codigo,Evento,Fuente,Causas,FxF,Tratamiento\n" + 
                                 matrizRiesgos.map(r => `"${r.codigo_riesgo}","${r.evento_riesgo?.replace(/"/g, '""')}","${r.fuente_riesgo}","${r.causas?.replace(/"/g, '""')}","${(r.escala_frecuencia || 0) * (r.escala_impacto || 0)}","${r.tratamiento}"`).join("\n");
                             const encodedUri = encodeURI(csvContent);
@@ -709,63 +720,97 @@ export default function DashboardOficial() {
                             link.setAttribute("download", "Matriz_Riesgos.csv");
                             document.body.appendChild(link);
                             link.click();
-                        }}>📥 Exportar CSV</button>
+                        }}><Download size={16} /> Exportar Matriz</button>
                     </div>
-                    <div className="card glass-panel" style={{ padding: 0, overflow: 'auto', maxHeight: '70vh' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem', tableLayout: 'fixed' }}>
-                            <thead style={{ background: 'var(--bg-color)', borderBottom: '2px solid var(--border)', position: 'sticky', top: 0, zIndex: 5 }}>
-                                <tr>
-                                    <th style={{ padding: '1rem', width: '10%' }}>Código</th>
-                                    <th style={{ padding: '1rem', width: '20%' }}>Evento de Riesgo</th>
-                                    <th style={{ padding: '1rem', width: '25%' }}>Fuente / Causas</th>
-                                    <th style={{ padding: '1rem', width: '10%', textAlign: 'center' }}>F x I</th>
-                                    <th style={{ padding: '1rem', width: '10%' }}>Trat.</th>
-                                    <th style={{ padding: '1rem', width: '25%' }}>Controles</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {matrizRiesgos.map(r => {
-                                    const inherente = (r.escala_frecuencia || 0) * (r.escala_impacto || 0);
-                                    
-                                    return (
-                                    <tr key={r.id} style={{ borderBottom: '1px solid var(--border)', verticalAlign: 'top' }}>
-                                        <td style={{ padding: '1rem', fontWeight: 'bold' }}>{r.codigo_riesgo}</td>
-                                        <td style={{ padding: '1rem', whiteSpace: 'pre-wrap' }}>{r.evento_riesgo}</td>
-                                        <td style={{ padding: '1rem', whiteSpace: 'pre-wrap' }}>
-                                            <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>Fuente:</span> {r.fuente_riesgo}<br/><br/>
-                                            <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>Causas:</span><br/>{r.causas}
-                                        </td>
-                                        <td style={{ padding: '1rem', textAlign: 'center' }}>
-                                            <div style={{ background: '#f1f5f9', padding: '0.5rem', borderRadius: '4px', fontWeight: 'bold' }}>
-                                                {inherente}
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        {matrizRiesgos.map(r => {
+                            const inherente = (r.escala_frecuencia || 0) * (r.escala_impacto || 0);
+                            const colorImpacto = inherente >= 15 ? 'var(--danger)' : inherente >= 9 ? 'var(--warning)' : 'var(--success)';
+                            
+                            // Parse controles text into a neat list
+                            const controlesList = r.descripcion_controles 
+                                ? r.descripcion_controles.split(/(?=\d+\.\s)/).filter(c => c.trim().length > 0)
+                                : [];
+
+                            return (
+                                <div key={r.id} style={{ background: 'white', borderRadius: 'var(--radius-md)', padding: '1.5rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)', border: '1px solid var(--border)' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border)' }}>
+                                        <div style={{ flex: 1, paddingRight: '2rem' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+                                                <span style={{ background: 'var(--primary)', color: 'white', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '1px' }}>
+                                                    {r.codigo_riesgo}
+                                                </span>
+                                                <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.1rem' }}>{r.evento_riesgo}</h3>
                                             </div>
-                                        </td>
-                                        <td style={{ padding: '1rem' }}>
-                                            <span style={{ fontSize: '0.75rem', padding: '0.3rem', borderRadius: '4px', background: r.tratamiento === 'MITIGAR' ? '#dcfce7' : '#fef3c7', color: r.tratamiento === 'MITIGAR' ? '#16a34a' : '#d97706', fontWeight: 'bold' }}>
-                                                {r.tratamiento}
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: '1rem', whiteSpace: 'pre-wrap' }}>
-                                            {r.descripcion_controles}
-                                        </td>
-                                    </tr>
-                                    );
-                                })}
-                                {matrizRiesgos.length === 0 && (
-                                    <tr><td colSpan="6" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>Cargando matriz...</td></tr>
-                                )}
-                            </tbody>
-                        </table>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                                <span style={{ fontWeight: '600' }}>Fuente:</span> {r.fuente_riesgo}
+                                            </div>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                                            <div style={{ textAlign: 'center' }}>
+                                                <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '0.2rem' }}>F x I</div>
+                                                <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: colorImpacto, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}>
+                                                    {inherente}
+                                                </div>
+                                            </div>
+                                            <div style={{ textAlign: 'center' }}>
+                                                <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '0.2rem' }}>Tratamiento</div>
+                                                <span style={{ padding: '0.4rem 0.8rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 'bold', 
+                                                    background: r.tratamiento === 'MITIGAR' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                                                    color: r.tratamiento === 'MITIGAR' ? 'var(--success-text)' : '#d97706',
+                                                    border: `1px solid ${r.tratamiento === 'MITIGAR' ? 'var(--success-text)' : '#d97706'}`
+                                                }}>
+                                                    {r.tratamiento}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                                        <div>
+                                            <h4 style={{ fontSize: '0.85rem', color: 'var(--text-main)', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                <AlertTriangle size={14} color="var(--warning)"/> Causas Principales
+                                            </h4>
+                                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: '1.6', whiteSpace: 'pre-wrap', background: 'var(--bg-body)', padding: '1rem', borderRadius: 'var(--radius-sm)' }}>
+                                                {r.causas}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <h4 style={{ fontSize: '0.85rem', color: 'var(--text-main)', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                <ShieldCheck size={14} color="var(--success-text)"/> Controles Establecidos
+                                            </h4>
+                                            <div style={{ background: 'var(--bg-body)', padding: '1rem', borderRadius: 'var(--radius-sm)' }}>
+                                                {controlesList.length > 0 ? (
+                                                    <ul style={{ margin: 0, paddingLeft: '1.2rem', color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: '1.6' }}>
+                                                        {controlesList.map((ctrl, idx) => (
+                                                            <li key={idx} style={{ marginBottom: '0.25rem' }}>{ctrl.replace(/^\d+\.\s*/, '')}</li>
+                                                        ))}
+                                                    </ul>
+                                                ) : (
+                                                    <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem' }}>{r.descripcion_controles}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        {matrizRiesgos.length === 0 && (
+                            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>Cargando matriz de riesgos...</div>
+                        )}
                     </div>
                 </div>
             )}
-
-            {/* VISTA 3: Jurisdicciones */}
+            
             {activeTab === 'jurisdicciones' && (
-                <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', alignItems: 'center' }}>
-                        <h2 style={{ fontSize: '1.25rem', color: 'var(--text-main)' }}>Niveles de Riesgo por Jurisdicción</h2>
-                        <button className="btn-outline" onClick={() => {
+                <div style={{ animation: 'fadeIn 0.3s ease' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', alignItems: 'center' }}>
+                        <div>
+                            <h2 style={{ fontSize: '1.25rem', color: 'var(--text-main)', margin: '0 0 0.25rem 0' }}>Riesgo Geográfico y Jurisdicciones</h2>
+                            <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.85rem' }}>Gestione el nivel de riesgo por ubicación (0-11.11: Bajo | 11.12-22.22: Medio | &gt;22.22: Alto)</p>
+                        </div>
+                        <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1rem' }} onClick={() => {
                             const csvContent = "data:text/csv;charset=utf-8," + "Departamento,Municipio,Codigo Postal,Nivel de Riesgo,Porcentaje\n" + 
                                 jurisdicciones.map(j => `${j.departamento},${j.municipio},${j.codigo_postal},${j.nivel_riesgo},${j.porcentaje}`).join("\n");
                             const encodedUri = encodeURI(csvContent);
@@ -774,53 +819,72 @@ export default function DashboardOficial() {
                             link.setAttribute("download", "Jurisdicciones.csv");
                             document.body.appendChild(link);
                             link.click();
-                        }}>📥 Exportar CSV</button>
+                        }}><Download size={16} /> Exportar CSV</button>
                     </div>
-                    <div className="card glass-panel" style={{ padding: 0, overflow: 'auto', maxHeight: '70vh' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
-                            <thead style={{ background: 'var(--bg-color)', borderBottom: '2px solid var(--border)', position: 'sticky', top: 0, zIndex: 5 }}>
-                                <tr>
-                                    <th style={{ padding: '1rem' }}>Departamento</th>
-                                    <th style={{ padding: '1rem' }}>Municipio</th>
-                                    <th style={{ padding: '1rem' }}>Código Postal</th>
-                                    <th style={{ padding: '1rem' }}>Nivel de Riesgo</th>
-                                    <th style={{ padding: '1rem' }}>Porcentaje (Pts)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {jurisdicciones.map(j => (
-                                    <tr key={j.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                                        <td style={{ padding: '1rem', fontWeight: 'bold' }}>{j.departamento}</td>
-                                        <td style={{ padding: '1rem' }}>{j.municipio}</td>
-                                        <td style={{ padding: '1rem' }}>{j.codigo_postal}</td>
-                                        <td style={{ padding: '1rem' }}>
-                                            <select 
-                                                value={(j.nivel_riesgo || 'BAJO').toUpperCase()} 
-                                                onChange={(e) => actualizarJurisdiccion(j.id, e.target.value, j.porcentaje)}
-                                                style={{ padding: '0.3rem', borderRadius: '4px', border: '1px solid #ccc' }}
-                                            >
-                                                <option value="BAJO">BAJO</option>
-                                                <option value="MEDIO">MEDIO</option>
-                                                <option value="ALTO">ALTO</option>
-                                            </select>
-                                        </td>
-                                        <td style={{ padding: '1rem' }}>
-                                            <input 
-                                                type="number" 
-                                                value={j.porcentaje} 
-                                                onChange={(e) => actualizarJurisdiccion(j.id, j.nivel_riesgo, parseFloat(e.target.value) || 0)}
-                                                style={{ padding: '0.3rem', borderRadius: '4px', border: '1px solid #ccc', width: '70px' }}
-                                            />
-                                        </td>
+                    
+                    <div className="card glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
+                        <div style={{ overflowX: 'auto', maxHeight: '75vh' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+                                <thead style={{ background: '#f8fafc', position: 'sticky', top: 0, zIndex: 5, boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                                    <tr>
+                                        <th style={{ padding: '1.2rem 1rem', color: '#475569', fontWeight: '600', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px' }}>Departamento</th>
+                                        <th style={{ padding: '1.2rem 1rem', color: '#475569', fontWeight: '600', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px' }}>Municipio</th>
+                                        <th style={{ padding: '1.2rem 1rem', color: '#475569', fontWeight: '600', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px' }}>Cód. Postal</th>
+                                        <th style={{ padding: '1.2rem 1rem', color: '#475569', fontWeight: '600', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px' }}>Porcentaje %</th>
+                                        <th style={{ padding: '1.2rem 1rem', color: '#475569', fontWeight: '600', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px' }}>Nivel Asignado</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {jurisdicciones.map((j, idx) => {
+                                        const isBajo = j.nivel_riesgo === 'BAJO';
+                                        const isMedio = j.nivel_riesgo === 'MEDIO';
+                                        
+                                        return (
+                                        <tr key={j.id} style={{ borderBottom: '1px solid var(--border)', background: idx % 2 === 0 ? 'white' : '#f8fafc', transition: 'background 0.2s' }}>
+                                            <td style={{ padding: '1rem', fontWeight: '600', color: 'var(--text-main)' }}>{j.departamento}</td>
+                                            <td style={{ padding: '1rem', color: 'var(--text-muted)' }}>{j.municipio}</td>
+                                            <td style={{ padding: '1rem', color: 'var(--text-muted)' }}>{j.codigo_postal}</td>
+                                            <td style={{ padding: '1rem' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                    <input 
+                                                        type="number" 
+                                                        step="0.01"
+                                                        defaultValue={j.porcentaje} 
+                                                        onBlur={(e) => actualizarJurisdiccion(j.id, e.target.value)}
+                                                        style={{ 
+                                                            padding: '0.4rem 0.6rem', borderRadius: '6px', 
+                                                            border: '1px solid #cbd5e1', width: '80px', 
+                                                            background: 'white', fontWeight: 'bold', color: 'var(--primary)',
+                                                            outline: 'none', transition: 'border-color 0.2s'
+                                                        }}
+                                                        onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
+                                                    />
+                                                    <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>%</span>
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '1rem' }}>
+                                                <span style={{ 
+                                                    padding: '0.35rem 0.75rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '0.5px',
+                                                    background: isBajo ? 'var(--success)' : isMedio ? 'var(--warning)' : 'var(--danger)',
+                                                    color: 'white', display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
+                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                                }}>
+                                                    {isBajo ? <CheckCircle size={12}/> : <AlertTriangle size={12}/>}
+                                                    {j.nivel_riesgo || 'BAJO'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    )})}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             )}
 
             {/* Modal del Oficial de Cumplimiento */}
+
+{/* Modal del Oficial de Cumplimiento */}
             <AnimatePresence>
                 {solicitudSeleccionada && (
                     <div key="oficial-modal" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '2rem' }}>
