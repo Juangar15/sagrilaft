@@ -772,7 +772,7 @@ app.post('/api/v1/solicitudes/:id/tusdatos/retry', async (req, res) => {
         const monitorFuentesRetry = {
             estado_fuentes: fuentes_caidas ? 'FUENTES_CAIDAS' : 'OK',
             fuentes_detalladas: fuentes_mergeadas,
-            dict_hallazgos: dict_hallazgos || solicitud.datos_formulario?.monitor_fuentes?.dict_hallazgos,
+            dict_hallazgos: realData.dict_hallazgos || solicitud.datos_formulario?.monitor_fuentes?.dict_hallazgos,
             raw_tusdatos: 'Resultados (Retry) procesados y sincronizados con Portal'
         };
         
