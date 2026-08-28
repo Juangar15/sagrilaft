@@ -1091,7 +1091,7 @@ export default function DashboardOficial() {
                                                                 <div key={idx} style={{ fontSize: '0.8rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.2rem' }}>
                                                                     <span style={{ color: 'var(--text-muted)' }}>{fuente}: </span>
                                                                     <strong style={{ color: valor === 'Error' || valor === 'Página no disponible' ? 'var(--danger)' : valor === true ? 'var(--danger)' : !valor && valor !== false ? 'var(--text-muted)' : 'var(--text-main)' }}>
-                                                                        {valor === true ? '🚨 HALLAZGO / SÍ' : valor === false ? 'No / Limpio' : (valor === '' || valor === null ? 'N/A (No aplica)' : valor)}
+                                                                        {valor === true ? '🚨 HALLAZGO (Ver PDF)' : valor === false ? 'No / Limpio' : (valor === '' || valor === null ? 'No registra en la fuente' : valor)}
                                                                     </strong>
                                                                 </div>
                                                             ))}
@@ -1147,9 +1147,11 @@ export default function DashboardOficial() {
                                             </div>
                                         </div>
                                     </div>
+                                    {!(solicitudSeleccionada.estado_actual === 'APROBADO_LIMPIO' || solicitudSeleccionada.estado_actual === 'RECHAZADO') && (
                                     <button className="btn-outline" style={{ width: '100%', padding: '0.75rem', fontWeight: 'bold' }} onClick={handleSimularRiesgo}>
                                         ⚡ Simular Motor de Riesgo Consolidado
                                     </button>
+                                )}
 
                                     {resultadoRiesgo && (
                                         <div style={{ marginTop: '1.5rem', padding: '1rem', background: '#fff', border: '1px dashed #94a3b8', borderRadius: '8px' }}>
