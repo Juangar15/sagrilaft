@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { sagrilaftService } from '../services/api';
 import { supabase } from '../supabaseClient';
 import { jsPDF } from 'jspdf';
+import * as XLSX from 'xlsx';
 import autoTable from 'jspdf-autotable';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -713,15 +714,20 @@ export default function DashboardOficial() {
                             <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.85rem' }}>Visualización interactiva (Clic en un riesgo para expandir Causas y Controles)</p>
                         </div>
                         <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1rem' }} onClick={() => {
-                            const csvContent = "data:text/csv;charset=utf-8," + "Codigo,Evento,Fuente,Causas,FxF,Tratamiento\n" + 
-                                matrizRiesgos.map(r => `"${r.codigo_riesgo}","${r.evento_riesgo?.replace(/"/g, '""')}","${r.fuente_riesgo}","${r.causas?.replace(/"/g, '""')}","${(r.escala_frecuencia || 0) * (r.escala_impacto || 0)}","${r.tratamiento}"`).join("\n");
-                            const encodedUri = encodeURI(csvContent);
-                            const link = document.createElement("a");
-                            link.setAttribute("href", encodedUri);
-                            link.setAttribute("download", "Matriz_Riesgos.csv");
-                            document.body.appendChild(link);
-                            link.click();
-                        }}><Download size={16} /> Exportar Matriz</button>
+                            const wb = XLSX.utils.book_new();
+                            const data = matrizRiesgos.map(r => ({
+                                "Código": r.codigo_riesgo,
+                                "Evento de Riesgo": r.evento_riesgo,
+                                "Fuente": r.fuente_riesgo,
+                                "Causas Principales": r.causas,
+                                "F x I": (r.escala_frecuencia || 0) * (r.escala_impacto || 0),
+                                "Tratamiento": r.tratamiento,
+                                "Controles Establecidos": r.descripcion_controles
+                            }));
+                            const ws = XLSX.utils.json_to_sheet(data);
+                            XLSX.utils.book_append_sheet(wb, ws, "Matriz_Riesgos");
+                            XLSX.writeFile(wb, "Matriz_Riesgos.xlsx");
+                        }}><Download size={16} /> Exportar Excel</button>
                     </div>
                     
                     <div className="card glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
@@ -839,15 +845,18 @@ export default function DashboardOficial() {
                             <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.85rem' }}>Gestione el nivel de riesgo por ubicación (0-11.11: Bajo | 11.12-22.22: Medio | &gt;22.22: Alto)</p>
                         </div>
                         <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1rem' }} onClick={() => {
-                            const csvContent = "data:text/csv;charset=utf-8," + "Departamento,Municipio,Codigo Postal,Nivel de Riesgo,Porcentaje\n" + 
-                                jurisdicciones.map(j => `${j.departamento},${j.municipio},${j.codigo_postal},${j.nivel_riesgo},${j.porcentaje}`).join("\n");
-                            const encodedUri = encodeURI(csvContent);
-                            const link = document.createElement("a");
-                            link.setAttribute("href", encodedUri);
-                            link.setAttribute("download", "Jurisdicciones.csv");
-                            document.body.appendChild(link);
-                            link.click();
-                        }}><Download size={16} /> Exportar CSV</button>
+                            const wb = XLSX.utils.book_new();
+                            const data = jurisdicciones.map(j => ({
+                                "Departamento": j.departamento,
+                                "Municipio": j.municipio,
+                                "Código Postal": j.codigo_postal,
+                                "Nivel de Riesgo": (j.nivel_riesgo || 'BAJO').toUpperCase(),
+                                "Porcentaje": j.porcentaje
+                            }));
+                            const ws = XLSX.utils.json_to_sheet(data);
+                            XLSX.utils.book_append_sheet(wb, ws, "Jurisdicciones");
+                            XLSX.writeFile(wb, "Jurisdicciones.xlsx");
+                        }}><Download size={16} /> Exportar Excel</button>
                     </div>
                     
                     <div className="card glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
@@ -1033,8 +1042,6 @@ export default function DashboardOficial() {
                                                 return (
                                                     <div>
                                                         {Object.entries(categoriasCampos).map(([titulo, llaves]) => renderGroup(llaves, titulo))}
-                                                        {renderGroup(otherKeys, 'Otros Datos Declarados')}
-
                                                         {arrayKeys.map(key => (
                                                             <div key={key} style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(59, 130, 246, 0.05)', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--border)' }}>
                                                                 <h6 style={{ margin: '0 0 1rem 0', color: 'var(--primary)' }}>📋 {formatKey(key)} ({datos[key].length})</h6>
@@ -1047,12 +1054,14 @@ export default function DashboardOficial() {
                                                                                 </div>
                                                                             ))
                                                                         ) : (
-                                                                            <div>• {String(item)}</div>
+                                                                            <div>🔹 {String(item)}</div>
                                                                         )}
                                                                     </div>
                                                                 ))}
                                                             </div>
                                                         ))}
+                                                        
+                                                        {renderGroup(otherKeys, 'Auditoría y Trazabilidad (Metadatos)')}
                                                     </div>
                                                 );
                                             })()}
