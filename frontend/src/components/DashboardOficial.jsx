@@ -1087,14 +1087,36 @@ export default function DashboardOficial() {
                                                     <details style={{ background: '#f8fafc', padding: '1rem', borderRadius: '4px', border: '1px solid var(--border)' }}>
                                                         <summary style={{ fontWeight: 'bold', cursor: 'pointer', color: 'var(--primary)' }}>Ver Desglose de Bases de Datos Consultadas</summary>
                                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '1rem', maxHeight: '200px', overflowY: 'auto' }}>
-                                                            {Object.entries(solicitudSeleccionada.datos_formulario.monitor_fuentes.fuentes_detalladas).map(([fuente, valor], idx) => (
-                                                                <div key={idx} style={{ fontSize: '0.8rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.2rem' }}>
-                                                                    <span style={{ color: 'var(--text-muted)' }}>{fuente}: </span>
-                                                                    <strong style={{ color: valor === 'Error' || valor === 'Página no disponible' ? 'var(--danger)' : valor === true ? 'var(--danger)' : !valor && valor !== false ? 'var(--text-muted)' : 'var(--text-main)' }}>
-                                                                        {valor === true ? '🚨 HALLAZGO (Ver PDF)' : valor === false ? 'No / Limpio' : (valor === '' || valor === null ? 'No registra en la fuente' : valor)}
-                                                                    </strong>
+                                                            {Object.entries(solicitudSeleccionada.datos_formulario.monitor_fuentes.fuentes_detalladas).map(([fuente, valor], idx) => {
+                                                                let detalleHallazgo = '';
+                                                                const dict = solicitudSeleccionada.datos_formulario.monitor_fuentes.dict_hallazgos;
+                                                                if (dict && valor === true) {
+                                                                    for (const cat of ['altos', 'medios', 'bajos', 'infos']) {
+                                                                        const items = dict[cat] || [];
+                                                                        const match = items.find(i => i.codigo === fuente);
+                                                                        if (match) {
+                                                                            detalleHallazgo = match.hallazgo + (match.descripcion ? ' - ' + match.descripcion : '');
+                                                                            break;
+                                                                        }
+                                                                    }
+                                                                }
+
+                                                                return (
+                                                                <div key={idx} style={{ fontSize: '0.8rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem', paddingTop: '0.5rem' }}>
+                                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                                        <span style={{ color: 'var(--text-muted)' }}>{fuente.replace(/_/g, ' ')}: </span>
+                                                                        <strong style={{ color: valor === 'Error' || valor === 'Página no disponible' ? 'var(--danger)' : valor === true ? 'var(--danger)' : !valor && valor !== false ? 'var(--text-muted)' : 'var(--text-main)', textAlign: 'right', maxWidth: '50%' }}>
+                                                                            {valor === true ? '🚨 HALLAZGO' : valor === false ? 'No / Limpio' : (valor === '' || valor === null ? 'No registra en la fuente' : valor)}
+                                                                        </strong>
+                                                                    </div>
+                                                                    {detalleHallazgo && (
+                                                                        <div style={{ color: '#475569', fontSize: '0.75rem', marginTop: '0.4rem', background: '#f1f5f9', padding: '0.4rem', borderRadius: '4px' }}>
+                                                                            <i>Detalle técnico:</i> {detalleHallazgo}
+                                                                        </div>
+                                                                    )}
                                                                 </div>
-                                                            ))}
+                                                                );
+                                                            })}
                                                         </div>
                                                     </details>
                                                 </div>
@@ -1107,17 +1129,39 @@ export default function DashboardOficial() {
                                         <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
                                             <h5 style={{ margin: '0 0 1rem 0', color: 'var(--text-main)', fontSize: '1rem' }}>📋 Resultados Detallados por Fuente</h5>
                                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.8rem', maxHeight: '300px', overflowY: 'auto', paddingRight: '1rem' }}>
-                                                {Object.entries(solicitudSeleccionada.monitor_fuentes.fuentes_detalladas).map(([fuente, resultado]) => (
-                                                    <div key={fuente} style={{ display: 'flex', justifyContent: 'space-between', background: 'var(--bg-body)', padding: '0.5rem', borderRadius: '4px' }}>
-                                                        <span style={{ textTransform: 'capitalize' }}>{fuente.replace(/_/g, ' ')}</span>
-                                                        <span style={{ 
-                                                            fontWeight: 'bold', 
-                                                            color: resultado === 'Error' ? 'var(--danger)' : resultado === true ? '#f59e0b' : 'var(--success-text)' 
-                                                        }}>
-                                                            {resultado === 'Error' ? '❌ ERROR / CAÍDA' : resultado === true ? '⚠️ HALLAZGO' : '✅ LIMPIO'}
-                                                        </span>
+                                                {Object.entries(solicitudSeleccionada.monitor_fuentes.fuentes_detalladas).map(([fuente, resultado]) => {
+                                                    let detalleHallazgo = '';
+                                                    const dict = solicitudSeleccionada.monitor_fuentes.dict_hallazgos;
+                                                    if (dict && resultado === true) {
+                                                        for (const cat of ['altos', 'medios', 'bajos', 'infos']) {
+                                                            const items = dict[cat] || [];
+                                                            const match = items.find(i => i.codigo === fuente);
+                                                            if (match) {
+                                                                detalleHallazgo = match.hallazgo;
+                                                                break;
+                                                            }
+                                                        }
+                                                    }
+                                                    
+                                                    return (
+                                                    <div key={fuente} style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg-body)', padding: '0.5rem', borderRadius: '4px' }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                            <span style={{ textTransform: 'capitalize' }}>{fuente.replace(/_/g, ' ')}</span>
+                                                            <span style={{ 
+                                                                fontWeight: 'bold', 
+                                                                color: resultado === 'Error' ? 'var(--danger)' : resultado === true ? '#f59e0b' : 'var(--success-text)' 
+                                                            }}>
+                                                                {resultado === 'Error' ? '⛔ ERROR / CAÍDA' : resultado === true ? '🚨 HALLAZGO' : '✅ LIMPIO'}
+                                                            </span>
+                                                        </div>
+                                                        {detalleHallazgo && (
+                                                            <div style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '0.4rem', fontStyle: 'italic' }}>
+                                                                {detalleHallazgo}
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                ))}
+                                                    );
+                                                })}
                                             </div>
                                         </div>
                                     )}

@@ -528,9 +528,20 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
             intentos++;
         }
 
-        if (!finalData) throw new Error("Timeout esperando respuesta de TusDatos");
+                if (!finalData) throw new Error("Timeout esperando respuesta de TusDatos");
 
-        // 1.3 Imprimir el reporte completo en consola para depuración
+        // 1.3 Obtener el reporte detallado (dict_hallazgos)
+        let dict_hallazgos = null;
+        try {
+            if (finalData.id) {
+                const reportRes = await axios.get(`${baseUrl}/report_json/${finalData.id}`, { headers });
+                dict_hallazgos = reportRes.data?.dict_hallazgos || null;
+            }
+        } catch (err) {
+            console.error("Error obteniendo report_json detallado de TusDatos:", err.message);
+        }
+
+        // 1.4 Imprimir el reporte completo en consola para depuración
         console.log("\n================ REPORT TUSDATOS (RAW JSON) ================");
         console.log(JSON.stringify(finalData, null, 2));
         console.log("============================================================\n");
@@ -564,6 +575,7 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
             procuraduria: finalData.results?.procuraduria === true ? 'ALERTA' : 'OK',
             estado_fuentes: fuentes_caidas ? 'FUENTES_CAIDAS' : 'OK',
             fuentes_detalladas: finalData.results || {},
+            dict_hallazgos: dict_hallazgos,
             raw_tusdatos: 'Resultados procesados exitosamente vía ' + (isTestEnv ? 'Sandbox' : 'Producción')
         };
         newFormulario.monitor_fuentes = monitorFuentes;
@@ -760,6 +772,7 @@ app.post('/api/v1/solicitudes/:id/tusdatos/retry', async (req, res) => {
         const monitorFuentesRetry = {
             estado_fuentes: fuentes_caidas ? 'FUENTES_CAIDAS' : 'OK',
             fuentes_detalladas: fuentes_mergeadas,
+            dict_hallazgos: dict_hallazgos || solicitud.datos_formulario?.monitor_fuentes?.dict_hallazgos,
             raw_tusdatos: 'Resultados (Retry) procesados y sincronizados con Portal'
         };
         
