@@ -6,7 +6,7 @@ import autoTable from 'jspdf-autotable';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Search, Download, Filter, FileText, AlertTriangle, 
-    CheckCircle, Clock, X, Building2, User, Globe, ShieldCheck, Edit3, LogOut
+    CheckCircle, Clock, X, Building2, User, Globe, ShieldCheck, Edit3, LogOut, ChevronDown, ChevronUp
 } from 'lucide-react';
 
 export default function DashboardOficial() {
@@ -27,6 +27,7 @@ export default function DashboardOficial() {
     };
     
     const [estadoActivo, setEstadoActivo] = useState('REVISION_PREVIA');
+    const [riesgoExpandido, setRiesgoExpandido] = useState(null);
     const [camposPingPong, setCamposPingPong] = useState({});
     const [observacionPingPong, setObservacionPingPong] = useState('');
     
@@ -709,7 +710,7 @@ export default function DashboardOficial() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', alignItems: 'center' }}>
                         <div>
                             <h2 style={{ fontSize: '1.25rem', color: 'var(--text-main)', margin: '0 0 0.25rem 0' }}>Matriz de Riesgo Documental</h2>
-                            <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.85rem' }}>Visualización y gestión de riesgos, causas y controles.</p>
+                            <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.85rem' }}>Visualización interactiva (Clic en un riesgo para expandir Causas y Controles)</p>
                         </div>
                         <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1rem' }} onClick={() => {
                             const csvContent = "data:text/csv;charset=utf-8," + "Codigo,Evento,Fuente,Causas,FxF,Tratamiento\n" + 
@@ -723,82 +724,109 @@ export default function DashboardOficial() {
                         }}><Download size={16} /> Exportar Matriz</button>
                     </div>
                     
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {matrizRiesgos.map(r => {
-                            const inherente = (r.escala_frecuencia || 0) * (r.escala_impacto || 0);
-                            const colorImpacto = inherente >= 15 ? 'var(--danger)' : inherente >= 9 ? 'var(--warning)' : 'var(--success)';
-                            
-                            // Parse controles text into a neat list
-                            const controlesList = r.descripcion_controles 
-                                ? r.descripcion_controles.split(/(?=\d+\.\s)/).filter(c => c.trim().length > 0)
-                                : [];
+                    <div className="card glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
+                        <div style={{ overflowX: 'auto', maxHeight: '75vh' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+                                <thead style={{ background: '#f8fafc', position: 'sticky', top: 0, zIndex: 5, boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                                    <tr>
+                                        <th style={{ padding: '1rem', width: '10%', color: '#475569', fontWeight: '600', textTransform: 'uppercase', fontSize: '0.75rem' }}>Código</th>
+                                        <th style={{ padding: '1rem', width: '40%', color: '#475569', fontWeight: '600', textTransform: 'uppercase', fontSize: '0.75rem' }}>Evento de Riesgo</th>
+                                        <th style={{ padding: '1rem', width: '15%', color: '#475569', fontWeight: '600', textTransform: 'uppercase', fontSize: '0.75rem' }}>Fuente</th>
+                                        <th style={{ padding: '1rem', width: '8%', color: '#475569', fontWeight: '600', textTransform: 'uppercase', fontSize: '0.75rem', textAlign: 'center' }}>F x I</th>
+                                        <th style={{ padding: '1rem', width: '12%', color: '#475569', fontWeight: '600', textTransform: 'uppercase', fontSize: '0.75rem', textAlign: 'center' }}>Tratamiento</th>
+                                        <th style={{ padding: '1rem', width: '15%', color: '#475569', fontWeight: '600', textTransform: 'uppercase', fontSize: '0.75rem', textAlign: 'center' }}>Detalles</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {matrizRiesgos.map((r, idx) => {
+                                        const inherente = (r.escala_frecuencia || 0) * (r.escala_impacto || 0);
+                                        const isHigh = inherente >= 15;
+                                        const isMed = inherente >= 9 && inherente < 15;
+                                        const colorImpacto = isHigh ? '#ef4444' : isMed ? '#f59e0b' : '#10b981';
+                                        const isExpanded = riesgoExpandido === r.id;
+                                        
+                                        const controlesList = r.descripcion_controles 
+                                            ? r.descripcion_controles.split(/(?=\d+\.\s)/).filter(c => c.trim().length > 0)
+                                            : [];
 
-                            return (
-                                <div key={r.id} style={{ background: 'white', borderRadius: 'var(--radius-md)', padding: '1.5rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)', border: '1px solid var(--border)' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border)' }}>
-                                        <div style={{ flex: 1, paddingRight: '2rem' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-                                                <span style={{ background: 'var(--primary)', color: 'white', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '1px' }}>
-                                                    {r.codigo_riesgo}
-                                                </span>
-                                                <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.1rem' }}>{r.evento_riesgo}</h3>
-                                            </div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                                                <span style={{ fontWeight: '600' }}>Fuente:</span> {r.fuente_riesgo}
-                                            </div>
-                                        </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                                            <div style={{ textAlign: 'center' }}>
-                                                <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '0.2rem' }}>F x I</div>
-                                                <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: colorImpacto, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}>
-                                                    {inherente}
-                                                </div>
-                                            </div>
-                                            <div style={{ textAlign: 'center' }}>
-                                                <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 'bold', marginBottom: '0.2rem' }}>Tratamiento</div>
-                                                <span style={{ padding: '0.4rem 0.8rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 'bold', 
-                                                    background: r.tratamiento === 'MITIGAR' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                                                    color: r.tratamiento === 'MITIGAR' ? 'var(--success-text)' : '#d97706',
-                                                    border: `1px solid ${r.tratamiento === 'MITIGAR' ? 'var(--success-text)' : '#d97706'}`
-                                                }}>
-                                                    {r.tratamiento}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-                                        <div>
-                                            <h4 style={{ fontSize: '0.85rem', color: 'var(--text-main)', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                <AlertTriangle size={14} color="var(--warning)"/> Causas Principales
-                                            </h4>
-                                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: '1.6', whiteSpace: 'pre-wrap', background: 'var(--bg-body)', padding: '1rem', borderRadius: 'var(--radius-sm)' }}>
-                                                {r.causas}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <h4 style={{ fontSize: '0.85rem', color: 'var(--text-main)', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                <ShieldCheck size={14} color="var(--success-text)"/> Controles Establecidos
-                                            </h4>
-                                            <div style={{ background: 'var(--bg-body)', padding: '1rem', borderRadius: 'var(--radius-sm)' }}>
-                                                {controlesList.length > 0 ? (
-                                                    <ul style={{ margin: 0, paddingLeft: '1.2rem', color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: '1.6' }}>
-                                                        {controlesList.map((ctrl, idx) => (
-                                                            <li key={idx} style={{ marginBottom: '0.25rem' }}>{ctrl.replace(/^\d+\.\s*/, '')}</li>
-                                                        ))}
-                                                    </ul>
-                                                ) : (
-                                                    <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem' }}>{r.descripcion_controles}</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                        {matrizRiesgos.length === 0 && (
-                            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>Cargando matriz de riesgos...</div>
-                        )}
+                                        return (
+                                            <React.Fragment key={r.id}>
+                                                <tr onClick={() => setRiesgoExpandido(isExpanded ? null : r.id)} style={{ background: isExpanded ? '#f1f5f9' : (idx % 2 === 0 ? 'white' : '#f8fafc'), cursor: 'pointer', borderBottom: isExpanded ? 'none' : '1px solid var(--border)', transition: 'background 0.2s' }}>
+                                                    <td style={{ padding: '1rem' }}>
+                                                        <span style={{ background: 'var(--primary)', color: 'white', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                                                            {r.codigo_riesgo}
+                                                        </span>
+                                                    </td>
+                                                    <td style={{ padding: '1rem', color: 'var(--text-main)', fontWeight: '500' }}>
+                                                        <div style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                                            {r.evento_riesgo}
+                                                        </div>
+                                                    </td>
+                                                    <td style={{ padding: '1rem', color: 'var(--text-muted)' }}>{r.fuente_riesgo}</td>
+                                                    <td style={{ padding: '1rem', textAlign: 'center' }}>
+                                                        <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px', borderRadius: '6px', background: colorImpacto, color: 'white', fontWeight: 'bold', fontSize: '0.85rem' }}>
+                                                            {inherente}
+                                                        </div>
+                                                    </td>
+                                                    <td style={{ padding: '1rem', textAlign: 'center' }}>
+                                                        <span style={{ padding: '0.3rem 0.6rem', borderRadius: '50px', fontSize: '0.7rem', fontWeight: 'bold', 
+                                                            background: r.tratamiento === 'MITIGAR' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                                                            color: r.tratamiento === 'MITIGAR' ? 'var(--success-text)' : '#d97706',
+                                                            border: `1px solid ${r.tratamiento === 'MITIGAR' ? 'var(--success-text)' : '#d97706'}`
+                                                        }}>
+                                                            {r.tratamiento}
+                                                        </span>
+                                                    </td>
+                                                    <td style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                                        {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                                                    </td>
+                                                </tr>
+                                                <AnimatePresence>
+                                                    {isExpanded && (
+                                                        <motion.tr 
+                                                            initial={{ opacity: 0, height: 0 }} 
+                                                            animate={{ opacity: 1, height: 'auto' }} 
+                                                            exit={{ opacity: 0, height: 0 }}
+                                                            style={{ background: '#f1f5f9', borderBottom: '1px solid var(--border)' }}
+                                                        >
+                                                            <td colSpan="6" style={{ padding: '0' }}>
+                                                                <div style={{ padding: '1.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                                                                    <div style={{ background: 'white', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                                                                        <h4 style={{ fontSize: '0.85rem', color: 'var(--text-main)', textTransform: 'uppercase', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                            <AlertTriangle size={16} color="#f59e0b"/> Causas Principales
+                                                                        </h4>
+                                                                        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.6', margin: 0, whiteSpace: 'pre-wrap' }}>
+                                                                            {r.causas}
+                                                                        </p>
+                                                                    </div>
+                                                                    <div style={{ background: 'white', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                                                                        <h4 style={{ fontSize: '0.85rem', color: 'var(--text-main)', textTransform: 'uppercase', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                            <ShieldCheck size={16} color="#10b981"/> Controles Establecidos
+                                                                        </h4>
+                                                                        {controlesList.length > 0 ? (
+                                                                            <ul style={{ margin: 0, paddingLeft: '1.2rem', color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.6' }}>
+                                                                                {controlesList.map((ctrl, i) => (
+                                                                                    <li key={i} style={{ marginBottom: '0.5rem' }}>{ctrl.replace(/^\d+\.\s*/, '')}</li>
+                                                                                ))}
+                                                                            </ul>
+                                                                        ) : (
+                                                                            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>{r.descripcion_controles}</p>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                        </motion.tr>
+                                                    )}
+                                                </AnimatePresence>
+                                            </React.Fragment>
+                                        );
+                                    })}
+                                    {matrizRiesgos.length === 0 && (
+                                        <tr><td colSpan="6" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>Cargando matriz de riesgos...</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             )}
@@ -839,6 +867,9 @@ export default function DashboardOficial() {
                                         const isBajo = j.nivel_riesgo === 'BAJO';
                                         const isMedio = j.nivel_riesgo === 'MEDIO';
                                         
+                                        // User request: Distinct colors for MEDIO and ALTO
+                                        const bgColor = isBajo ? '#10b981' : isMedio ? '#eab308' : '#ef4444'; // Emerald for Low, Yellow for Med, Red for High
+                                        
                                         return (
                                         <tr key={j.id} style={{ borderBottom: '1px solid var(--border)', background: idx % 2 === 0 ? 'white' : '#f8fafc', transition: 'background 0.2s' }}>
                                             <td style={{ padding: '1rem', fontWeight: '600', color: 'var(--text-main)' }}>{j.departamento}</td>
@@ -865,8 +896,9 @@ export default function DashboardOficial() {
                                             <td style={{ padding: '1rem' }}>
                                                 <span style={{ 
                                                     padding: '0.35rem 0.75rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '0.5px',
-                                                    background: isBajo ? 'var(--success)' : isMedio ? 'var(--warning)' : 'var(--danger)',
-                                                    color: 'white', display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
+                                                    background: bgColor,
+                                                    color: isMedio ? '#451a03' : 'white', // Ensure high contrast for yellow text
+                                                    display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
                                                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                                                 }}>
                                                     {isBajo ? <CheckCircle size={12}/> : <AlertTriangle size={12}/>}
@@ -883,6 +915,8 @@ export default function DashboardOficial() {
             )}
 
             {/* Modal del Oficial de Cumplimiento */}
+
+{/* Modal del Oficial de Cumplimiento */}
 
 {/* Modal del Oficial de Cumplimiento */}
             <AnimatePresence>
