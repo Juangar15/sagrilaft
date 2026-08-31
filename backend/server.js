@@ -589,42 +589,93 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
         };
         newFormulario.monitor_fuentes = monitorFuentes;
 
-        // 2. Ejecutar la lógica de Evaluación Dinámica (Los 3 Baldes)
+        // 2. Ejecutar la Lógica de Puntuación Precisa (Scoring Engine 100% Real)
+        
+        // 2.1 Analizar Hallazgos de TusDatos (Pesos)
+        const td = dict_hallazgos || {};
+        const numAltos = (td.altos || []).length;
+        const numMedios = (td.medios || []).length;
+        const numBajos = (td.bajos || []).length;
+
+        let tusDatosScore = 0;
+        if (numAltos > 0) {
+            tusDatosScore = 100; // Bloqueo automático por Listas Críticas
+        } else {
+            tusDatosScore += Math.min(numMedios * 15, 45); // Max 45 pts por hallazgos medios (Procuraduría, etc.)
+            tusDatosScore += Math.min(numBajos * 5, 15);   // Max 15 pts por hallazgos bajos
+        }
+
+        // 2.2 Analizar Riesgo Geográfico (Jurisdicción)
+        let jurisdiccionScore = 0;
+        let nivelJurisdiccion = 'BAJO';
+        try {
+            const depto = solicitud.datos_formulario?.departamento_principal || solicitud.datos_formulario?.departamento || '';
+            const muni = solicitud.datos_formulario?.municipio_principal || solicitud.datos_formulario?.municipio || '';
+            
+            if (depto || muni) {
+                const { data: jurisData } = await supabase.from('jurisdicciones')
+                    .select('nivel_riesgo, porcentaje')
+                    .ilike('departamento', `%${depto}%`)
+                    .ilike('municipio', `%${muni}%`)
+                    .limit(1);
+
+                if (jurisData && jurisData.length > 0) {
+                    nivelJurisdiccion = (jurisData[0].nivel_riesgo || 'BAJO').toUpperCase();
+                    if (nivelJurisdiccion === 'ALTO') jurisdiccionScore = 20;
+                    else if (nivelJurisdiccion === 'MEDIO') jurisdiccionScore = 10;
+                }
+            }
+        } catch (e) {
+            console.error("Error consultando jurisdicción:", e.message);
+        }
+
+        // 2.3 Analizar Riesgos del Formulario (PEPs, etc.)
+        let pepScore = 0;
+        const esPep = String(solicitud.datos_formulario?.es_pep).toLowerCase() === 'si' || 
+                      String(solicitud.datos_formulario?.tiene_vinculo_pep).toLowerCase() === 'si';
+        if (esPep) pepScore = 15;
+
+        // 2.4 Calcular Score Final
+        let rawScore = tusDatosScore + jurisdiccionScore + pepScore;
+        let scoreFinal = Math.min(Math.round(rawScore), 100);
+
+        let estadoGeneral = 'APROBADO_LIMPIO';
+        if (fuentes_caidas) {
+            estadoGeneral = "FUENTES_INCOMPLETAS";
+        } else {
+            if (scoreFinal <= 33.33) {
+                estadoGeneral = "APROBADO_LIMPIO";
+            } else if (scoreFinal <= 66.66) {
+                estadoGeneral = "REVISION_MANUAL";
+            } else {
+                estadoGeneral = "ALERTA_CRITICA";
+            }
+        }
+
+        // 2.5 Reflejar en la Matriz de Riesgos
         const { data: riesgos, error: errRiesgos } = await supabase.from('matriz_riesgos_master').select('*').eq('activo', true);
         if (errRiesgos) throw errRiesgos;
 
-        let totalRiesgo = 0;
         const evaluaciones = [];
-
-        let scoreFinal = coincidencia_api ? 95 : 5;
-        let estadoGeneral = coincidencia_api ? "ALERTA_CRITICA" : "APROBADO_LIMPIO";
-        
-        // Priorizar estado de fuentes caídas para permitir recarga
-        if (fuentes_caidas) {
-            estadoGeneral = "FUENTES_INCOMPLETAS";
-        }
-
         if (riesgos && riesgos.length > 0) {
             for (const riesgo of riesgos) {
                 let frec = riesgo.escala_frecuencia_inherente || 1;
                 let imp = riesgo.escala_impacto_inherente || 1;
-                let detalles = "Evaluación base.";
+                let detalles = "Evaluación base estable.";
 
-                // Aplicar BALDES
-                if (riesgo.categoria_detonante === 'API') {
-                    if (coincidencia_api) {
-                        frec = 5; imp = 5;
-                        detalles = "Riesgo elevado por hallazgo crítico en API (Listas Restrictivas).";
-                    }
-                } else if (riesgo.categoria_detonante === 'FORMULARIO') {
-                    detalles = "Evaluado previamente en formulario.";
-                } else if (riesgo.categoria_detonante === 'MANUAL') {
-                    detalles = "Riesgo operativo/organizacional evaluado con scores base.";
+                if (riesgo.codigo === 'R-001') {
+                    // Listas Restrictivas (ONU, OFAC)
+                    if (numAltos > 0) { frec = 5; detalles = `Riesgo extremo: ${numAltos} coincidencias en Listas Restrictivas Internacionales.`; }
+                } else if (riesgo.codigo === 'R-002') {
+                    // Antecedentes (Policía, etc.)
+                    if (numMedios > 0) { frec = 4; detalles = `Riesgo alto: ${numMedios} antecedentes o anotaciones fiscales/disciplinarias.`; }
+                    else if (numBajos > 0) { frec = 3; detalles = `Riesgo medio: ${numBajos} hallazgos menores o informativos.`; }
+                } else if (riesgo.codigo === 'R-004') {
+                    // PEPs
+                    if (esPep) { frec = 4; detalles = "Contraparte o vinculado está marcado como Persona Expuesta Políticamente (PEP)."; }
                 }
 
                 const residual = frec * imp;
-                totalRiesgo += residual;
-
                 evaluaciones.push({
                     solicitud_id: id,
                     riesgo_id: riesgo.id,
@@ -635,16 +686,6 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
                 });
             }
 
-            const maxScorePosible = riesgos.length * 25;
-            scoreFinal = Math.round((totalRiesgo / maxScorePosible) * 100);
-            
-            if (fuentes_caidas) {
-                estadoGeneral = "FUENTES_INCOMPLETAS";
-            } else {
-                estadoGeneral = scoreFinal >= 85 ? "ALERTA_CRITICA" : scoreFinal >= 50 ? "REVISION_MANUAL" : "APROBADO_LIMPIO";
-            }
-
-            // Eliminar evaluaciones previas (si es un reintento) y guardar nuevas
             await supabase.from('evaluacion_riesgos_resultado').delete().eq('solicitud_id', id);
             await supabase.from('evaluacion_riesgos_resultado').insert(evaluaciones);
         }
