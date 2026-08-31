@@ -497,9 +497,17 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
         // Si no tenemos un jobid previo (no es un reintento) o queremos forzar uno nuevo
         const payload = { doc: nit.toString().replace(/\D/g,''), typedoc: tipoIdentificacion };
         const launchRes = await axios.post(`${baseUrl}/launch`, payload, { headers });
-        jobid = launchRes.data.jobid;
+        console.log("TusDatos Launch Response:", launchRes.data);
+        
+        if (launchRes.data.error) {
+            throw new Error(`Respuesta de TusDatos: ${launchRes.data.error}`);
+        }
+        
+        jobid = launchRes.data.jobid || launchRes.data.id;
 
-        if (!jobid) throw new Error("TusDatos: No se obtuvo jobid");
+        if (!jobid) {
+            throw new Error(`TusDatos: No se obtuvo jobid. Respuesta completa: ${JSON.stringify(launchRes.data)}`);
+        }
 
         // Guardamos el jobid en la DB para futuras recargas
         let newFormulario = { ...solicitud.datos_formulario, jobid_tusdatos: jobid, error_fuentes_tusdatos: false };
@@ -658,8 +666,12 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Error en Integración TusDatos:", error);
-        return res.status(500).json({ error: "Fallo al ejecutar TusDatos", detalle: error.message });
+        let errorDetalle = error.message;
+        if (error.response && error.response.data) {
+            errorDetalle = `HTTP ${error.response.status}: ${JSON.stringify(error.response.data)}`;
+        }
+        console.error("Error en Integración TusDatos:", errorDetalle, error);
+        return res.status(500).json({ error: "Fallo al ejecutar TusDatos", detalle: errorDetalle });
     }
 });
 
