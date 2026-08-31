@@ -610,19 +610,25 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
         let nivelJurisdiccion = 'BAJO';
         try {
             const depto = solicitud.datos_formulario?.departamento_principal || solicitud.datos_formulario?.departamento || '';
-            const muni = solicitud.datos_formulario?.municipio_principal || solicitud.datos_formulario?.municipio || '';
+            const muni = solicitud.datos_formulario?.municipio_principal || solicitud.datos_formulario?.municipio || solicitud.datos_formulario?.ciudad || solicitud.datos_formulario?.ciudad_principal || '';
             
             if (depto || muni) {
-                const { data: jurisData } = await supabase.from('jurisdicciones')
-                    .select('nivel_riesgo, porcentaje')
-                    .ilike('departamento', `%${depto}%`)
-                    .ilike('municipio', `%${muni}%`)
-                    .limit(1);
-
+                const { data: jurisData } = await supabase.from('sagrilaft_jurisdicciones').select('departamento, municipio, nivel_riesgo, porcentaje').limit(2000);
                 if (jurisData && jurisData.length > 0) {
-                    nivelJurisdiccion = (jurisData[0].nivel_riesgo || 'BAJO').toUpperCase();
-                    if (nivelJurisdiccion === 'ALTO') jurisdiccionScore = 20;
-                    else if (nivelJurisdiccion === 'MEDIO') jurisdiccionScore = 10;
+                    const normalizeStr = (str) => (str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+                    const deptoNorm = normalizeStr(depto);
+                    const muniNorm = normalizeStr(muni);
+                    
+                    const j = jurisData.find(jd => 
+                        normalizeStr(jd.departamento) === deptoNorm && 
+                        normalizeStr(jd.municipio) === muniNorm
+                    );
+                    
+                    if (j) {
+                        nivelJurisdiccion = (j.nivel_riesgo || 'BAJO').toUpperCase();
+                        if (nivelJurisdiccion === 'ALTO') jurisdiccionScore = 20;
+                        else if (nivelJurisdiccion === 'MEDIO') jurisdiccionScore = 10;
+                    }
                 }
             }
         } catch (e) {

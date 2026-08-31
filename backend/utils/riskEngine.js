@@ -14,19 +14,30 @@ async function calcularRiesgoConsolidado(datos_formulario, alertas_manuales = []
     let desglose = [];
 
     // 1. EVALUAR JURISDICCIÓN (Riesgo Geográfico)
-    let dpto = datos_formulario.departamento || datos_formulario.departamento_empresa || '';
-    let mun = datos_formulario.municipio || datos_formulario.ciudad || datos_formulario.municipio_empresa || datos_formulario.ciudad_empresa || '';
+    let dpto = datos_formulario.departamento_principal || datos_formulario.departamento || datos_formulario.departamento_empresa || '';
+    let mun = datos_formulario.municipio_principal || datos_formulario.ciudad_principal || datos_formulario.municipio || datos_formulario.ciudad || datos_formulario.municipio_empresa || datos_formulario.ciudad_empresa || '';
     
-    // Normalizar para la búsqueda
+        // Normalizar para la búsqueda (Sin acentos)
     const buscarJurisdiccion = async () => {
-        if (!dpto.trim() && !mun.trim()) return null; // No buscar si están vacíos para evitar falsos positivos
+        if (!dpto.trim() && !mun.trim()) return null;
+        
         const { data } = await supabase
             .from('sagrilaft_jurisdicciones')
-            .select('*')
-            .ilike('departamento', `%${dpto.trim()}%`)
-            .ilike('municipio', `%${mun.trim()}%`)
-            .limit(1);
-        return data && data.length > 0 ? data[0] : null;
+            .select('departamento, municipio, nivel_riesgo, porcentaje')
+            .limit(2000);
+            
+        if (data && data.length > 0) {
+            const normalizeStr = (str) => (str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+            const dptoNorm = normalizeStr(dpto);
+            const munNorm = normalizeStr(mun);
+            
+            const j = data.find(jd => 
+                normalizeStr(jd.departamento) === dptoNorm && 
+                normalizeStr(jd.municipio) === munNorm
+            );
+            return j || null;
+        }
+        return null;
     };
 
     const jur = await buscarJurisdiccion();
