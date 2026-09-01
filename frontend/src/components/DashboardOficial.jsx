@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { sagrilaftService } from '../services/api';
 import { supabase } from '../supabaseClient';
 import { jsPDF } from 'jspdf';
+import { AREAS_Y_CARGOS } from '../utils/areasYCargos';
 import * as XLSX from 'xlsx';
 import autoTable from 'jspdf-autotable';
 import { motion, AnimatePresence } from 'framer-motion';
