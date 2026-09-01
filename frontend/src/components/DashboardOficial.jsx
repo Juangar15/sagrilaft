@@ -1315,11 +1315,21 @@ export default function DashboardOficial() {
                                             </div>
                                         </div>
                                     </div>
-                                    {!(solicitudSeleccionada.estado_actual === 'APROBADO_LIMPIO' || solicitudSeleccionada.estado_actual === 'RECHAZADO') && (
+                                    
+                                    <div style={{ marginBottom: '1rem' }}>
+                                        <label className="label">Observaciones y Justificación (Opcional)</label>
+                                        <textarea className="input-field" rows="3" value={formOficial.observaciones} onChange={e => setFormOficial({...formOficial, observaciones: e.target.value})} placeholder="Ej: Se evaluó la alerta manual y se determinó que..."></textarea>
+                                    </div>
+                                    
                                     <button className="btn-outline" style={{ width: '100%', padding: '0.75rem', fontWeight: 'bold' }} onClick={handleSimularRiesgo}>
                                         ⚡ Simular Motor de Riesgo Consolidado
                                     </button>
-                                )}
+                                    
+                                    {(solicitudSeleccionada.estado_actual === 'APROBADO_LIMPIO' || solicitudSeleccionada.estado_actual === 'RECHAZADO') && (
+                                        <button className="btn-primary" style={{ width: '100%', padding: '0.75rem', fontWeight: 'bold', marginTop: '0.75rem', background: '#3b82f6', borderColor: '#3b82f6' }} onClick={handleGuardarActualizacion}>
+                                            💾 Guardar Actualización de Riesgo y Observaciones
+                                        </button>
+                                    )}
 
                                     {resultadoRiesgo && (
                                         <div style={{ marginTop: '1.5rem', padding: '1rem', background: '#fff', border: '1px dashed #94a3b8', borderRadius: '8px' }}>
@@ -1374,6 +1384,13 @@ export default function DashboardOficial() {
                                             <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '0.5rem', marginTop: '0.75rem', textAlign: 'right', fontWeight: '700', fontSize: '0.9rem' }}>
                                                 PUNTAJE FINAL: {solicitudSeleccionada.desglose_riesgo.puntaje_total}/100
                                             </div>
+                                        </div>
+                                    )}
+                                    
+                                    {solicitudSeleccionada.analisis_oficial?.observaciones && (
+                                        <div style={{ marginBottom: '1.5rem', padding: '1rem', background: '#fef2f2', borderRadius: '8px', border: '1px solid #fecaca', textAlign: 'left', color: '#991b1b', fontSize: '0.85rem' }}>
+                                            <h6 style={{ margin: '0 0 0.5rem 0', fontWeight: '600' }}>📝 Notas del Oficial de Cumplimiento</h6>
+                                            <p style={{ margin: 0, fontStyle: 'italic' }}>"{solicitudSeleccionada.analisis_oficial.observaciones}"</p>
                                         </div>
                                     )}
 
