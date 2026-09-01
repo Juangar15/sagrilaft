@@ -1045,7 +1045,50 @@ export default function DashboardOficial() {
 
                             {/* Body Modal */}
                             <div style={{ padding: '2rem' }}>
+
+                                {solicitudSeleccionada.estado_actual === 'ASIGNACION_CARGO' && (
+                                    <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '1.5rem' }}>
+                                        <h4 style={{ margin: '0 0 1rem 0', color: 'var(--primary)' }}>Asignación de Área y Cargo</h4>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                                            <div>
+                                                <label className="label">Estado de Vinculación</label>
+                                                <select className="input-field" value={formAsignacion.estado_vinculacion} onChange={e => setFormAsignacion({...formAsignacion, estado_vinculacion: e.target.value})}>
+                                                    <option value="vinculados">Vinculado</option>
+                                                    <option value="no_vinculados">No Vinculado</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="label">Área</label>
+                                                <select className="input-field" value={formAsignacion.area} onChange={e => setFormAsignacion({...formAsignacion, area: e.target.value, cargo: ''})}>
+                                                    <option value="">Seleccione Área...</option>
+                                                    {Object.keys(AREAS_Y_CARGOS).map(area => (
+                                                        <option key={area} value={area}>{area}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="label">Cargo</label>
+                                                <select className="input-field" value={formAsignacion.cargo} onChange={e => setFormAsignacion({...formAsignacion, cargo: e.target.value})} disabled={!formAsignacion.area}>
+                                                    <option value="">Seleccione Cargo...</option>
+                                                    {(AREAS_Y_CARGOS[formAsignacion.area] || []).map(cargo => (
+                                                        <option key={cargo} value={cargo}>{cargo}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '1rem' }}>
+                                            <button className="btn-primary" onClick={handleAsignarCargo} disabled={cargando}>
+                                                Asignar y Enviar a Revisión Previa
+                                            </button>
+                                            <button className="btn-outline" onClick={() => setMostrarPingPong(true)}>
+                                                Devolver (Ping-Pong)
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                                 
+                                <div style={{ display: solicitudSeleccionada.estado_actual === 'ASIGNACION_CARGO' ? 'none' : 'block' }}>
+
                                 {solicitudSeleccionada.estado_actual === 'DEVUELTO_CORRECCION' && (
                                     <div style={{ background: '#fffbeb', border: '1px solid #f59e0b', padding: '1.5rem', borderRadius: '8px', marginBottom: '2rem' }}>
                                         <h4 style={{ color: '#d97706', margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -1582,7 +1625,7 @@ export default function DashboardOficial() {
                                 </div>
                                 </>
                                 )}
-
+                                </div> {/* Cierra el div wrapper de display: none */}
                             </div>
                         </motion.div>
                     </div>
