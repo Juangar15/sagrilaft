@@ -719,6 +719,7 @@ export default function DashboardOficial() {
                 
                 <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
                     {[
+                        { id: 'ASIGNACION_CARGO', label: 'Asignación Área/Cargo', icon: <FileText size={16}/>, color: '#6366f1', activeBg: '#6366f1', activeColor: 'white' },
                         { id: 'REVISION_PREVIA', label: 'Revisión Previa', icon: <FileText size={16}/>, color: '#475569', activeBg: 'var(--primary)', activeColor: 'white' },
                         { id: 'DEVUELTO_CORRECCION', label: 'Ping-Pong', icon: <Clock size={16}/>, color: '#f59e0b', activeBg: '#f59e0b', activeColor: 'white' },
                         { id: 'FUENTES_INCOMPLETAS', label: 'Fuentes Caídas', icon: <AlertTriangle size={16}/>, color: 'var(--danger)', activeBg: 'var(--danger)', activeColor: 'white' },
