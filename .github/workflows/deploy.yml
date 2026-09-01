@@ -3,7 +3,7 @@ name: Deploy Sagrilaft to VPS
 on:
   push:
     branches:
-      - main # O master, dependiendo de cómo se llame tu rama principal
+      - main
 
 jobs:
   deploy:
@@ -15,8 +15,12 @@ jobs:
           host: 2.25.69.176
           username: root
           key: ${{ secrets.VPS }}
+          envs: GH_TOKEN
           script: |
             cd /opt/sagrilaft
+            git remote set-url origin https://Juangar15:${GH_TOKEN}@github.com/Juangar15/sagrilaft.git
             git fetch origin
             git reset --hard origin/main
             bash deploy.sh
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
