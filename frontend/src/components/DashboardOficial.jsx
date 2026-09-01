@@ -466,9 +466,9 @@ export default function DashboardOficial() {
 
     // Render tarjeta Kanban
     const TarjetaRadicado = ({ sol }) => {
-        const isCritico = sol.estado_actual === 'ALERTA_CRITICA' || sol.score_riesgo >= 90;
+        const isCritico = sol.estado_actual === 'ALERTA_CRITICA' || sol.score_riesgo > 66.66;
         const isExtendido = sol.estado_actual === 'ESPERA_EXTENDIDO';
-        const isAlerta = sol.score_riesgo > 30 && sol.score_riesgo < 90;
+        const isAlerta = sol.score_riesgo > 33.33 && sol.score_riesgo <= 66.66;
         const colorClase = isCritico ? 'var(--danger)' : isExtendido ? '#8b5cf6' : isAlerta ? 'var(--warning)' : 'var(--success)';
         const badgeClase = isCritico ? 'badge-danger' : isExtendido ? 'badge-neutral' : isAlerta ? 'badge-warning' : 'badge-success';
 
