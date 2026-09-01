@@ -283,6 +283,44 @@ export default function DashboardOficial() {
         }
     };
 
+    const handleGuardarActualizacion = async () => {
+        if (!resultadoRiesgo) {
+            showToast("Primero debes simular el riesgo para guardar los cambios.", "error");
+            return;
+        }
+        try {
+            let nuevoEstado = solicitudSeleccionada.estado_actual;
+            if (nuevoEstado === 'APROBADO_LIMPIO' || nuevoEstado === 'RECHAZADO') {
+                nuevoEstado = resultadoRiesgo.nivel_riesgo_final === 'ALTO' ? 'RECHAZADO' : 'APROBADO_LIMPIO';
+            }
+
+            await supabase.from('solicitudes_sagrilaft').update({ 
+                analisis_oficial: formOficial,
+                calificacion_oficial: formOficial.calificacion_oficial,
+                alertas_manuales: formOficial.alertas_manuales,
+                desglose_riesgo: resultadoRiesgo,
+                score_riesgo: resultadoRiesgo.puntaje_total,
+                estado_actual: nuevoEstado
+            }).eq('id', solicitudSeleccionada.id);
+
+            const data = await sagrilaftService.obtenerSolicitudes();
+            setSolicitudes(data || []);
+            setSolicitudSeleccionada({
+                ...solicitudSeleccionada,
+                analisis_oficial: formOficial,
+                calificacion_oficial: formOficial.calificacion_oficial,
+                alertas_manuales: formOficial.alertas_manuales,
+                desglose_riesgo: resultadoRiesgo,
+                score_riesgo: resultadoRiesgo.puntaje_total,
+                estado_actual: nuevoEstado
+            });
+            showToast("Actualización guardada correctamente", "success");
+        } catch (err) {
+            console.error(err);
+            showToast("Error al guardar actualización", "error");
+        }
+    };
+
     const actualizarJurisdiccion = async (id, val) => {
         try {
             const porcentaje = parseFloat(val) || 0;
