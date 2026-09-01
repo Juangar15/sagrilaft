@@ -95,9 +95,9 @@ async function calcularRiesgoConsolidado(datos_formulario, alertas_manuales = []
 
     // 5. CALIFICACIÓN DEL OFICIAL (Juicio Experto)
     let ptsOficial = 0;
-    if (calificacion_oficial.toLowerCase() === 'bajo') ptsOficial = 5;
-    if (calificacion_oficial.toLowerCase() === 'medio') ptsOficial = 15;
-    if (calificacion_oficial.toLowerCase() === 'alto') ptsOficial = 25;
+    if (calificacion_oficial.toLowerCase() === 'bajo') ptsOficial = 0;
+    if (calificacion_oficial.toLowerCase() === 'medio') ptsOficial = 10;
+    if (calificacion_oficial.toLowerCase() === 'alto') ptsOficial = 20;
 
     if (ptsOficial > 0) {
         puntos_totales += ptsOficial;

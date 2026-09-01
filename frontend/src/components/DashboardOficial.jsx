@@ -470,24 +470,27 @@ export default function DashboardOficial() {
             
             doc.setFontSize(10);
             doc.setTextColor(20, 20, 20);
-            doc.text(`Fecha de Aprobación: ${new Date().toLocaleDateString('es-CO', { year:'numeric', month:'long', day:'numeric' })}`, 14, finalY);
             
-            const nextYear = new Date();
+            const fechaAprobacion = solicitudSeleccionada.fecha_creacion ? new Date(solicitudSeleccionada.fecha_creacion) : new Date();
+            const fechaGeneracion = new Date();
+            
+            doc.text(`Fecha de Aprobación: ${fechaAprobacion.toLocaleDateString('es-CO', { year:'numeric', month:'long', day:'numeric' })}`, 14, finalY);
+            doc.text(`Fecha de Generación del Certificado: ${fechaGeneracion.toLocaleDateString('es-CO', { year:'numeric', month:'long', day:'numeric' })}`, 14, finalY + 6);
+            
+            const nextYear = new Date(fechaAprobacion);
             nextYear.setFullYear(nextYear.getFullYear() + 1);
-            doc.text(`Vigencia del Certificado: 1 año (Próxima actualización: ${nextYear.toLocaleDateString('es-CO', { year:'numeric', month:'long', day:'numeric' })})`, 14, finalY + 6);
-
-            doc.text(`_____________________________________`, 14, finalY + 25);
-            doc.text(`Firma del Oficial de Cumplimiento`, 14, finalY + 30);
+            doc.text(`Vigencia del Certificado: 1 año (Próxima actualización: ${nextYear.toLocaleDateString('es-CO', { year:'numeric', month:'long', day:'numeric' })})`, 14, finalY + 12);
 
             // Huella de Auditoría
             doc.setFillColor(245, 245, 245);
-            doc.rect(14, finalY + 40, 180, 35, 'F');
+            doc.rect(14, finalY + 25, 180, 35, 'F');
             doc.setFont("courier", "bold");
             doc.setFontSize(8);
             doc.setTextColor(100, 100, 100);
-            doc.text(`[ HUELLA DE AUDITORÍA DEL SISTEMA ]`, 18, finalY + 46);
-            doc.text(`Timestamp del proceso de aprobación: ${new Date().toISOString()}`, 18, finalY + 52);
-            doc.text(`Dirección IP de origen (Firma OTP): 190.158.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`, 18, finalY + 58);
+            doc.text(`[ HUELLA DE AUDITORÍA DEL SISTEMA ]`, 18, finalY + 31);
+            doc.text(`Timestamp de aprobación: ${fechaAprobacion.toISOString()}`, 18, finalY + 37);
+            doc.text(`Timestamp de emisión del documento: ${fechaGeneracion.toISOString()}`, 18, finalY + 43);
+            doc.text(`Dirección IP de origen (Firma OTP): 190.158.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`, 18, finalY + 49);
             
             const chars = '0123456789abcdef';
             let mockHash = '';
