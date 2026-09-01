@@ -120,14 +120,14 @@ async function calcularRiesgoConsolidado(datos_formulario, alertas_manuales = []
         tipo: 'MANUAL'
     });
 
-    // 4. CALCULAR CATEGORÍA FINAL
-    // Escala teórica sobre 100 puntos (configurable según política interna)
+    // 4. CALCULAR CATEGORÍA FINAL (0-33 BAJO | 34-66 MEDIO | 67-100 ALTO)
+    const puntaje_final = Math.min(puntos_totales, 100);
     let nivel_final = 'BAJO';
-    if (puntos_totales >= 40 && puntos_totales <= 65) nivel_final = 'MEDIO';
-    if (puntos_totales > 65) nivel_final = 'ALTO';
+    if (puntaje_final >= 34 && puntaje_final <= 66) nivel_final = 'MEDIO';
+    if (puntaje_final > 66) nivel_final = 'ALTO';
 
     return {
-        puntaje_total: puntos_totales,
+        puntaje_total: puntaje_final,
         nivel_riesgo_final: nivel_final,
         desglose: desglose
     };

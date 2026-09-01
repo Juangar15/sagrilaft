@@ -475,7 +475,16 @@ export default function DashboardOficial() {
         return (
             <motion.div 
                 layoutId={`card-${sol.id}`}
-                onClick={() => setSolicitudSeleccionada(sol)}
+                onClick={() => {
+                    setSolicitudSeleccionada(sol);
+                    setResultadoRiesgo(null);
+                    setFormOficial({
+                        observaciones: '',
+                        calificacion_oficial: 'Bajo',
+                        alertas_manuales: [],
+                        nombre_oficial: 'Oficial Demo'
+                    });
+                }}
                 className="card"
                 whileHover={{ y: -4, boxShadow: 'var(--shadow-lg)' }}
                 style={{ 
@@ -1338,9 +1347,41 @@ export default function DashboardOficial() {
                                 {/* Bloque de Firma y Aprobación */}
                                 <div style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', textAlign: 'center' }}>
                                     <h4 style={{ margin: '0 0 1rem 0' }}>Dictamen Final</h4>
+                                    
+                                    {/* Desglose del puntaje para registros con scoring calculado */}
+                                    {solicitudSeleccionada.desglose_riesgo && (
+                                        <div style={{ marginBottom: '1.5rem', padding: '1rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', textAlign: 'left' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                                                <h6 style={{ margin: 0, color: '#0f172a', fontWeight: '600', fontSize: '0.85rem' }}>📊 Factores que influyeron en el puntaje</h6>
+                                                <span style={{ 
+                                                    padding: '0.25rem 0.75rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: '700',
+                                                    background: solicitudSeleccionada.desglose_riesgo.nivel_riesgo_final === 'ALTO' ? '#fee2e2' : solicitudSeleccionada.desglose_riesgo.nivel_riesgo_final === 'MEDIO' ? '#fef3c7' : '#dcfce7',
+                                                    color: solicitudSeleccionada.desglose_riesgo.nivel_riesgo_final === 'ALTO' ? '#dc2626' : solicitudSeleccionada.desglose_riesgo.nivel_riesgo_final === 'MEDIO' ? '#d97706' : '#16a34a'
+                                                }}>
+                                                    RIESGO {solicitudSeleccionada.desglose_riesgo.nivel_riesgo_final || 'BAJO'}
+                                                </span>
+                                            </div>
+                                            <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.82rem', color: '#475569' }}>
+                                                {(solicitudSeleccionada.desglose_riesgo.desglose || []).map((item, idx) => (
+                                                    <li key={idx} style={{ marginBottom: '0.4rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+                                                        <span><b>{item.categoria}:</b> {item.detalle}</span>
+                                                        <span style={{ fontWeight: '700', whiteSpace: 'nowrap', color: item.puntos > 0 ? '#dc2626' : '#16a34a', minWidth: '50px', textAlign: 'right' }}>
+                                                            {item.puntos > 0 ? '+' + item.puntos + ' pts' : '0 pts'}
+                                                        </span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                            <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '0.5rem', marginTop: '0.75rem', textAlign: 'right', fontWeight: '700', fontSize: '0.9rem' }}>
+                                                PUNTAJE FINAL: {solicitudSeleccionada.desglose_riesgo.puntaje_total}/100
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-                                        {solicitudSeleccionada.score_riesgo >= 90 
+                                        {solicitudSeleccionada.score_riesgo >= 67 
                                             ? "El tercero presenta hallazgos restrictivos críticos." 
+                                            : solicitudSeleccionada.score_riesgo >= 34 
+                                            ? "El tercero requiere revisión manual adicional."
                                             : "El tercero es apto según la validación preliminar."}
                                     </p>
                                     
