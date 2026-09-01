@@ -1083,9 +1083,6 @@ export default function DashboardOficial() {
                                             <button className="btn-primary" onClick={handleAsignarCargo} disabled={cargando}>
                                                 Asignar y Enviar a Revisión Previa
                                             </button>
-                                            <button className="btn-outline" onClick={() => setMostrarPingPong(true)}>
-                                                Devolver (Ping-Pong)
-                                            </button>
                                         </div>
                                     </div>
                                 )}
@@ -1229,7 +1226,7 @@ export default function DashboardOficial() {
                                         <Globe size={18} /> Monitor de Fuentes (TusDatos)
                                     </h4>
                                     
-                                    {(solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || solicitudSeleccionada.estado_actual === 'REVISION_PREVIA') ? (
+                                    {(solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || (solicitudSeleccionada.estado_actual === 'REVISION_PREVIA' || solicitudSeleccionada.estado_actual === 'ASIGNACION_CARGO')) ? (
                                         <div style={{ textAlign: 'center', padding: '2rem' }}>
                                             <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>No se ha ejecutado la consulta en bases de datos externas.</p>
                                             <button 
@@ -1566,17 +1563,17 @@ export default function DashboardOficial() {
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                             <button 
                                                 className="btn-primary" 
-                                                style={{ width: '100%', padding: '1rem', background: (solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || solicitudSeleccionada.estado_actual === 'REVISION_PREVIA') ? 'var(--text-muted)' : 'var(--success)', borderColor: (solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || solicitudSeleccionada.estado_actual === 'REVISION_PREVIA') ? 'var(--border)' : 'var(--success)', opacity: (solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || solicitudSeleccionada.estado_actual === 'REVISION_PREVIA') ? 0.5 : 1, cursor: (solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || solicitudSeleccionada.estado_actual === 'REVISION_PREVIA') ? 'not-allowed' : 'pointer' }} 
+                                                style={{ width: '100%', padding: '1rem', background: (solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || (solicitudSeleccionada.estado_actual === 'REVISION_PREVIA' || solicitudSeleccionada.estado_actual === 'ASIGNACION_CARGO')) ? 'var(--text-muted)' : 'var(--success)', borderColor: (solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || (solicitudSeleccionada.estado_actual === 'REVISION_PREVIA' || solicitudSeleccionada.estado_actual === 'ASIGNACION_CARGO')) ? 'var(--border)' : 'var(--success)', opacity: (solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || (solicitudSeleccionada.estado_actual === 'REVISION_PREVIA' || solicitudSeleccionada.estado_actual === 'ASIGNACION_CARGO')) ? 0.5 : 1, cursor: (solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || (solicitudSeleccionada.estado_actual === 'REVISION_PREVIA' || solicitudSeleccionada.estado_actual === 'ASIGNACION_CARGO')) ? 'not-allowed' : 'pointer' }} 
                                                 onClick={handleAprobarManualmente}
-                                                disabled={solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || solicitudSeleccionada.estado_actual === 'REVISION_PREVIA'}
-                                                title={(solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || solicitudSeleccionada.estado_actual === 'REVISION_PREVIA') ? "Debe ejecutar TusDatos primero" : "Otorgar Visto Bueno"}
+                                                disabled={solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || (solicitudSeleccionada.estado_actual === 'REVISION_PREVIA' || solicitudSeleccionada.estado_actual === 'ASIGNACION_CARGO')}
+                                                title={(solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || (solicitudSeleccionada.estado_actual === 'REVISION_PREVIA' || solicitudSeleccionada.estado_actual === 'ASIGNACION_CARGO')) ? "Debe ejecutar TusDatos primero" : "Otorgar Visto Bueno"}
                                             >
                                                 <CheckCircle size={20} style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} /> 
-                                                {(solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || solicitudSeleccionada.estado_actual === 'REVISION_PREVIA') ? 'Bloqueado (Requiere TusDatos)' : 'Otorgar Visto Bueno Definitivo'}
+                                                {(solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || (solicitudSeleccionada.estado_actual === 'REVISION_PREVIA' || solicitudSeleccionada.estado_actual === 'ASIGNACION_CARGO')) ? 'Bloqueado (Requiere TusDatos)' : 'Otorgar Visto Bueno Definitivo'}
                                             </button>
                                             
                                             {!mostrarPingPong ? (
-                                                <div style={{ display: 'grid', gridTemplateColumns: (solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || solicitudSeleccionada.estado_actual === 'REVISION_PREVIA') ? '1fr 1fr 1fr' : '1fr 1fr 1fr 1fr', gap: '0.75rem' }}>
+                                                <div style={{ display: 'grid', gridTemplateColumns: (solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || (solicitudSeleccionada.estado_actual === 'REVISION_PREVIA' || solicitudSeleccionada.estado_actual === 'ASIGNACION_CARGO')) ? '1fr 1fr 1fr' : '1fr 1fr 1fr 1fr', gap: '0.75rem' }}>
                                                     {solicitudSeleccionada.score_riesgo !== undefined && solicitudSeleccionada.score_riesgo !== null && solicitudSeleccionada.estado_actual !== 'FUENTES_INCOMPLETAS' && (
                                                         <button className="btn-outline" style={{ padding: '0.75rem', fontSize: '0.85rem' }} onClick={(e) => handleTusDatos(e, solicitudSeleccionada)}>
                                                             {cargandoTusDatos === solicitudSeleccionada.id ? 'Consultando...' : '🔄 Re-evaluar API'}
