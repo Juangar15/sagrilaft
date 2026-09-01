@@ -1171,33 +1171,37 @@ app.post('/api/v1/solicitudes/:id/asignar-cargo', async (req, res) => {
 app.post('/api/v1/solicitudes/:id/migrar-cloudflare', async (req, res) => {
     try {
         const { id } = req.params;
-        const { area_asignada, cargo_asignado, estado_vinculacion } = req.body;
+        // Fix: read 'area' and 'cargo' from req.body as that's what frontend sends
+        const { area, cargo, estado_vinculacion } = req.body;
         
         const { data: sol, error: errSol } = await supabase.from('solicitudes_sagrilaft').select('*').eq('id', id).single();
         if (errSol) throw errSol;
 
         let datosFormulario = sol.datos_formulario || {};
-        datosFormulario.area_asignada = area_asignada;
-        datosFormulario.cargo_asignado = cargo_asignado;
+        datosFormulario.area_asignada = area;
+        datosFormulario.cargo_asignado = cargo;
         datosFormulario.estado_vinculacion = estado_vinculacion;
 
         const nit = sol.nit_cedula;
         const year = new Date().getFullYear();
         const isEmpleado = (sol.tipo_vinculacion || '').toLowerCase().includes('empleado');
-        const folderRoot = isEmpleado ? `sagrilaft/empleados/${year}` : `sagrilaft/terceros/${year}`;
         const statusFolder = sol.estado_actual === 'APROBADO_LIMPIO' ? 'aceptados' : 'no_aceptados';
         
+        let score = sol.score_riesgo || 0;
+        let colorSemaforo = 'verde';
+        if (score >= 33.34 && score <= 66.66) colorSemaforo = 'amarillo';
+        if (score > 66.66) colorSemaforo = 'rojo';
+
+        const folderRoot = isEmpleado ? `sagrilaft/empleados/${year}` : `sagrilaft/terceros/${year}`;
+        
         let folderR2 = '';
-        if (sol.estado_actual === 'APROBADO_LIMPIO') {
-            if (isEmpleado) {
-                const area = area_asignada || 'sin_area';
-                const cargo = cargo_asignado || 'sin_cargo';
-                folderR2 = `${folderRoot}/${statusFolder}/${estado_vinculacion || 'vinculados'}/${area}/${cargo}/${nit}`;
-            } else {
-                folderR2 = `${folderRoot}/${statusFolder}/${nit}`;
-            }
+        if (isEmpleado) {
+            const areaStr = area || 'sin_area';
+            const cargoStr = cargo || 'sin_cargo';
+            const vinculacionStr = estado_vinculacion || 'vinculados';
+            folderR2 = `${folderRoot}/${statusFolder}/${vinculacionStr}/${areaStr}/${cargoStr}/${colorSemaforo}/${nit}`;
         } else {
-            folderR2 = `${folderRoot}/${statusFolder}/${nit}`;
+            folderR2 = `${folderRoot}/${statusFolder}/${colorSemaforo}/${nit}`;
         }
 
         let archivosActualizados = {};
@@ -1238,14 +1242,27 @@ app.post('/api/v1/solicitudes/:id/aprobar_definitivo', async (req, res) => {
 
         const estadoFinal = formAprobacion.decision_final === 'ACEPTADO' ? 'APROBADO_LIMPIO' : 'RECHAZADO';
         
-        // Determinar Semaforo (Semaforización)
-        let colorSemaforo = 'verde';
-        if (sol.score_riesgo >= 30 && sol.score_riesgo < 70) colorSemaforo = 'amarillo';
-        if (sol.score_riesgo >= 70) colorSemaforo = 'rojo';
-        
-        const carpetaDecision = estadoFinal === 'APROBADO_LIMPIO' ? 'aceptados' : 'rechazados';
         const nit = sol.nit_cedula;
-        const folderR2 = `expedientes/${carpetaDecision}/${colorSemaforo}/${nit}`;
+        const year = new Date().getFullYear();
+        const isEmpleado = (sol.tipo_vinculacion || '').toLowerCase().includes('empleado');
+        const statusFolder = estadoFinal === 'APROBADO_LIMPIO' ? 'aceptados' : 'no_aceptados';
+        
+        let score = sol.score_riesgo || 0;
+        let colorSemaforo = 'verde';
+        if (score >= 33.34 && score <= 66.66) colorSemaforo = 'amarillo';
+        if (score > 66.66) colorSemaforo = 'rojo';
+
+        const folderRoot = isEmpleado ? `sagrilaft/empleados/${year}` : `sagrilaft/terceros/${year}`;
+        
+        let folderR2 = '';
+        if (isEmpleado) {
+            const areaStr = sol.datos_formulario?.area_asignada || 'sin_area';
+            const cargoStr = sol.datos_formulario?.cargo_asignado || 'sin_cargo';
+            const vinculacionStr = sol.datos_formulario?.estado_vinculacion || 'vinculados';
+            folderR2 = `${folderRoot}/${statusFolder}/${vinculacionStr}/${areaStr}/${cargoStr}/${colorSemaforo}/${nit}`;
+        } else {
+            folderR2 = `${folderRoot}/${statusFolder}/${colorSemaforo}/${nit}`;
+        }
 
         // 1. Generar el PDF del Formulario Final de Verificación
         const pdfBuffer = await generarFormularioFinalPDF(sol, formAprobacion);
