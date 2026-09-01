@@ -74,6 +74,16 @@ export const sagrilaftService = {
         return response.data;
     },
 
+    asignarCargo: async (id, payload) => {
+        const response = await api.post(`/solicitudes/${id}/asignar-cargo`, payload);
+        return response.data;
+    },
+
+    migrarCloudflare: async (id, payload) => {
+        const response = await api.post(`/solicitudes/${id}/migrar-cloudflare`, payload);
+        return response.data;
+    },
+
     retryTusDatos: async (id) => {
         const response = await api.post(`/solicitudes/${id}/tusdatos/retry`);
         return response.data;

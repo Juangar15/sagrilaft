@@ -34,6 +34,7 @@ export default function DashboardOficial() {
     
     // Checklist de aprobación final
     const [showModalAprobacion, setShowModalAprobacion] = useState(false);
+    const [formAsignacion, setFormAsignacion] = useState({ area: '', cargo: '', estado_vinculacion: 'vinculados' });
     const [formAprobacion, setFormAprobacion] = useState({
         doc_completa: '', verifico_listas: '', autenticidad: '', proc_rep: '', contra_rep: '',
         poli_rep: '', info_fin: '', visita: '', minero: '', rucon: '', sarlaft: '', sagrilaft: '',
@@ -217,6 +218,40 @@ export default function DashboardOficial() {
             }
         } catch (error) {
             console.error(error);
+        }
+    };
+
+    const handleAsignarCargo = async () => {
+        if (!formAsignacion.area || !formAsignacion.cargo) {
+            return showToast("Debe seleccionar Área y Cargo para continuar.", "error");
+        }
+        try {
+            setCargando(true);
+            await sagrilaftService.asignarCargo(solicitudSeleccionada.id, formAsignacion);
+            showToast("Área y cargo asignados. Solicitud enviada a Revisión Previa.", "success");
+            setSolicitudSeleccionada({ ...solicitudSeleccionada, estado_actual: 'REVISION_PREVIA' });
+            
+            const data = await sagrilaftService.obtenerSolicitudes();
+            setSolicitudes(data || []);
+        } catch (error) {
+            showToast("Error al asignar cargo.", "error");
+        } finally {
+            setCargando(false);
+        }
+    };
+
+    const handleMigrarCloudflare = async () => {
+        if (!formAsignacion.area || !formAsignacion.cargo) {
+            return showToast("Debe seleccionar Área y Cargo para poder migrar.", "error");
+        }
+        try {
+            setCargando(true);
+            await sagrilaftService.migrarCloudflare(solicitudSeleccionada.id, formAsignacion);
+            showToast("Archivos migrados exitosamente a la nueva estructura en Cloudflare.", "success");
+        } catch (error) {
+            showToast("Error al migrar archivos.", "error");
+        } finally {
+            setCargando(false);
         }
     };
 
@@ -1394,6 +1429,36 @@ export default function DashboardOficial() {
                                         </div>
                                     )}
                                 </div>
+
+                                {solicitudSeleccionada.estado_actual === 'APROBADO_LIMPIO' && (
+                                    <div style={{ background: '#fefce8', padding: '1.5rem', borderRadius: '8px', border: '1px solid #fef08a', marginBottom: '1.5rem' }}>
+                                        <h4 style={{ margin: '0 0 1rem 0', color: '#854d0e' }}>Migración a Cloudflare R2</h4>
+                                        <p style={{ fontSize: '0.85rem', color: '#a16207', marginBottom: '1rem' }}>Asigna el Área y Cargo correspondientes para reubicar este expediente en la nueva estructura corporativa en la nube.</p>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                                            <div>
+                                                <label className="label">Área</label>
+                                                <select className="input-field" value={formAsignacion.area} onChange={e => setFormAsignacion({...formAsignacion, area: e.target.value, cargo: ''})}>
+                                                    <option value="">Seleccione Área...</option>
+                                                    {Object.keys(AREAS_Y_CARGOS).map(area => (
+                                                        <option key={area} value={area}>{area}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="label">Cargo</label>
+                                                <select className="input-field" value={formAsignacion.cargo} onChange={e => setFormAsignacion({...formAsignacion, cargo: e.target.value})} disabled={!formAsignacion.area}>
+                                                    <option value="">Seleccione Cargo...</option>
+                                                    {(AREAS_Y_CARGOS[formAsignacion.area] || []).map(cargo => (
+                                                        <option key={cargo} value={cargo}>{cargo}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <button className="btn-outline" style={{ borderColor: '#eab308', color: '#b45309' }} onClick={handleMigrarCloudflare} disabled={cargando}>
+                                            Migrar a Estructura Cloudflare
+                                        </button>
+                                    </div>
+                                )}
 
                                 {/* Bloque de Firma y Aprobación */}
                                 <div style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', textAlign: 'center' }}>

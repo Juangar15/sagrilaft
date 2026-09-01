@@ -412,7 +412,7 @@ app.post('/api/v1/onboarding', upload.any(), async (req, res) => {
                 .update({
                     datos_formulario: formData,
                     campos_a_corregir: {}, // Limpiamos correcciones
-                    estado_actual: 'REVISION_PREVIA',
+                    estado_actual: 'ASIGNACION_CARGO',
                     razon_social: razon_social,
                     nit_cedula: nit
                 })
@@ -432,7 +432,7 @@ app.post('/api/v1/onboarding', upload.any(), async (req, res) => {
                     nit_cedula: nit,
                     razon_social: razon_social,
                     tipo_vinculacion: tipo_vinculacion,
-                    estado_actual: 'REVISION_PREVIA',
+                    estado_actual: 'ASIGNACION_CARGO',
                     token_asociado: token,
                     datos_formulario: formData
                 }])
@@ -445,11 +445,11 @@ app.post('/api/v1/onboarding', upload.any(), async (req, res) => {
 
         // Retornamos éxito inmediatamente
         return res.status(201).json({
-            mensaje: "Formulario recibido exitosamente. En revisión previa.",
+            mensaje: "Formulario recibido exitosamente. En asignación de cargo.",
             resultado: {
                 id: resultId,
-                estado: "REVISION_PREVIA",
-                mensaje: "El área de cumplimiento revisará la información antes de continuar."
+                estado: "ASIGNACION_CARGO",
+                mensaje: "El área de cumplimiento asignará el cargo antes de continuar."
             }
         });
 
@@ -1140,6 +1140,93 @@ async function copyFileInR2(sourceUrl, destinationFolder, filename) {
         return sourceUrl;
     }
 }
+
+// POST /api/v1/solicitudes/:id/asignar-cargo
+app.post('/api/v1/solicitudes/:id/asignar-cargo', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { area_asignada, cargo_asignado, estado_vinculacion } = req.body;
+        
+        const { data: sol, error: errSol } = await supabase.from('solicitudes_sagrilaft').select('*').eq('id', id).single();
+        if (errSol) throw errSol;
+
+        let datosFormulario = sol.datos_formulario || {};
+        datosFormulario.area_asignada = area_asignada;
+        datosFormulario.cargo_asignado = cargo_asignado;
+        datosFormulario.estado_vinculacion = estado_vinculacion;
+
+        const { data, error } = await supabase.from('solicitudes_sagrilaft').update({ 
+            estado_actual: 'REVISION_PREVIA',
+            datos_formulario: datosFormulario
+        }).eq('id', id).select();
+
+        if (error) throw error;
+        res.json({ mensaje: 'Cargo asignado. Solicitud en Revisión Previa.', data });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/v1/solicitudes/:id/migrar-cloudflare
+app.post('/api/v1/solicitudes/:id/migrar-cloudflare', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { area_asignada, cargo_asignado, estado_vinculacion } = req.body;
+        
+        const { data: sol, error: errSol } = await supabase.from('solicitudes_sagrilaft').select('*').eq('id', id).single();
+        if (errSol) throw errSol;
+
+        let datosFormulario = sol.datos_formulario || {};
+        datosFormulario.area_asignada = area_asignada;
+        datosFormulario.cargo_asignado = cargo_asignado;
+        datosFormulario.estado_vinculacion = estado_vinculacion;
+
+        const nit = sol.nit_cedula;
+        const year = new Date().getFullYear();
+        const isEmpleado = (sol.tipo_vinculacion || '').toLowerCase().includes('empleado');
+        const folderRoot = isEmpleado ? `sagrilaft/empleados/${year}` : `sagrilaft/terceros/${year}`;
+        const statusFolder = sol.estado_actual === 'APROBADO_LIMPIO' ? 'aceptados' : 'no_aceptados';
+        
+        let folderR2 = '';
+        if (sol.estado_actual === 'APROBADO_LIMPIO') {
+            if (isEmpleado) {
+                const area = area_asignada || 'sin_area';
+                const cargo = cargo_asignado || 'sin_cargo';
+                folderR2 = `${folderRoot}/${statusFolder}/${estado_vinculacion || 'vinculados'}/${area}/${cargo}/${nit}`;
+            } else {
+                folderR2 = `${folderRoot}/${statusFolder}/${nit}`;
+            }
+        } else {
+            folderR2 = `${folderRoot}/${statusFolder}/${nit}`;
+        }
+
+        let archivosActualizados = {};
+        let archivosAnteriores = datosFormulario.archivos_cargados || {};
+        
+        if (Object.keys(archivosAnteriores).length > 0) {
+            for (const [key, url] of Object.entries(archivosAnteriores)) {
+                if (url.includes(process.env.R2_PUBLIC_URL)) {
+                    const filename = url.split('/').pop();
+                    const newUrl = await copyFileInR2(url, folderR2, filename);
+                    archivosActualizados[key] = newUrl;
+                } else {
+                    archivosActualizados[key] = url;
+                }
+            }
+        }
+        
+        datosFormulario.archivos_cargados = archivosActualizados;
+
+        const { data, error } = await supabase.from('solicitudes_sagrilaft').update({ 
+            datos_formulario: datosFormulario
+        }).eq('id', id).select();
+
+        if (error) throw error;
+        res.json({ mensaje: 'Archivos migrados a la nueva estructura en Cloudflare.', data });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 // POST /api/v1/solicitudes/:id/aprobar_definitivo
 app.post('/api/v1/solicitudes/:id/aprobar_definitivo', async (req, res) => {
