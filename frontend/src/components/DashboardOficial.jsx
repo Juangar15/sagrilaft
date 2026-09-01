@@ -555,6 +555,7 @@ export default function DashboardOficial() {
                 onClick={() => {
                     setSolicitudSeleccionada(sol);
                     setResultadoRiesgo(null);
+                    setFormAsignacion({ area: sol.datos_formulario?.area_asignada || '', cargo: sol.datos_formulario?.cargo_asignado || '', estado_vinculacion: sol.datos_formulario?.estado_vinculacion || 'vinculados' });
                     setFormOficial({
                         observaciones: '',
                         calificacion_oficial: 'Bajo',
@@ -1089,7 +1090,7 @@ export default function DashboardOficial() {
                                     </div>
                                 )}
                                 
-                                <div style={{ display: solicitudSeleccionada.estado_actual === 'ASIGNACION_CARGO' ? 'none' : 'block' }}>
+                                <div style={{ display: 'block' }}>
 
                                 {solicitudSeleccionada.estado_actual === 'DEVUELTO_CORRECCION' && (
                                     <div style={{ background: '#fffbeb', border: '1px solid #f59e0b', padding: '1.5rem', borderRadius: '8px', marginBottom: '2rem' }}>
