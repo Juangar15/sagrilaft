@@ -249,6 +249,13 @@ export default function DashboardOficial() {
             setCargando(true);
             await sagrilaftService.migrarCloudflare(solicitudSeleccionada.id, formAsignacion);
             showToast("Archivos migrados exitosamente a la nueva estructura en Cloudflare.", "success");
+            
+            // Refrescar el estado local para ocultar el formulario de migración
+            const updatedForm = { ...solicitudSeleccionada.datos_formulario, area_asignada: formAsignacion.area, cargo_asignado: formAsignacion.cargo };
+            setSolicitudSeleccionada({ ...solicitudSeleccionada, datos_formulario: updatedForm });
+            
+            const data = await sagrilaftService.obtenerSolicitudes();
+            setSolicitudes(data || []);
         } catch (error) {
             showToast("Error al migrar archivos.", "error");
         } finally {
@@ -1473,7 +1480,7 @@ export default function DashboardOficial() {
                                     )}
                                 </div>
 
-                                {solicitudSeleccionada.estado_actual === 'APROBADO_LIMPIO' && (
+                                {solicitudSeleccionada.estado_actual === 'APROBADO_LIMPIO' && (!solicitudSeleccionada.datos_formulario?.area_asignada || !solicitudSeleccionada.datos_formulario?.cargo_asignado) && (
                                     <div style={{ background: '#fefce8', padding: '1.5rem', borderRadius: '8px', border: '1px solid #fef08a', marginBottom: '1.5rem' }}>
                                         <h4 style={{ margin: '0 0 1rem 0', color: '#854d0e' }}>Migración a Cloudflare R2</h4>
                                         <p style={{ fontSize: '0.85rem', color: '#a16207', marginBottom: '1rem' }}>Asigna el Área y Cargo correspondientes para reubicar este expediente en la nueva estructura corporativa en la nube.</p>

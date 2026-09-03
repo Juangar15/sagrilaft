@@ -9,6 +9,7 @@ const path = require('path');
 const os = require('os');
 const { S3Client, PutObjectCommand, CopyObjectCommand } = require('@aws-sdk/client-s3');
 const { generarEvidenciaPDF } = require('./utils/pdfGenerator');
+const { calcularRiesgoConsolidado } = require('./utils/riskEngine');
 const { generarFormularioFinalPDF } = require('./utils/pdfFinalGenerator');
 const multer = require('multer');
 const axios = require('axios');
