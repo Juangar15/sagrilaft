@@ -1051,8 +1051,12 @@ app.post('/api/v1/solicitudes/:id/guardar-riesgo', async (req, res) => {
             return res.status(400).json({ error: "resultadoRiesgo inválido" });
         }
 
-        // Obtener datos completos para actualizar datos_formulario correctamente
-        const { data: sol, error: errSol } = await supabase.from('solicitudes_sagrilaft').select('estado_actual, datos_formulario').eq('id', id).single();
+        // Obtener datos completos para actualizar datos_formulario
+        const { data: sol, error: errSol } = await supabase
+            .from('solicitudes_sagrilaft')
+            .select('estado_actual, datos_formulario')
+            .eq('id', id)
+            .single();
         if (errSol || !sol) return res.status(404).json({ error: "Solicitud no encontrada" });
 
         let nuevoEstado = sol.estado_actual;
@@ -1060,16 +1064,16 @@ app.post('/api/v1/solicitudes/:id/guardar-riesgo', async (req, res) => {
             nuevoEstado = resultadoRiesgo.nivel_riesgo_final === 'ALTO' ? 'RECHAZADO' : 'APROBADO_LIMPIO';
         }
 
-        // Guardar desglose dentro de datos_formulario (no como columna separada)
+        // Todo va dentro de datos_formulario — no existen columnas sueltas para analisis_oficial, etc.
         const datosActualizados = {
             ...(sol.datos_formulario || {}),
+            analisis_oficial: formOficial,
+            calificacion_oficial: formOficial?.calificacion_oficial || 'Bajo',
+            alertas_manuales: formOficial?.alertas_manuales || [],
             desglose_riesgo: resultadoRiesgo
         };
 
         const { error: errUpd } = await supabase.from('solicitudes_sagrilaft').update({
-            analisis_oficial: formOficial,
-            calificacion_oficial: formOficial?.calificacion_oficial,
-            alertas_manuales: formOficial?.alertas_manuales,
             datos_formulario: datosActualizados,
             score_riesgo: resultadoRiesgo.puntaje_total,
             estado_actual: nuevoEstado
@@ -1098,11 +1102,10 @@ app.post('/api/v1/admin/recalcular-scores', async (req, res) => {
         for (const sol of solicitudes) {
             if (!sol.datos_formulario) continue;
             try {
-                const calc = await calcularRiesgoConsolidado(
-                    sol.datos_formulario,
-                    sol.alertas_manuales || [],
-                    sol.calificacion_oficial || 'Bajo'
-                );
+                // calificacion_oficial y alertas_manuales viven dentro de datos_formulario
+                const calificacion = sol.datos_formulario.calificacion_oficial || 'Bajo';
+                const alertas = sol.datos_formulario.alertas_manuales || [];
+                const calc = await calcularRiesgoConsolidado(sol.datos_formulario, alertas, calificacion);
 
                 const puntajeNuevo = calc.puntaje_total;
                 const puntajeViejo = sol.score_riesgo;
@@ -1118,7 +1121,6 @@ app.post('/api/v1/admin/recalcular-scores', async (req, res) => {
                 await supabase.from('solicitudes_sagrilaft').update({
                     score_riesgo: puntajeNuevo,
                     datos_formulario: newForm,
-                    calificacion_oficial: sol.calificacion_oficial || 'Bajo',
                     estado_actual: nuevoEstado
                 }).eq('id', sol.id);
 
@@ -1319,8 +1321,8 @@ app.post('/api/v1/solicitudes/:id/aprobar_definitivo', async (req, res) => {
         const statusFolder = estadoFinal === 'APROBADO_LIMPIO' ? 'aceptados' : 'no_aceptados';
         
         // Recalcular score en el momento de la aprobación usando la calificación oficial guardada
-        const calificacionOficial = sol.calificacion_oficial || formAprobacion.calificacion_oficial || 'Bajo';
-        const alertasManuales = sol.alertas_manuales || formAprobacion.alertas_manuales || [];
+        const calificacionOficial = sol.datos_formulario?.calificacion_oficial || formAprobacion.calificacion_oficial || 'Bajo';
+        const alertasManuales = sol.datos_formulario?.alertas_manuales || formAprobacion.alertas_manuales || [];
         const scoreRecalculado = await calcularRiesgoConsolidado(sol.datos_formulario, alertasManuales, calificacionOficial);
         const score = scoreRecalculado.puntaje_total;
         

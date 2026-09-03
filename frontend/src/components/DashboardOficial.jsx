@@ -574,9 +574,9 @@ export default function DashboardOficial() {
                     setResultadoRiesgo(null);
                     setFormAsignacion({ area: sol.datos_formulario?.area_asignada || '', cargo: sol.datos_formulario?.cargo_asignado || '', estado_vinculacion: sol.datos_formulario?.estado_vinculacion || 'vinculados' });
                     setFormOficial({
-                        observaciones: '',
-                        calificacion_oficial: 'Bajo',
-                        alertas_manuales: [],
+                        observaciones: sol.datos_formulario?.analisis_oficial?.observaciones || '',
+                        calificacion_oficial: sol.datos_formulario?.calificacion_oficial || 'Bajo',
+                        alertas_manuales: sol.datos_formulario?.alertas_manuales || [],
                         nombre_oficial: 'Oficial Demo'
                     });
                 }}
