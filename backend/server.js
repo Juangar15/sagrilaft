@@ -589,61 +589,10 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
         };
         newFormulario.monitor_fuentes = monitorFuentes;
 
-        // 2. Ejecutar la Lógica de Puntuación Precisa (Scoring Engine 100% Real)
-        
-        // 2.1 Analizar Hallazgos de TusDatos (Pesos)
-        const td = dict_hallazgos || {};
-        const numAltos = (td.altos || []).length;
-        const numMedios = (td.medios || []).length;
-        const numBajos = (td.bajos || []).length;
-
-        let tusDatosScore = 0;
-        if (numAltos > 0) {
-            tusDatosScore = 100; // Bloqueo automático por Listas Críticas
-        } else {
-            tusDatosScore += Math.min(numMedios * 15, 45); // Max 45 pts por hallazgos medios (Procuraduría, etc.)
-            tusDatosScore += Math.min(numBajos * 5, 15);   // Max 15 pts por hallazgos bajos
-        }
-
-        // 2.2 Analizar Riesgo Geográfico (Jurisdicción)
-        let jurisdiccionScore = 0;
-        let nivelJurisdiccion = 'BAJO';
-        try {
-            const depto = solicitud.datos_formulario?.departamento_principal || solicitud.datos_formulario?.departamento || '';
-            const muni = solicitud.datos_formulario?.municipio_principal || solicitud.datos_formulario?.municipio || solicitud.datos_formulario?.ciudad || solicitud.datos_formulario?.ciudad_principal || '';
-            
-            if (depto || muni) {
-                const { data: jurisData } = await supabase.from('sagrilaft_jurisdicciones').select('departamento, municipio, nivel_riesgo, porcentaje').limit(2000);
-                if (jurisData && jurisData.length > 0) {
-                    const normalizeStr = (str) => (str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-                    const deptoNorm = normalizeStr(depto);
-                    const muniNorm = normalizeStr(muni);
-                    
-                    const j = jurisData.find(jd => 
-                        normalizeStr(jd.departamento) === deptoNorm && 
-                        normalizeStr(jd.municipio) === muniNorm
-                    );
-                    
-                    if (j) {
-                        nivelJurisdiccion = (j.nivel_riesgo || 'BAJO').toUpperCase();
-                        if (nivelJurisdiccion === 'ALTO') jurisdiccionScore = 20;
-                        else if (nivelJurisdiccion === 'MEDIO') jurisdiccionScore = 10;
-                    }
-                }
-            }
-        } catch (e) {
-            console.error("Error consultando jurisdicción:", e.message);
-        }
-
-        // 2.3 Analizar Riesgos del Formulario (PEPs, etc.)
-        let pepScore = 0;
-        const esPep = String(solicitud.datos_formulario?.es_pep).toLowerCase() === 'si' || 
-                      String(solicitud.datos_formulario?.tiene_vinculo_pep).toLowerCase() === 'si';
-        if (esPep) pepScore = 15;
-
-        // 2.4 Calcular Score Final
-        let rawScore = tusDatosScore + jurisdiccionScore + pepScore;
-        let scoreFinal = Math.min(Math.round(rawScore), 100);
+        // 2. Ejecutar la Lógica de Puntuación Precisa usando riskEngine
+        const resultadoRiesgo = await calcularRiesgoConsolidado(newFormulario);
+        const scoreFinal = resultadoRiesgo.puntaje_total;
+        newFormulario.desglose_riesgo = resultadoRiesgo;
 
         let estadoGeneral = 'APROBADO_LIMPIO';
         if (fuentes_caidas) {
@@ -657,6 +606,14 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
                 estadoGeneral = "ALERTA_CRITICA";
             }
         }
+
+        // Variables needed by matrix update:
+        const td = dict_hallazgos || {};
+        const numAltos = (td.altos || []).length;
+        const numMedios = (td.medios || []).length;
+        const numBajos = (td.bajos || []).length;
+        const esPep = String(solicitud.datos_formulario?.es_pep).toLowerCase() === 'si' || 
+                      String(solicitud.datos_formulario?.tiene_vinculo_pep).toLowerCase() === 'si';
 
         // 2.5 Reflejar en la Matriz de Riesgos
         const { data: riesgos, error: errRiesgos } = await supabase.from('matriz_riesgos_master').select('*').eq('activo', true);
@@ -856,9 +813,16 @@ app.post('/api/v1/solicitudes/:id/tusdatos/retry', async (req, res) => {
             console.error("No se pudo generar el PDF Nativo de Evidencias en Retry:", pdfErr.message);
         }
 
+        const resultadoRiesgo = await calcularRiesgoConsolidado(newFormulario);
+        const scoreFinal = resultadoRiesgo.puntaje_total;
+        newFormulario.desglose_riesgo = resultadoRiesgo;
+
+        if (scoreFinal <= 33.33 && !finalData.hallazgo) estadoGeneral = "APROBADO_LIMPIO";
+        else if (scoreFinal <= 66.66 && !finalData.hallazgo) estadoGeneral = "REVISION_MANUAL";
+
         await supabase.from('solicitudes_sagrilaft').update({
             estado_actual: estadoGeneral,
-            score_riesgo: finalData.hallazgo ? 95 : 5,
+            score_riesgo: scoreFinal,
             datos_formulario: newFormulario
         }).eq('id', id);
 
@@ -941,17 +905,26 @@ app.post('/api/v1/solicitudes/:id/tusdatos/sync', async (req, res) => {
         const fuentes_caidas = remainingErrors > 0;
         
         // Mantener la lógica de estado general y score del original
-        const coincidencia_api = finalData.hallazgo; 
-        const scoreFinal = coincidencia_api ? 95 : 5;
-        let estadoGeneral = coincidencia_api ? "ALERTA_CRITICA" : "APROBADO_LIMPIO";
-        if (fuentes_caidas) estadoGeneral = "FUENTES_INCOMPLETAS";
-
+        const coincidencia_api = finalData.hallazgo;
         newFormulario.monitor_fuentes = {
             ...newFormulario.monitor_fuentes,
             estado_fuentes: fuentes_caidas ? 'FUENTES_CAIDAS' : 'OK',
             fuentes_detalladas: fuentes_mergeadas,
-            raw_tusdatos: 'Resultados sincronizados instantáneamente con el portal TusDatos'
+            raw_tusdatos: 'Resultados sincronizados con TusDatos'
         };
+
+        const resultadoRiesgo = await calcularRiesgoConsolidado(newFormulario);
+        const scoreFinal = resultadoRiesgo.puntaje_total;
+        newFormulario.desglose_riesgo = resultadoRiesgo;
+
+        let estadoGeneral = coincidencia_api ? "ALERTA_CRITICA" : "APROBADO_LIMPIO";
+        if (fuentes_caidas) {
+            estadoGeneral = "FUENTES_INCOMPLETAS";
+        } else if (!coincidencia_api) {
+            if (scoreFinal <= 33.33) estadoGeneral = "APROBADO_LIMPIO";
+            else if (scoreFinal <= 66.66) estadoGeneral = "REVISION_MANUAL";
+            else estadoGeneral = "ALERTA_CRITICA";
+        }
 
         await supabase.from('solicitudes_sagrilaft').update({
             estado_actual: estadoGeneral,
@@ -1038,8 +1011,6 @@ app.post('/api/v1/otp/verify', (req, res) => {
 
 // Arrancar el servidor
 // Importar motor de riesgos
-const { calcularRiesgoConsolidado } = require('./utils/riskEngine');
-
 // POST /api/v1/solicitudes/:id/calcular-riesgo - Simular Riesgo
 app.post('/api/v1/solicitudes/:id/calcular-riesgo', async (req, res) => {
     try {
