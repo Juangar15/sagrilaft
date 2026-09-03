@@ -1051,8 +1051,8 @@ app.post('/api/v1/solicitudes/:id/guardar-riesgo', async (req, res) => {
             return res.status(400).json({ error: "resultadoRiesgo inválido" });
         }
 
-        // Obtener estado actual para decidir nuevoEstado
-        const { data: sol, error: errSol } = await supabase.from('solicitudes_sagrilaft').select('estado_actual').eq('id', id).single();
+        // Obtener datos completos para actualizar datos_formulario correctamente
+        const { data: sol, error: errSol } = await supabase.from('solicitudes_sagrilaft').select('estado_actual, datos_formulario').eq('id', id).single();
         if (errSol || !sol) return res.status(404).json({ error: "Solicitud no encontrada" });
 
         let nuevoEstado = sol.estado_actual;
@@ -1060,11 +1060,17 @@ app.post('/api/v1/solicitudes/:id/guardar-riesgo', async (req, res) => {
             nuevoEstado = resultadoRiesgo.nivel_riesgo_final === 'ALTO' ? 'RECHAZADO' : 'APROBADO_LIMPIO';
         }
 
+        // Guardar desglose dentro de datos_formulario (no como columna separada)
+        const datosActualizados = {
+            ...(sol.datos_formulario || {}),
+            desglose_riesgo: resultadoRiesgo
+        };
+
         const { error: errUpd } = await supabase.from('solicitudes_sagrilaft').update({
             analisis_oficial: formOficial,
             calificacion_oficial: formOficial?.calificacion_oficial,
             alertas_manuales: formOficial?.alertas_manuales,
-            desglose_riesgo: resultadoRiesgo,
+            datos_formulario: datosActualizados,
             score_riesgo: resultadoRiesgo.puntaje_total,
             estado_actual: nuevoEstado
         }).eq('id', id);
@@ -1075,7 +1081,7 @@ app.post('/api/v1/solicitudes/:id/guardar-riesgo', async (req, res) => {
         res.json({ ok: true, estado_actual: nuevoEstado, score_riesgo: resultadoRiesgo.puntaje_total });
     } catch (error) {
         console.error("Error guardando riesgo:", error);
-        res.status(500).json({ error: "Error guardando riesgo" });
+        res.status(500).json({ error: "Error guardando riesgo: " + error.message });
     }
 });
 
@@ -1112,7 +1118,7 @@ app.post('/api/v1/admin/recalcular-scores', async (req, res) => {
                 await supabase.from('solicitudes_sagrilaft').update({
                     score_riesgo: puntajeNuevo,
                     datos_formulario: newForm,
-                    desglose_riesgo: calc,
+                    calificacion_oficial: sol.calificacion_oficial || 'Bajo',
                     estado_actual: nuevoEstado
                 }).eq('id', sol.id);
 
@@ -1312,7 +1318,12 @@ app.post('/api/v1/solicitudes/:id/aprobar_definitivo', async (req, res) => {
         const isEmpleado = (sol.tipo_vinculacion || '').toLowerCase().includes('empleado');
         const statusFolder = estadoFinal === 'APROBADO_LIMPIO' ? 'aceptados' : 'no_aceptados';
         
-        let score = sol.score_riesgo || 0;
+        // Recalcular score en el momento de la aprobación usando la calificación oficial guardada
+        const calificacionOficial = sol.calificacion_oficial || formAprobacion.calificacion_oficial || 'Bajo';
+        const alertasManuales = sol.alertas_manuales || formAprobacion.alertas_manuales || [];
+        const scoreRecalculado = await calcularRiesgoConsolidado(sol.datos_formulario, alertasManuales, calificacionOficial);
+        const score = scoreRecalculado.puntaje_total;
+        
         let colorSemaforo = 'verde';
         if (score >= 33.34 && score <= 66.66) colorSemaforo = 'amarillo';
         if (score > 66.66) colorSemaforo = 'rojo';
@@ -1328,6 +1339,8 @@ app.post('/api/v1/solicitudes/:id/aprobar_definitivo', async (req, res) => {
         } else {
             folderR2 = `${folderRoot}/${statusFolder}/${colorSemaforo}/${nit}`;
         }
+
+        console.log(`📁 Aprobando ${nit}: score=${score}, semaforo=${colorSemaforo}, folder=${folderR2}`);
 
         // 1. Generar el PDF del Formulario Final de Verificación
         const pdfBuffer = await generarFormularioFinalPDF(sol, formAprobacion);
@@ -1348,13 +1361,15 @@ app.post('/api/v1/solicitudes/:id/aprobar_definitivo', async (req, res) => {
         // Agregar el formulario final al listado
         archivosActualizados.formulario_verificacion_oficial = pdfUrl;
 
-        // Actualizamos BD
+        // Actualizamos BD con score recalculado y datos finales
         let datosFormularioActualizados = sol.datos_formulario || {};
         datosFormularioActualizados.analisis_oficial = formAprobacion;
         datosFormularioActualizados.archivos_cargados = archivosActualizados;
+        datosFormularioActualizados.desglose_riesgo = scoreRecalculado;
 
         const { error } = await supabase.from('solicitudes_sagrilaft').update({ 
             estado_actual: estadoFinal,
+            score_riesgo: score,
             datos_formulario: datosFormularioActualizados
         }).eq('id', id);
         

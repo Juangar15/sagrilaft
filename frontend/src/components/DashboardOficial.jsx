@@ -84,11 +84,12 @@ export default function DashboardOficial() {
                     ...r,
                     eventos_ocurridos: eventosGuardados[r.id] || 0
                 }));
-
                 // Mapear score_riesgo_total (DB) a score_riesgo (Frontend)
+                // desglose_riesgo puede estar en datos_formulario (nuevo) o como campo directo (viejo)
                 const mappedSol = (dataSol || []).map(s => ({
                     ...s,
-                    score_riesgo: s.score_riesgo !== undefined ? s.score_riesgo : s.score_riesgo_total
+                    score_riesgo: s.score_riesgo !== undefined ? s.score_riesgo : s.score_riesgo_total,
+                    desglose_riesgo: s.desglose_riesgo || s.datos_formulario?.desglose_riesgo || null
                 }));
                 setSolicitudes(mappedSol);
                 setMatrizRiesgos(matrizConEventos);
@@ -196,13 +197,12 @@ export default function DashboardOficial() {
             await sagrilaftService.actualizarEstadoSolicitud(solicitudSeleccionada.id, nuevoEstado);
             setSolicitudSeleccionada({ ...solicitudSeleccionada, estado_actual: nuevoEstado });
             
-            // Si hay un form de oficial (por ejemplo al aprobar manualmente), lo guardamos
+            // Si hay un form de oficial, lo guardamos (sin desglose_riesgo que no es columna directa)
             if (nuevoEstado === 'APROBADO_LIMPIO' || nuevoEstado === 'APROBADO_RIESGO_CONTROLADO') {
                 await supabase.from('solicitudes_sagrilaft').update({ 
                     analisis_oficial: formOficial,
                     calificacion_oficial: formOficial.calificacion_oficial,
-                    alertas_manuales: formOficial.alertas_manuales,
-                    desglose_riesgo: resultadoRiesgo
+                    alertas_manuales: formOficial.alertas_manuales
                 }).eq('id', solicitudSeleccionada.id);
             }
 
