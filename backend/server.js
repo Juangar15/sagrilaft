@@ -1041,6 +1041,99 @@ app.post('/api/v1/solicitudes/:id/calcular-riesgo', async (req, res) => {
     }
 });
 
+// POST /api/v1/solicitudes/:id/guardar-riesgo - Guardar score recalculado (fuente de verdad única)
+app.post('/api/v1/solicitudes/:id/guardar-riesgo', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { formOficial, resultadoRiesgo } = req.body;
+
+        if (!resultadoRiesgo || resultadoRiesgo.puntaje_total === undefined) {
+            return res.status(400).json({ error: "resultadoRiesgo inválido" });
+        }
+
+        // Obtener estado actual para decidir nuevoEstado
+        const { data: sol, error: errSol } = await supabase.from('solicitudes_sagrilaft').select('estado_actual').eq('id', id).single();
+        if (errSol || !sol) return res.status(404).json({ error: "Solicitud no encontrada" });
+
+        let nuevoEstado = sol.estado_actual;
+        if (nuevoEstado === 'APROBADO_LIMPIO' || nuevoEstado === 'RECHAZADO') {
+            nuevoEstado = resultadoRiesgo.nivel_riesgo_final === 'ALTO' ? 'RECHAZADO' : 'APROBADO_LIMPIO';
+        }
+
+        const { error: errUpd } = await supabase.from('solicitudes_sagrilaft').update({
+            analisis_oficial: formOficial,
+            calificacion_oficial: formOficial?.calificacion_oficial,
+            alertas_manuales: formOficial?.alertas_manuales,
+            desglose_riesgo: resultadoRiesgo,
+            score_riesgo: resultadoRiesgo.puntaje_total,
+            estado_actual: nuevoEstado
+        }).eq('id', id);
+
+        if (errUpd) throw errUpd;
+
+        console.log(`✅ Score guardado para ${id}: ${resultadoRiesgo.puntaje_total} (${resultadoRiesgo.nivel_riesgo_final})`);
+        res.json({ ok: true, estado_actual: nuevoEstado, score_riesgo: resultadoRiesgo.puntaje_total });
+    } catch (error) {
+        console.error("Error guardando riesgo:", error);
+        res.status(500).json({ error: "Error guardando riesgo" });
+    }
+});
+
+// POST /api/v1/admin/recalcular-scores - Recalcular masivamente todos los scores usando riskEngine
+app.post('/api/v1/admin/recalcular-scores', async (req, res) => {
+    try {
+        const { data: solicitudes, error } = await supabase.from('solicitudes_sagrilaft').select('*');
+        if (error) throw error;
+
+        let corregidos = 0;
+        let errores = 0;
+        const log = [];
+
+        for (const sol of solicitudes) {
+            if (!sol.datos_formulario) continue;
+            try {
+                const calc = await calcularRiesgoConsolidado(
+                    sol.datos_formulario,
+                    sol.alertas_manuales || [],
+                    sol.calificacion_oficial || 'Bajo'
+                );
+
+                const puntajeNuevo = calc.puntaje_total;
+                const puntajeViejo = sol.score_riesgo;
+
+                let nuevoEstado = sol.estado_actual;
+                if (['APROBADO_LIMPIO', 'RECHAZADO', 'REVISION_MANUAL', 'ALERTA_CRITICA'].includes(sol.estado_actual)) {
+                    if (puntajeNuevo <= 33.33) nuevoEstado = 'APROBADO_LIMPIO';
+                    else if (puntajeNuevo <= 66.66) nuevoEstado = 'REVISION_MANUAL';
+                    else nuevoEstado = 'ALERTA_CRITICA';
+                }
+
+                const newForm = { ...sol.datos_formulario, desglose_riesgo: calc };
+                await supabase.from('solicitudes_sagrilaft').update({
+                    score_riesgo: puntajeNuevo,
+                    datos_formulario: newForm,
+                    desglose_riesgo: calc,
+                    estado_actual: nuevoEstado
+                }).eq('id', sol.id);
+
+                if (puntajeViejo !== puntajeNuevo) {
+                    log.push(`${sol.nit_cedula}: ${puntajeViejo} → ${puntajeNuevo} (${calc.nivel_riesgo_final})`);
+                    corregidos++;
+                }
+            } catch (e) {
+                errores++;
+                log.push(`ERROR en ${sol.nit_cedula}: ${e.message}`);
+            }
+        }
+
+        console.log(`Recalculación masiva: ${corregidos} corregidos, ${errores} errores`);
+        res.json({ ok: true, total: solicitudes.length, corregidos, errores, log });
+    } catch (error) {
+        console.error("Error en recalculación masiva:", error);
+        res.status(500).json({ error: "Error en recalculación masiva" });
+    }
+});
+
 // ==========================================
 // MÓDULO DE CONFIGURACIÓN Y JURISDICCIONES
 // ==========================================

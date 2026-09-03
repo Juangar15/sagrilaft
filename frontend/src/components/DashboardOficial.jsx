@@ -332,37 +332,47 @@ export default function DashboardOficial() {
             return;
         }
         try {
-            let nuevoEstado = solicitudSeleccionada.estado_actual;
-            if (nuevoEstado === 'APROBADO_LIMPIO' || nuevoEstado === 'RECHAZADO') {
-                nuevoEstado = resultadoRiesgo.nivel_riesgo_final === 'ALTO' ? 'RECHAZADO' : 'APROBADO_LIMPIO';
+            setCargando(true);
+            const token = localStorage.getItem('token');
+            const url = `${import.meta.env.VITE_API_URL}/api/v1/solicitudes/${solicitudSeleccionada.id}/guardar-riesgo`;
+            const payload = {
+                formOficial,
+                resultadoRiesgo
+            };
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.error || 'Error al guardar');
             }
+            const saved = await response.json();
 
-            await supabase.from('solicitudes_sagrilaft').update({ 
-                analisis_oficial: formOficial,
-                calificacion_oficial: formOficial.calificacion_oficial,
-                alertas_manuales: formOficial.alertas_manuales,
-                desglose_riesgo: resultadoRiesgo,
-                score_riesgo: resultadoRiesgo.puntaje_total,
-                estado_actual: nuevoEstado
-            }).eq('id', solicitudSeleccionada.id);
-
+            // Refrescar lista completa para que la tarjeta actualice su Score
             const data = await sagrilaftService.obtenerSolicitudes();
             setSolicitudes(data || []);
-            setSolicitudSeleccionada({
-                ...solicitudSeleccionada,
+
+            // Actualizar el estado local del modal inmediatamente
+            setSolicitudSeleccionada(prev => ({
+                ...prev,
                 analisis_oficial: formOficial,
                 calificacion_oficial: formOficial.calificacion_oficial,
                 alertas_manuales: formOficial.alertas_manuales,
                 desglose_riesgo: resultadoRiesgo,
                 score_riesgo: resultadoRiesgo.puntaje_total,
-                estado_actual: nuevoEstado
-            });
-            showToast("Actualización guardada correctamente", "success");
+                estado_actual: saved.estado_actual || prev.estado_actual
+            }));
+            showToast(`✅ Actualización guardada. Score: ${resultadoRiesgo.puntaje_total}/100 (${resultadoRiesgo.nivel_riesgo_final})`, "success");
         } catch (err) {
-            console.error(err);
-            showToast("Error al guardar actualización", "error");
+            console.error("Error guardando:", err);
+            showToast("Error al guardar actualización: " + err.message, "error");
+        } finally {
+            setCargando(false);
         }
     };
+
 
     const actualizarJurisdiccion = async (id, val) => {
         try {
@@ -722,6 +732,29 @@ export default function DashboardOficial() {
                     </button>
                     <button onClick={() => setFiltroTipo('empleados')} style={{ padding: '0.5rem 1.5rem', borderRadius: 'var(--radius-md)', border: 'none', cursor: 'pointer', fontWeight: 'bold', transition: '0.3s', background: filtroTipo === 'empleados' ? 'var(--primary)' : 'transparent', color: filtroTipo === 'empleados' ? 'white' : 'var(--text-muted)' }}>
                         👤 Talento Humano
+                    </button>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                    <button 
+                        onClick={async () => {
+                            try {
+                                const token = localStorage.getItem('token');
+                                const r = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/admin/recalcular-scores`, {
+                                    method: 'POST',
+                                    headers: { 'Authorization': `Bearer ${token}` }
+                                });
+                                const d = await r.json();
+                                showToast(`✅ Recalculación completada: ${d.corregidos} corregidos de ${d.total}`, 'success');
+                                const data = await sagrilaftService.obtenerSolicitudes();
+                                setSolicitudes(data || []);
+                            } catch(e) {
+                                showToast('Error al recalcular scores', 'error');
+                            }
+                        }}
+                        style={{ padding: '0.4rem 1rem', borderRadius: '6px', border: '1px solid #6366f1', background: 'transparent', color: '#6366f1', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600' }}
+                    >
+                        🔄 Recalcular todos los scores
                     </button>
                 </div>
 
@@ -1233,7 +1266,12 @@ export default function DashboardOficial() {
                                         <Globe size={18} /> Monitor de Fuentes (TusDatos)
                                     </h4>
                                     
-                                    {(solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || (solicitudSeleccionada.estado_actual === 'REVISION_PREVIA' || solicitudSeleccionada.estado_actual === 'ASIGNACION_CARGO')) ? (
+                                    {solicitudSeleccionada.estado_actual === 'ASIGNACION_CARGO' ? (
+                                        <div style={{ textAlign: 'center', padding: '2rem', background: '#fefce8', borderRadius: '8px', border: '1px solid #fef08a' }}>
+                                            <p style={{ color: '#854d0e', fontWeight: '600', marginBottom: '0.5rem' }}>🔒 Pendiente de asignación de Área y Cargo</p>
+                                            <p style={{ color: '#a16207', fontSize: '0.85rem' }}>Primero debes asignar el Área y Cargo en el recuadro superior. Una vez asignados, el expediente pasará a Revisión Previa donde se ejecutará la consulta en TusDatos.</p>
+                                        </div>
+                                    ) : (solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || solicitudSeleccionada.estado_actual === 'REVISION_PREVIA') ? (
                                         <div style={{ textAlign: 'center', padding: '2rem' }}>
                                             <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>No se ha ejecutado la consulta en bases de datos externas.</p>
                                             <button 

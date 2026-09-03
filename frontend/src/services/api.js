@@ -92,6 +92,16 @@ export const sagrilaftService = {
     recargarTusDatos: async (solicitudId) => {
         const response = await api.post(`/solicitudes/${solicitudId}/tusdatos/retry`);
         return response.data;
+    },
+
+    guardarActualizacionRiesgo: async (id, payload) => {
+        const response = await api.post(`/solicitudes/${id}/guardar-riesgo`, payload);
+        return response.data;
+    },
+
+    recalcularScoresMasivo: async () => {
+        const response = await api.post('/admin/recalcular-scores');
+        return response.data;
     }
 };
 
