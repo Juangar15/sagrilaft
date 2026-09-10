@@ -273,16 +273,16 @@ export default function FormularioEmpleado() {
                                 <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CreditCard size={20}/> 2. Perfil Financiero Personal</h3>
                                 
                                 <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
-                                    <CurrencyInput label="Total Activos" name="activos" value={formData.activos} onChange={handleChange} required={true} />
-                                    <CurrencyInput label="Total Pasivos" name="pasivos" value={formData.pasivos} onChange={handleChange} required={true} />
+                                    <CurrencyInput label="Total Activos" name="activos" value={formData.activos} onChange={handleChange} required={false} />
+                                    <CurrencyInput label="Total Pasivos" name="pasivos" value={formData.pasivos} onChange={handleChange} required={false} />
                                     <div style={{ flex: "1fr" }}>
                                         <label className="label">Patrimonio Líquido</label>
                                         <input type="text" value={`$ ${formData.patrimonio.toLocaleString('es-CO')}`} disabled className="input-field" style={{ fontWeight: 'bold' }} />
                                     </div>
                                 </div>
                                 <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
-                                    <CurrencyInput label="Ingresos Mensuales" name="ingresos_mensuales" value={formData.ingresos_mensuales} onChange={handleChange} required={true} />
-                                    <CurrencyInput label="Egresos Mensuales" name="egresos_mensuales" value={formData.egresos_mensuales} onChange={handleChange} required={true} />
+                                    <CurrencyInput label="Ingresos Mensuales" name="ingresos_mensuales" value={formData.ingresos_mensuales} onChange={handleChange} required={false} />
+                                    <CurrencyInput label="Egresos Mensuales" name="egresos_mensuales" value={formData.egresos_mensuales} onChange={handleChange} required={false} />
                                 </div>
                                 
                                 <div style={{ marginTop: '2rem' }}>
