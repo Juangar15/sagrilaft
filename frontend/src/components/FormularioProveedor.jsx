@@ -828,17 +828,14 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 
                                 <h4 style={{ margin: '0 0 1rem 0', color: 'var(--text-main)' }}>Perfil Financiero (Valores en COP)</h4>
                                 <div style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem', border: '1px solid var(--border)' }}>
-                                    <p style={{ fontSize: '0.85rem', color: 'var(--warning)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(217, 119, 6, 0.1)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(217, 119, 6, 0.3)' }}>
-                                        <AlertTriangle size={16} /> Nota: Esta información es opcional. Por favor, llene estos campos únicamente si está seguro de la información financiera.
-                                    </p>
                                     <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
-                                        <CurrencyInput label="Total Activos" name="activos" value={formData.activos} onChange={handleChange} required={false} disabled={isDisabled('activos')} isError={!!camposACorregir['activos']} />
-                                        <CurrencyInput label="Total Pasivos" name="pasivos" value={formData.pasivos} onChange={handleChange} required={false} disabled={isDisabled('pasivos')} isError={!!camposACorregir['pasivos']} />
-                                        <CurrencyInput label="Patrimonio Líquido" name="patrimonio" value={formData.patrimonio} onChange={handleChange} required={false} disabled={isDisabled('patrimonio')} isError={!!camposACorregir['patrimonio']} />
+                                        <CurrencyInput label="Total Activos" name="activos" value={formData.activos} onChange={handleChange} required={true} disabled={isDisabled('activos')} isError={!!camposACorregir['activos']} />
+                                        <CurrencyInput label="Total Pasivos" name="pasivos" value={formData.pasivos} onChange={handleChange} required={true} disabled={isDisabled('pasivos')} isError={!!camposACorregir['pasivos']} />
+                                        <CurrencyInput label="Patrimonio Líquido" name="patrimonio" value={formData.patrimonio} onChange={handleChange} required={true} disabled={isDisabled('patrimonio')} isError={!!camposACorregir['patrimonio']} />
                                     </div>
                                     <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
-                                        <CurrencyInput label="Ingresos Mensuales" name="ingresos_mensuales" value={formData.ingresos_mensuales} onChange={handleChange} required={false} disabled={isDisabled('ingresos_mensuales')} isError={!!camposACorregir['ingresos_mensuales']} />
-                                        <CurrencyInput label="Egresos Mensuales" name="egresos_mensuales" value={formData.egresos_mensuales} onChange={handleChange} required={false} disabled={isDisabled('egresos_mensuales')} isError={!!camposACorregir['egresos_mensuales']} />
+                                        <CurrencyInput label="Ingresos Mensuales" name="ingresos_mensuales" value={formData.ingresos_mensuales} onChange={handleChange} required={true} disabled={isDisabled('ingresos_mensuales')} isError={!!camposACorregir['ingresos_mensuales']} />
+                                        <CurrencyInput label="Egresos Mensuales" name="egresos_mensuales" value={formData.egresos_mensuales} onChange={handleChange} required={true} disabled={isDisabled('egresos_mensuales')} isError={!!camposACorregir['egresos_mensuales']} />
                                     </div>
 
                                     <div className="form-grid form-grid-3">
