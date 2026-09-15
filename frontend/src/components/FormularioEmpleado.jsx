@@ -44,7 +44,7 @@ export default function FormularioEmpleado() {
         correo_electronico: '', estado_civil: 'soltero',
         direccion_residencial: '', telefono_celular: '',
         ciudad: 'Medellín', departamento: 'Antioquia', pais: 'Colombia',
-        ocupacion_profesion: '', declara_renta: 'no',
+        ocupacion_profesion: '', declara_renta: '',
         responsable_iva: 'no', regimen_simple: 'no', gran_contribuyente: 'no',
         exterior_tributario: 'no', autoretenedor_renta: 'no', autoretenedor_iva: 'no', autoretenedor_ica: 'no',
 

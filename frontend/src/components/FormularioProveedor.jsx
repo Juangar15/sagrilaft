@@ -69,7 +69,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         correo_electronico: '', estado_civil: '',
         direccion_residencial: '', telefono_celular: '',
         ciudad: '', departamento: '', pais: 'Colombia',
-        ocupacion_profesion: 'independiente', declara_renta: 'no',
+        ocupacion_profesion: 'independiente', declara_renta: '',
         actividad_economica_principal: '', codigo_ciiu: '', sector: 'Comercial', sector_otro: '',
         empresa_labora: '', cargo: '', area: '',
         direccion_corporativa: '', telefono_corporativo: '',
@@ -113,7 +113,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         referencias_bancarias: [], // {referencia, cuenta, tipo, ciudad, telefono}
         pep_familiares_extendido: [], // {nombre, identificacion, parentesco}
 
-        // 6. �0tica
+        // 6. Ética
         politica_corrupcion: 'no', tiene_comite_etica: 'no', codigo_etica_conducta: 'no',
         canales_denuncia: 'no', acusada_corrupcion: 'no', 
         tiene_oficial_cumplimiento: 'no', nombre_oficial_cumplimiento: '', detalles_etica: '',
@@ -139,6 +139,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
 
         // 8. Fondos
         origen_fondos: '',
+        representacion_de: '',
 
         // Documentos
         archivos_cargados: {}
@@ -313,7 +314,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         }
     };
 
-    const nombreEmpresaFull = formData.empresa_destino === 'selecta' ? 'SELECTA COMPA�ÍA DE CEREALES S.A.S.' : 'COSECHAS BEBIDAS NATURALES S.A.S.';
+    const nombreEmpresaFull = formData.empresa_destino === 'selecta' ? 'SELECTA COMPAÍA DE CEREALES S.A.S.' : 'COSECHAS BEBIDAS NATURALES S.A.S.';
     const correoEmpresa = formData.empresa_destino === 'selecta' ? 'oficialdecumplimiento@cerealesselecta.com' : 'oficialdecumplimiento@cosechasexpress.com';
     const direccionEmpresa = formData.empresa_destino === 'selecta' ? 'CARRERA 48B NO. 99 SUR 59 La Estrella, en Antioquia' : 'CALLE 12 SUR # 50 G 21, Medellín, Antioquia';
     const isInternalRole = ['empleado', 'prestacion_servicios', 'contratista', 'accionista'].includes(formData.clase_vinculacion);
@@ -346,7 +347,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                 { id: 5, label: 'Referencias' },
                 { id: 12, label: 'Conflicto de Interés' },
                 { id: 13, label: 'Operaciones Internacionales' },
-                { id: 7, label: '�0tica y ESG' },
+                { id: 7, label: 'Ética y ESG' },
                 { id: 8, label: 'Origen Fondos' },
                 { id: 9, label: 'Documentos' },
                 { id: 10, label: 'Firma y Envío' }
@@ -669,7 +670,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 )}
                                 <div style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: 'var(--radius-md)', textAlign: 'left', marginBottom: '2rem', border: '1px solid var(--border)' }}>
                                     <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1rem', textAlign: 'justify' }}>
-                                        <b>6. AUTORIZACI�N PARA EL TRATAMIENTO DE DATOS PERSONALES</b><br/><br/>
+                                        <b>6. AUTORIZACIN PARA EL TRATAMIENTO DE DATOS PERSONALES</b><br/><br/>
                                         Dando cumplimiento a lo dispuesto en la Ley 1581 de 2012 "Por el cual se dictan disposiciones generales para la protección de datos personales" y de conformidad con lo señalado en el Decreto 1377 de 2013, con la firma de este documento manifiesto que he sido informado por {nombreEmpresaFull} de lo siguiente:<br/><br/>
                                         <ol style={{ margin: '0 0 1rem 1.5rem', padding: 0 }}>
                                             <li>{nombreEmpresaFull} actuará como responsable del tratamiento de los datos personales de los cuales soy titular y podrá recolectar, usar y tratar dichos datos conforme a su política de privacidad.</li>
@@ -720,7 +721,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                         </div>
                                         <div className="form-grid form-grid-3">
                                             {renderInput("Correo Electrónico", "correo_electronico", "email", "1fr", false, true)}
-                                            {renderSelect("Estado Civil", "estado_civil", [{value:'', label:'Seleccione...'}, {value:'Soltero (a)', label:'Soltero (a)'}, {value:'Casado (a)', label:'Casado (a)'}, {value:'Divorciado (a)', label:'Divorciado (a)'}, {value:'Viudo (a)', label:'Viudo (a)'}, {value:'Unión libre / Unión marital de hecho', label:'Unión libre / Unión marital de hecho'}])}
+                                            {renderSelect("Estado Civil", "estado_civil", [{value:'Soltero (a)', label:'Soltero (a)'}, {value:'Casado (a)', label:'Casado (a)'}, {value:'Divorciado (a)', label:'Divorciado (a)'}, {value:'Viudo (a)', label:'Viudo (a)'}, {value:'Unión libre / Unión marital de hecho', label:'Unión libre / Unión marital de hecho'}])}
                                             {renderInput("Dirección/Barrio", "direccion_residencial", "text", "1fr", false, true)}
                                         </div>
                                         <div className="form-grid form-grid-3">
@@ -835,7 +836,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                     {renderSelect("¿Declara bajo juramento ser PEP?", "declara_ser_pep", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                 </div>
                                 <div style={{ marginTop: '1.5rem' }}>
-                                    {renderInput("Si respondi� afirmativamente alguna, proporcione nombres, cargos, v�nculo y entidad", "pep_detalles", "text", "1fr", false, ['es_funcionario_publico', 'vinculo_familiar_pep', 'ejerce_poder_publico', 'maneja_recursos_publicos', 'goza_reconocimiento_publico', 'declara_ser_pep'].some(k => formData[k] === 'si'))}
+                                    {renderInput("Si respondió afirmativamente alguna, proporcione nombres, cargos, vínculo y entidad", "pep_detalles", "text", "1fr", false, ['es_funcionario_publico', 'vinculo_familiar_pep', 'ejerce_poder_publico', 'maneja_recursos_publicos', 'goza_reconocimiento_publico', 'declara_ser_pep'].some(k => formData[k] === 'si'))}
                                 </div>
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
@@ -845,14 +846,17 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                             </motion.div>
                         )}
 
-                        {/* PASO 15: DECLARACI�N PEP */}
+                        {/* PASO 15: DECLARACIÓN PEP */}
                         {paso === 15 && (
                             <motion.div key="p15" variants={formVariants} initial="hidden" animate="visible" exit="exit">
                                 <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><ShieldCheck size={20}/> Formato Persona Pública o Políticamente Expuesta</h3>
                                 
                                 <div style={{ background: 'var(--surface)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', marginBottom: '1.5rem', fontSize: '0.85rem', lineHeight: '1.6', color: 'var(--text-main)' }}>
+                                    <div style={{marginBottom: '1rem'}}>
+                                        {renderInput("En representación de (Nombre propio o Razón Social)", "representacion_de", "text", "1fr", false, true)}
+                                    </div>
                                     <p style={{ textAlign: 'justify' }}>
-                                        Yo <strong>{formData.nombres} {formData.primer_apellido} {formData.segundo_apellido}</strong> identificado(a) con cédula de ciudadanía No <strong>{formData.numero_identificacion}</strong> expedida en <strong>{formData.lugar_expedicion || '_______________'}</strong> actuando en mi nombre y/o en representación de <strong>{formData.razon_social || '_______________'}</strong> y dando certeza de que todo lo consignado aquí es cierto, realizo la siguiente declaración de origen de fondos con el propósito de dar cumplimiento a lo señalado en la circular externa 07 de 1996 de la Superfinanciera, el estatuto orgánico del sistema financiero EOSF decreto 663 de 1993, ley 190 de 1996 y para dar cumplimiento a lo establecido en la circular externa 100-000016 del 24 de diciembre del 2020 de la Superintendencia de Sociedades, la ley 1121 de 2006 y demás normas concordantes.
+                                        Yo <strong>{formData.nombres} {formData.primer_apellido} {formData.segundo_apellido}</strong> identificado(a) con cédula de ciudadanía No <strong>{formData.numero_identificacion}</strong> expedida en <strong>{formData.lugar_expedicion || '_______________'}</strong> actuando en mi nombre y/o en representación de <strong>{formData.representacion_de || formData.razon_social || '_______________'}</strong> y dando certeza de que todo lo consignado aquí es cierto, realizo la siguiente declaración de origen de fondos con el propósito de dar cumplimiento a lo señalado en la circular externa 07 de 1996 de la Superfinanciera, el estatuto orgánico del sistema financiero EOSF decreto 663 de 1993, ley 190 de 1996 y para dar cumplimiento a lo establecido en la circular externa 100-000016 del 24 de diciembre del 2020 de la Superintendencia de Sociedades, la ley 1121 de 2006 y demás normas concordantes.
                                     </p>
                                     
                                     <p>Declaro que mi familia en primer, segundo y tercer grado de afinidad son:</p>
@@ -974,7 +978,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                     <p>Este tipo de evento ocurre cuando el interés personal de un empleado, representante, proveedor, contratista y/o colaborador interfiere de manera directa o de algún modo con los intereses propios de la empresa. A continuación, a título de ejemplo y no exhaustivo o limitado, algunas de las situaciones que caracterizan los conflictos de interés:</p>
                                     <ol style={{ marginLeft: '1.5rem', marginTop: '0.5rem' }}>
                                         <li><strong>Desarrollo de actividades:</strong> no se permiten actividades paralelas, conflictivas con los negocios de {nombreEmpresaFull}, que puedan afectar o afecten el desempeño del colaborador, director o administrador dentro del horario de trabajo, que utilicen la estructura de la Compañía para fines particulares o que estén vinculadas a la competencia.</li>
-                                        <li><strong>Contratación de familiares:</strong> De acuerdo al Programa de transparencia y ética empresarial y demás Políticas internas, la contratación de parientes hasta el 3 grado de consanguinidad o afinidad (padres, hermanos, hijos, esposo(a) o compañero(a) permanente, suegros, abuelos, nietos y cuñados), solo será permitida de forma excepcional y con aprobación previa y expresa de {nombreEmpresaFull} (Comité de �0tica), siempre y cuando que no exista relación de subordinación entre ellos y que no trabajen en áreas o procesos en los que pueda haber conflicto de intereses.</li>
+                                        <li><strong>Contratación de familiares:</strong> De acuerdo al Programa de transparencia y ética empresarial y demás Políticas internas, la contratación de parientes hasta el 3 grado de consanguinidad o afinidad (padres, hermanos, hijos, esposo(a) o compañero(a) permanente, suegros, abuelos, nietos y cuñados), solo será permitida de forma excepcional y con aprobación previa y expresa de {nombreEmpresaFull} (Comité de Ética), siempre y cuando que no exista relación de subordinación entre ellos y que no trabajen en áreas o procesos en los que pueda haber conflicto de intereses.</li>
                                         <li><strong>Relaciones comerciales privadas:</strong> los colaboradores, directores o administradores no deben tener relaciones comerciales, personales, financieras u otras relaciones directas o indirectas con competidores, clientes, proveedores y, socios comerciales y/o consultores que puedan interferir o incluso que parezca percibir con la independencia de cualquier decisión tomado a nombre de {nombreEmpresaFull}</li>
                                         <li><strong>Posición y poder de las autoridades:</strong> {nombreEmpresaFull} valora la ética y la transparencia en las relaciones con todas sus partes interesadas o terceros. Por lo tanto, ningún colaborador, director o administrador debe utilizar su posición o autoridad en la Compañía para obtener ventajas personales de clientes, proveedores, socios comerciales, consultores y/o competidores.</li>
                                     </ol>
@@ -982,7 +986,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
 
                                 <div style={{ background: 'var(--surface)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', marginBottom: '2rem', ...(isDisabled('tiene_conflicto_interes') ? {opacity: 0.7} : {}), ...(camposACorregir['tiene_conflicto_interes'] ? {border: '2px solid #ef4444', background: '#fef2f2'} : {}) }}>
                                     <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '1rem', color: 'var(--text-main)' }}>
-                                        Declaro que a la fecha tengo situación(es) que pueda(n) presentar un potencial CONFLICTO DE INTER�0S para el ejercicio del cargo que actualmente desempeño en {nombreEmpresaFull}, en mi relación con los siguientes empleados, proveedores, clientes entre otros:
+                                        Declaro que a la fecha tengo situación(es) que pueda(n) presentar un potencial CONFLICTO DE INTERÉS para el ejercicio del cargo que actualmente desempeño en {nombreEmpresaFull}, en mi relación con los siguientes empleados, proveedores, clientes entre otros:
                                     </label>
                                     <div style={{ display: 'flex', gap: '2rem' }}>
                                         <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: isDisabled('tiene_conflicto_interes') ? 'not-allowed' : 'pointer' }}>
@@ -1151,7 +1155,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                     </div>
                                     {formData.accionistas.map((acc, idx) => (
                                         <div key={idx} style={{ padding: '0.5rem', borderBottom: '1px solid var(--border)', fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <div>�x� {acc.nombre} (CC: {acc.identificacion}) - <b>{acc.porcentaje}%</b></div>
+                                            <div>x {acc.nombre} (CC: {acc.identificacion}) - <b>{acc.porcentaje}%</b></div>
                                             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                                                 Admin. Recursos: <b>{acc.administra_recursos === 'si' ? 'Sí' : 'No'}</b> | Reconoc. Público: <b>{acc.goza_reconocimiento === 'si' ? 'Sí' : 'No'}</b>
                                             </div>
@@ -1175,7 +1179,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                     {renderSelect("¿Declara bajo juramento ser PEP?", "declara_ser_pep", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                 </div>
                                 <div style={{ marginTop: '1.5rem' }}>
-                                    {renderInput("Si respondi� afirmativamente alguna, proporcione nombres, cargos, v�nculo y entidad", "pep_detalles", "text", "1fr", false, ['es_funcionario_publico', 'vinculo_familiar_pep', 'ejerce_poder_publico', 'maneja_recursos_publicos', 'goza_reconocimiento_publico', 'declara_ser_pep'].some(k => formData[k] === 'si'))}
+                                    {renderInput("Si respondió afirmativamente alguna, proporcione nombres, cargos, vínculo y entidad", "pep_detalles", "text", "1fr", false, ['es_funcionario_publico', 'vinculo_familiar_pep', 'ejerce_poder_publico', 'maneja_recursos_publicos', 'goza_reconocimiento_publico', 'declara_ser_pep'].some(k => formData[k] === 'si'))}
                                 </div>
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
@@ -1229,14 +1233,14 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                             </motion.div>
                         )}
 
-                        {/* PASO 6: �0TICA Y CUMPLIMIENTO */}
+                        {/* PASO 6: 0TICA Y CUMPLIMIENTO */}
                         {paso === 6 && (
                             <motion.div key="p6" variants={formVariants} initial="hidden" animate="visible" exit="exit">
-                                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><ShieldCheck size={20}/> 6. �0tica y Cumplimiento</h3>
+                                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><ShieldCheck size={20}/> 6. Ética y Cumplimiento</h3>
                                 
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                                     <div style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
-                                        <h4 style={{ margin: '0 0 1rem 0' }}>Políticas y Comportamientos �0ticos</h4>
+                                        <h4 style={{ margin: '0 0 1rem 0' }}>Políticas y Comportamientos Éticos</h4>
                                         <div className="form-grid form-grid-2" style={{ marginBottom: "1.5rem" }}>
                                             {renderSelect("¿Prevención de corrupción y soborno?", "politica_corrupcion", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                             {renderSelect("¿Tiene código de ética y/o conducta?", "codigo_etica_conducta", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
@@ -1339,12 +1343,12 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                     <div style={{ background: 'var(--surface)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
                                         <h4 style={{ margin: '0 0 1rem 0' }}>Declaración de Origen de Fondos</h4>
                                         <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem', lineHeight: '1.5' }}>
-                                            <p>Declaro expresamente a {formData.empresa_destino === 'selecta' ? 'SELECTA COMPA�ÍA DE CEREALES' : 'COSECHAS BEBIDAS NATURALES S.A.S.'} que:</p>
+                                            <p>Declaro expresamente a {formData.empresa_destino === 'selecta' ? 'SELECTA COMPAÍA DE CEREALES' : 'COSECHAS BEBIDAS NATURALES S.A.S.'} que:</p>
                                             <ol style={{ margin: '0.5rem 0 0.5rem 1.5rem', padding: 0 }}>
                                                 <li>La información que he suministrado en este documento es veraz y verificable y me comprometo a actualizarla anualmente.</li>
                                                 <li>Tanto mis actividades, profesión u oficio son lícitas, las ejerzo dentro del marco legal y los recursos que poseo no provienen de actividades ilícitas de las contempladas en el Código Penal Colombiano o en cualquier norma que lo sustituya, adicione o modifique.</li>
                                                 <li>Los recursos que se deriven del desarrollo de este contrato, no serán destinados a la financiación del terrorismo, actividades terroristas o grupos terroristas.</li>
-                                                <li>Acepto que {formData.empresa_destino === 'selecta' ? 'SELECTA COMPA�ÍA DE CEREALES' : 'COSECHAS BEBIDAS NATURALES S.A.S.'} está en la obligación legal de solicitar las aclaraciones que estime pertinente, en el evento en que se presenten circunstancias con base en las cuales se pueda tener dudas razonables sobre mis transacciones, así como del origen de mis fondos, evento en el cual suministraré las aclaraciones que sean necesarias del caso.</li>
+                                                <li>Acepto que {formData.empresa_destino === 'selecta' ? 'SELECTA COMPAÍA DE CEREALES' : 'COSECHAS BEBIDAS NATURALES S.A.S.'} está en la obligación legal de solicitar las aclaraciones que estime pertinente, en el evento en que se presenten circunstancias con base en las cuales se pueda tener dudas razonables sobre mis transacciones, así como del origen de mis fondos, evento en el cual suministraré las aclaraciones que sean necesarias del caso.</li>
                                                 <li>Los recursos que poseo provienen de la(s) siguiente(s) actividad(es):</li>
                                             </ol>
                                         </div>
@@ -1513,7 +1517,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                             </motion.div>
                         )}
 
-                        {/* PASO 10: FIRMA ELECTR�NICA OTP */}
+                        {/* PASO 10: FIRMA ELECTRNICA OTP */}
                         {paso === 10 && (
                             <motion.div key="p10" variants={formVariants} initial="hidden" animate="visible" exit="exit" style={{ textAlign: 'center' }}>
                                 <Lock size={48} color="var(--primary)" style={{ margin: '0 auto 1rem' }} />
@@ -1530,7 +1534,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 ) : (
                                     <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
                                         <div style={{ background: 'var(--success-bg)', color: 'var(--success-text)', padding: '1rem', borderRadius: 'var(--radius-sm)', marginBottom: '1.5rem', fontWeight: '500' }}>
-                                            �S Código de 6 dígitos enviado por correo electrónico.
+                                            ✅ Código de 6 dígitos enviado por correo electrónico.
                                         </div>
                                         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '2rem' }}>
                                             <input type="text" maxLength={6} placeholder="Ej: 123456" value={codigoOTP} onChange={(e) => setCodigoOTP(e.target.value)} className="input-field" style={{ width: '150px', textAlign: 'center', fontSize: '1.25rem', letterSpacing: '0.2em' }} />
@@ -1547,7 +1551,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                             </motion.div>
                         )}
 
-                        {/* PASO 11: �0XITO */}
+                        {/* PASO 11: ÉXITO */}
                         {paso === 11 && resultadoApi && (
                             <motion.div key="p11" variants={formVariants} initial="hidden" animate="visible" exit="exit" style={{ textAlign: 'center', padding: '2rem 0' }}>
                                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', bounce: 0.5 }}>
