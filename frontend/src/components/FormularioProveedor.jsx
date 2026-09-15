@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { sagrilaftService } from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
@@ -39,7 +39,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
     const [terminosAceptados, setTerminosAceptados] = useState(false);
     const [auditHash, setAuditHash] = useState('');
     
-    // Estado de CorrecciÃ³n Parcial (Ping-Pong)
+    // Estado de Corrección Parcial (Ping-Pong)
     const [camposACorregir, setCamposACorregir] = useState({});
     const [esCorreccion, setEsCorreccion] = useState(false);
 
@@ -61,7 +61,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         tipo_proveeduria: '',
         tipo_persona: isGenericEmpleado ? 'natural' : 'juridica',
 
-        // 1. IdentificaciÃ³n Natural
+        // 1. Identificación Natural
         nombres: '', primer_apellido: '', segundo_apellido: '',
         tipo_identificacion: 'cc', numero_identificacion: '',
         lugar_expedicion: '', fecha_expedicion: '', 
@@ -75,7 +75,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         direccion_corporativa: '', telefono_corporativo: '',
         ciudad_empresa_labora: '', departamento_empresa_labora: '', pais_empresa_labora: '',
 
-        // 2. IdentificaciÃ³n JurÃ­dica
+        // 2. Identificación Jurídica
         razon_social: '', tipo_empresa: 'privada',
         direccion_oficina_principal: '', ciudad_juridica: '',
         departamento_juridica: '', telefono_juridica: '',
@@ -113,7 +113,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         referencias_bancarias: [], // {referencia, cuenta, tipo, ciudad, telefono}
         pep_familiares_extendido: [], // {nombre, identificacion, parentesco}
 
-        // 6. Ã‰tica
+        // 6. �0tica
         politica_corrupcion: 'no', tiene_comite_etica: 'no', codigo_etica_conducta: 'no',
         canales_denuncia: 'no', acusada_corrupcion: 'no', 
         tiene_oficial_cumplimiento: 'no', nombre_oficial_cumplimiento: '', detalles_etica: '',
@@ -164,10 +164,10 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                     }
                 }
             } catch (error) {
-                // No es Ping-Pong o no existe aÃºn en la base de datos
+                // No es Ping-Pong o no existe aún en la base de datos
             }
 
-            // 2. Si no es Ping-Pong, intentar validar como InvitaciÃ³n Nueva
+            // 2. Si no es Ping-Pong, intentar validar como Invitación Nueva
             if (!esPingPong) {
                 try {
                     const validacion = await sagrilaftService.validarInvitacion(token);
@@ -182,7 +182,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                         }));
                     }
                 } catch (error) {
-                    showToast("El enlace de invitaciÃ³n es invÃ¡lido o ha expirado.");
+                    showToast("El enlace de invitación es inválido o ha expirado.");
                 }
             }
         };
@@ -190,7 +190,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         inicializarFormulario();
     }, [token]);
 
-    // Estados temporales para listas dinÃ¡micas y fechas de documentos
+    // Estados temporales para listas dinámicas y fechas de documentos
     const [fechasDocumentos, setFechasDocumentos] = useState({});
     const [nuevoAccionista, setNuevoAccionista] = useState({ tipo_id: 'cc', identificacion: '', nombre: '', porcentaje: '', administra_recursos: 'no', goza_reconocimiento: 'no' });
     const [nuevaRefComercial, setNuevaRefComercial] = useState({ referencia: '', direccion: '', ciudad: '', contacto: '', telefono: '' });
@@ -260,7 +260,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
     const handleChange = (e) => {
         let { name, value } = e.target;
         
-        // ValidaciÃ³n de solo nÃºmeros
+        // Validación de solo números
         const camposNumericos = [
             'numero_identificacion', 'telefono_celular', 'telefono_corporativo', 
             'telefono_juridica', 'telefono_corporativo_juridica', 'celular_corporativo_juridica',
@@ -268,7 +268,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
             'ingresos_mensuales', 'egresos_mensuales', 'patrimonio', 'otros_ingresos_mensuales'
         ];
         if (camposNumericos.includes(name)) {
-            value = value.replace(/\D/g, ''); // Elimina todo lo que no sea dÃ­gito
+            value = value.replace(/\D/g, ''); // Elimina todo lo que no sea dígito
         }
 
         setFormData(prev => {
@@ -290,7 +290,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         try {
             const email = formData.correo_electronico;
             if (!email) {
-                showToast("No hay un correo electrÃ³nico asociado para enviar el cÃ³digo.");
+                showToast("No hay un correo electrónico asociado para enviar el código.");
                 setCargando(false);
                 return;
             }
@@ -302,10 +302,10 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
             });
             const data = await response.json();
             
-            if (!response.ok) throw new Error(data.error || 'Error enviando cÃ³digo');
+            if (!response.ok) throw new Error(data.error || 'Error enviando código');
             
             setOtpEnviado(true);
-            showToast("CÃ³digo de firma enviado a su correo electrÃ³nico.");
+            showToast("Código de firma enviado a su correo electrónico.");
         } catch (error) {
             showToast(error.message);
         } finally {
@@ -313,9 +313,9 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         }
     };
 
-    const nombreEmpresaFull = formData.empresa_destino === 'selecta' ? 'SELECTA COMPAÃ‘ÃA DE CEREALES S.A.S.' : 'COSECHAS BEBIDAS NATURALES S.A.S.';
+    const nombreEmpresaFull = formData.empresa_destino === 'selecta' ? 'SELECTA COMPA�ÍA DE CEREALES S.A.S.' : 'COSECHAS BEBIDAS NATURALES S.A.S.';
     const correoEmpresa = formData.empresa_destino === 'selecta' ? 'oficialdecumplimiento@cerealesselecta.com' : 'oficialdecumplimiento@cosechasexpress.com';
-    const direccionEmpresa = formData.empresa_destino === 'selecta' ? 'CARRERA 48B NO. 99 SUR 59 La Estrella, en Antioquia' : 'CALLE 12 SUR # 50 G 21, MedellÃ­n, Antioquia';
+    const direccionEmpresa = formData.empresa_destino === 'selecta' ? 'CARRERA 48B NO. 99 SUR 59 La Estrella, en Antioquia' : 'CALLE 12 SUR # 50 G 21, Medellín, Antioquia';
     const isInternalRole = ['empleado', 'prestacion_servicios', 'contratista', 'accionista'].includes(formData.clase_vinculacion);
 
     const getPasosList = () => {
@@ -324,32 +324,32 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         if (isInternalRole) {
             const steps = [
                 { id: 1, label: 'Inicio' },
-                { id: 2, label: 'IdentificaciÃ³n' },
+                { id: 2, label: 'Identificación' },
                 { id: 3, label: 'Financiera' },
-                { id: 12, label: 'Conflicto de InterÃ©s' },
+                { id: 12, label: 'Conflicto de Interés' },
                 { id: 14, label: 'PEPs' }
             ];
             if (isPepEmpleado) {
-                steps.push({ id: 15, label: 'DeclaraciÃ³n PEP' });
+                steps.push({ id: 15, label: 'Declaración PEP' });
             }
             steps.push({ id: 8, label: 'Origen Fondos' });
             steps.push({ id: 9, label: 'Documentos' });
-            steps.push({ id: 10, label: 'Firma y EnvÃ­o' });
+            steps.push({ id: 10, label: 'Firma y Envío' });
             return steps;
         } else {
             return [
                 { id: 1, label: 'Inicio' },
                 { id: 2, label: 'Ident. Natural' },
-                { id: 4, label: 'Ident. JurÃ­dica', condition: f => f.tipo_persona === 'juridica' },
+                { id: 4, label: 'Ident. Jurídica', condition: f => f.tipo_persona === 'juridica' },
                 { id: 3, label: 'Financiera' },
                 { id: 6, label: 'Accionistas y PEPs' },
                 { id: 5, label: 'Referencias' },
-                { id: 12, label: 'Conflicto de InterÃ©s' },
+                { id: 12, label: 'Conflicto de Interés' },
                 { id: 13, label: 'Operaciones Internacionales' },
-                { id: 7, label: 'Ã‰tica y ESG' },
+                { id: 7, label: '�0tica y ESG' },
                 { id: 8, label: 'Origen Fondos' },
                 { id: 9, label: 'Documentos' },
-                { id: 10, label: 'Firma y EnvÃ­o' }
+                { id: 10, label: 'Firma y Envío' }
             ].filter(s => !s.condition || s.condition(formData));
         }
     };
@@ -360,7 +360,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         const d = formData;
         if (pasoActual === 1) {
             if (!terminosAceptados) {
-                showToast("Debes aceptar la polÃ­tica de tratamiento de datos personales para continuar.");
+                showToast("Debes aceptar la política de tratamiento de datos personales para continuar.");
                 return false;
             }
             if (!d.fecha_diligenciamiento || !d.tipo_solicitud || !d.clase_vinculacion || !d.tipo_persona || !d.empresa_destino || (!isInternalRole && !d.ambito_operacion)) {
@@ -371,16 +371,16 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         if (pasoActual === 2) {
             if (d.tipo_persona === 'natural') {
                 if (!d.nombres || !d.primer_apellido || !d.numero_identificacion || !d.fecha_nacimiento || !d.correo_electronico || !d.telefono_celular) {
-                    showToast("Faltan campos obligatorios de identificaciÃ³n personal.");
+                    showToast("Faltan campos obligatorios de identificación personal.");
                     return false;
                 }
                 if (!isInternalRole && (!d.actividad_economica_principal || !d.codigo_ciiu)) {
-                    showToast("Faltan campos obligatorios: Actividad EconÃ³mica y CÃ³digo CIIU.");
+                    showToast("Faltan campos obligatorios: Actividad Económica y Código CIIU.");
                     return false;
                 }
                 const edad = new Date().getFullYear() - new Date(d.fecha_nacimiento).getFullYear();
                 if (edad < 18) {
-                    showToast("Debe ser mayor de edad (18+ aÃ±os).");
+                    showToast("Debe ser mayor de edad (18+ años).");
                     return false;
                 }
             } else {
@@ -396,32 +396,32 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
             const patrimonio = Number(d.patrimonio) || 0;
             
             if (!isGenericEmpleado) {
-                // Hacer obligatoria la informaciÃ³n financiera para terceros
+                // Hacer obligatoria la información financiera para terceros
                 if (d.activos === '' || d.pasivos === '' || d.patrimonio === '' || d.ingresos_mensuales === '' || d.egresos_mensuales === '' || d.activos === undefined || d.pasivos === undefined || d.patrimonio === undefined || d.ingresos_mensuales === undefined || d.egresos_mensuales === undefined) {
                     showToast("Por favor complete los campos obligatorios del Perfil Financiero.");
                     return false;
                 }
 
                 if (Math.abs(activos - (pasivos + patrimonio)) > 1) {
-                    showToast("La ecuaciÃ³n contable no cuadra: Activos debe ser igual a Pasivos + Patrimonio.");
+                    showToast("La ecuación contable no cuadra: Activos debe ser igual a Pasivos + Patrimonio.");
                     return false;
                 }
             }
         }
         if (pasoActual === 12) {
             if (!d.tiene_conflicto_interes) {
-                showToast("Debe declarar si tiene o no situaciones de conflicto de interÃ©s.");
+                showToast("Debe declarar si tiene o no situaciones de conflicto de interés.");
                 return false;
             }
             if (d.tiene_conflicto_interes === 'si' && (!d.familiares_conflicto || d.familiares_conflicto.length === 0)) {
-                showToast("Debe aÃ±adir al menos un familiar o persona en la tabla de conflicto de interÃ©s.");
+                showToast("Debe añadir al menos un familiar o persona en la tabla de conflicto de interés.");
                 return false;
             }
         }
         if (pasoActual === 14) {
             const isPep = ['es_funcionario_publico', 'vinculo_familiar_pep', 'ejerce_poder_publico', 'maneja_recursos_publicos', 'goza_reconocimiento_publico', 'declara_ser_pep'].some(k => d[k] === 'si');
             if (isPep && !d.pep_detalles) {
-                showToast("Como respondiÃ³ afirmativamente en PEP, debe proporcionar los detalles obligatoriamente.");
+                showToast("Como respondió afirmativamente en PEP, debe proporcionar los detalles obligatoriamente.");
                 return false;
             }
         }
@@ -440,17 +440,17 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         }
         if (pasoActual === 5) {
             if (d.referencias_comerciales.length === 0) {
-                showToast("Debes aÃ±adir al menos una (1) Referencia Comercial.");
+                showToast("Debes añadir al menos una (1) Referencia Comercial.");
                 return false;
             }
             if (d.referencias_bancarias.length === 0) {
-                showToast("Debes aÃ±adir al menos una (1) Referencia Bancaria.");
+                showToast("Debes añadir al menos una (1) Referencia Bancaria.");
                 return false;
             }
         }
         if (pasoActual === 8) {
             if (!d.origen_fondos || d.origen_fondos.trim().length < 5) {
-                showToast("La declaraciÃ³n de origen de fondos es obligatoria y debe ser explÃ­cita.");
+                showToast("La declaración de origen de fondos es obligatoria y debe ser explícita.");
                 return false;
             }
         }
@@ -484,7 +484,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (codigoOTP.length < 5) return showToast("CÃ³digo OTP invÃ¡lido.");
+        if (codigoOTP.length < 5) return showToast("Código OTP inválido.");
         
         setCargando(true);
         try {
@@ -505,7 +505,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                 })
             });
             const otpData = await otpResponse.json();
-            if (!otpResponse.ok) throw new Error(otpData.error || 'Fallo en la verificaciÃ³n OTP');
+            if (!otpResponse.ok) throw new Error(otpData.error || 'Fallo en la verificación OTP');
 
             const auditInfo = otpData.audit;
             setAuditHash(auditInfo.hash);
@@ -609,7 +609,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
             <div style={{ background: 'var(--surface)', padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '1rem', position: 'sticky', top: 0, zIndex: 10 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <ShieldCheck size={28} color="var(--primary)" style={{ flexShrink: 0 }} />
-                    <h2 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.1rem', lineHeight: '1.3' }}>Portal de VinculaciÃ³n Sistema de Autocontrol y GestiÃ³n del Riesgo LA/FT/FP y C/ST</h2>
+                    <h2 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.1rem', lineHeight: '1.3' }}>Portal de Vinculación Sistema de Autocontrol y Gestión del Riesgo LA/FT/FP y C/ST</h2>
                 </div>
                 <div style={{ display: 'flex', gap: '4px', width: '100%' }}>
                     {pasosDisponibles.map((p, i) => (
@@ -624,8 +624,8 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                     <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} style={{ background: '#fffbeb', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid #fde68a', marginBottom: '2rem', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
                         <AlertTriangle size={24} color="#d97706" style={{ flexShrink: 0 }} />
                         <div>
-                            <h4 style={{ margin: '0 0 0.5rem 0', color: '#d97706' }}>Formulario Devuelto para CorrecciÃ³n</h4>
-                            <p style={{ margin: 0, fontSize: '0.9rem', color: '#92400e' }}>El equipo de cumplimiento ha revisado tu solicitud y ha solicitado correcciones. Por favor revisa los campos resaltados en rojo, actualiza la informaciÃ³n y vuelve a enviar el formulario.</p>
+                            <h4 style={{ margin: '0 0 0.5rem 0', color: '#d97706' }}>Formulario Devuelto para Corrección</h4>
+                            <p style={{ margin: 0, fontSize: '0.9rem', color: '#92400e' }}>El equipo de cumplimiento ha revisado tu solicitud y ha solicitado correcciones. Por favor revisa los campos resaltados en rojo, actualiza la información y vuelve a enviar el formulario.</p>
                             <ul style={{ margin: '0.5rem 0 0 0', paddingLeft: '1.5rem', fontSize: '0.9rem', color: '#92400e' }}>
                                 {Object.entries(camposACorregir).map(([k, v]) => (
                                     <li key={k}><b>{k}:</b> {v}</li>
@@ -644,45 +644,45 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Briefcase size={20}/> 1. Naturaleza de la Solicitud</h3>
                                 <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
                                     {renderInput("Fecha Diligenciamiento", "fecha_diligenciamiento", "date", "1fr", true)}
-                                    {!isInternalRole && renderSelect("Ãmbito de OperaciÃ³n", "ambito_operacion", [{value: 'nacional', label: 'Nacional'}, {value: 'internacional', label: 'Internacional'}])}
+                                    {!isInternalRole && renderSelect("Ámbito de Operación", "ambito_operacion", [{value: 'nacional', label: 'Nacional'}, {value: 'internacional', label: 'Internacional'}])}
                                     {renderSelect("Empresa Destino", "empresa_destino", [{value: 'selecta', label: 'Selecta'}, {value: 'cosechas', label: 'Cosechas'}])}
                                 </div>
                                 <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
-                                    {renderSelect("Tipo de Solicitud", "tipo_solicitud", [{value: 'vinculacion', label: 'VinculaciÃ³n Nueva'}, {value: 'actualizacion', label: 'ActualizaciÃ³n de Datos'}])}
+                                    {renderSelect("Tipo de Solicitud", "tipo_solicitud", [{value: 'vinculacion', label: 'Vinculación Nueva'}, {value: 'actualizacion', label: 'Actualización de Datos'}])}
                                     <div>
-                                        <label className="label required">Clase de VinculaciÃ³n</label>
+                                        <label className="label required">Clase de Vinculación</label>
                                         <input type="text" className="input-field" value={formData.clase_vinculacion.toUpperCase() || 'PROVEEDOR'} readOnly style={{opacity: 0.7, cursor: 'not-allowed'}} />
                                     </div>
                                     {isInternalRole ? (
                                         <div style={{ flex: "1fr" }}>
-                                            <label className="label">IdentificaciÃ³n de la Persona</label>
+                                            <label className="label">Identificación de la Persona</label>
                                             <input type="text" value="Persona Natural" className="input-field" readOnly style={{opacity: 0.7, cursor: 'not-allowed'}} />
                                         </div>
                                     ) : (
-                                        renderSelect("IdentificaciÃ³n de la Persona", "tipo_persona", [{value: 'juridica', label: 'Persona JurÃ­dica (Empresa)'}, {value: 'natural', label: 'Persona Natural'}])
+                                        renderSelect("Identificación de la Persona", "tipo_persona", [{value: 'juridica', label: 'Persona Jurídica (Empresa)'}, {value: 'natural', label: 'Persona Natural'}])
                                     )}
                                 </div>
                                 {formData.clase_vinculacion === 'proveedor' && (
                                     <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
-                                        {renderInput("Tipo de ProveedurÃ­a (Â¿QuÃ© vende/suministra?)", "tipo_proveeduria", "text", "1fr")}
+                                        {renderInput("Tipo de Proveeduría (¿Qué vende/suministra?)", "tipo_proveeduria", "text", "1fr")}
                                     </div>
                                 )}
                                 <div style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: 'var(--radius-md)', textAlign: 'left', marginBottom: '2rem', border: '1px solid var(--border)' }}>
                                     <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1rem', textAlign: 'justify' }}>
-                                        <b>6. AUTORIZACIÃ“N PARA EL TRATAMIENTO DE DATOS PERSONALES</b><br/><br/>
-                                        Dando cumplimiento a lo dispuesto en la Ley 1581 de 2012 "Por el cual se dictan disposiciones generales para la protecciÃ³n de datos personales" y de conformidad con lo seÃ±alado en el Decreto 1377 de 2013, con la firma de este documento manifiesto que he sido informado por {nombreEmpresaFull} de lo siguiente:<br/><br/>
+                                        <b>6. AUTORIZACI�N PARA EL TRATAMIENTO DE DATOS PERSONALES</b><br/><br/>
+                                        Dando cumplimiento a lo dispuesto en la Ley 1581 de 2012 "Por el cual se dictan disposiciones generales para la protección de datos personales" y de conformidad con lo señalado en el Decreto 1377 de 2013, con la firma de este documento manifiesto que he sido informado por {nombreEmpresaFull} de lo siguiente:<br/><br/>
                                         <ol style={{ margin: '0 0 1rem 1.5rem', padding: 0 }}>
-                                            <li>{nombreEmpresaFull} actuarÃ¡ como responsable del tratamiento de los datos personales de los cuales soy titular y podrÃ¡ recolectar, usar y tratar dichos datos conforme a su polÃ­tica de privacidad.</li>
-                                            <li>Garantiza la confidencialidad, libertad, seguridad, veracidad, transparencia, acceso y circulaciÃ³n restringida de los datos personales.</li>
-                                            <li>Es de carÃ¡cter facultativo responder preguntas que traten sobre Datos Sensibles o sobre menores de edad.</li>
-                                            <li>Me han informado la posibilidad que tengo de acceder en cualquier momento a los datos suministrados, asÃ­ como de solicitar la correcciÃ³n, actualizaciÃ³n o supresiÃ³n, en los tÃ©rminos establecidos por la Ley 1581 de 2012, dirigiendo una comunicaciÃ³n escrita al responsable de tratamiento a la {direccionEmpresa}, con los siguientes datos: nombre y apellidos, domicilio a efectos de notificaciones, peticiÃ³n en que se concreta la solicitud, fecha, firma de la persona interesada. Para mi comodidad, puedo ejercer estos mismos derechos a travÃ©s del correo electrÃ³nico: {correoEmpresa}; asÃ­ como el derecho a revocar la autorizaciÃ³n otorgada para el tratamiento de datos personales.</li>
-                                            <li>Autorizo a {nombreEmpresaFull}, a consultar y verificar mis datos en las centrales de informaciÃ³n y/o bases de datos pÃºblicas, especialmente en las listas establecidas para el control y prevenciÃ³n de Lavado de Activos y la FinanciaciÃ³n de Terrorismo.</li>
+                                            <li>{nombreEmpresaFull} actuará como responsable del tratamiento de los datos personales de los cuales soy titular y podrá recolectar, usar y tratar dichos datos conforme a su política de privacidad.</li>
+                                            <li>Garantiza la confidencialidad, libertad, seguridad, veracidad, transparencia, acceso y circulación restringida de los datos personales.</li>
+                                            <li>Es de carácter facultativo responder preguntas que traten sobre Datos Sensibles o sobre menores de edad.</li>
+                                            <li>Me han informado la posibilidad que tengo de acceder en cualquier momento a los datos suministrados, así como de solicitar la corrección, actualización o supresión, en los términos establecidos por la Ley 1581 de 2012, dirigiendo una comunicación escrita al responsable de tratamiento a la {direccionEmpresa}, con los siguientes datos: nombre y apellidos, domicilio a efectos de notificaciones, petición en que se concreta la solicitud, fecha, firma de la persona interesada. Para mi comodidad, puedo ejercer estos mismos derechos a través del correo electrónico: {correoEmpresa}; así como el derecho a revocar la autorización otorgada para el tratamiento de datos personales.</li>
+                                            <li>Autorizo a {nombreEmpresaFull}, a consultar y verificar mis datos en las centrales de información y/o bases de datos públicas, especialmente en las listas establecidas para el control y prevención de Lavado de Activos y la Financiación de Terrorismo.</li>
                                         </ol>
                                     </div>
                                     <label style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start', cursor: 'pointer', background: 'rgba(59, 130, 246, 0.05)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
                                         <input type="checkbox" checked={terminosAceptados} onChange={(e) => setTerminosAceptados(e.target.checked)} style={{ marginTop: '0.2rem', width: '18px', height: '18px', flexShrink: 0 }} />
                                         <span style={{ fontSize: '0.9rem', color: 'var(--text-main)', fontWeight: '500' }}>
-                                            En seÃ±al de aceptaciÃ³n de lo anterior, consiento y autorizo a {nombreEmpresaFull} para tratar mis datos personales, para los fines relacionados con su objeto social y en especial para fines legales, contractuales y misionales, conforme a su polÃ­tica de tratamiento de datos.
+                                            En señal de aceptación de lo anterior, consiento y autorizo a {nombreEmpresaFull} para tratar mis datos personales, para los fines relacionados con su objeto social y en especial para fines legales, contractuales y misionales, conforme a su política de tratamiento de datos.
                                         </span>
                                     </label>
                                 </div>
@@ -692,11 +692,11 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                             </motion.div>
                         )}
 
-                        {/* PASO 2: IDENTIDAD (DINÃMICO) */}
+                        {/* PASO 2: IDENTIDAD (DINÁMICO) */}
                         {paso === 2 && (
                             <motion.div key="p2" variants={formVariants} initial="hidden" animate="visible" exit="exit">
                                 <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <User size={20}/> 2. IdentificaciÃ³n ({formData.tipo_persona === 'juridica' ? 'Persona JurÃ­dica' : 'Persona Natural'})
+                                    <User size={20}/> 2. Identificación ({formData.tipo_persona === 'juridica' ? 'Persona Jurídica' : 'Persona Natural'})
                                 </h3>
 
                                 {formData.tipo_persona === 'natural' ? (
@@ -707,11 +707,11 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                             {renderInput("Segundo Apellido", "segundo_apellido", "text", "1fr", false, false)}
                                         </div>
                                         <div className="form-grid form-grid-3">
-                                            {renderSelect("Tipo ID", "tipo_identificacion", [{value:'cc', label:'CC (CÃ©dula de CiudadanÃ­a)'}, {value:'ce', label:'CE (CÃ©dula de ExtranjerÃ­a)'}, {value:'pasaporte', label:'Pasaporte'}, {value:'ppt', label:'PPT (Permiso de ProtecciÃ³n Temporal)'}, {value:'otro', label:'Otro'}], "0.5fr")}
+                                            {renderSelect("Tipo ID", "tipo_identificacion", [{value:'cc', label:'CC (Cédula de Ciudadanía)'}, {value:'ce', label:'CE (Cédula de Extranjería)'}, {value:'pasaporte', label:'Pasaporte'}, {value:'ppt', label:'PPT (Permiso de Protección Temporal)'}, {value:'otro', label:'Otro'}], "0.5fr")}
                                             {formData.tipo_identificacion === 'otro' && renderInput("Especifique", "otro_tipo_identificacion", "text", "0.5fr")}
-                                            {renderInput("No. IdentificaciÃ³n", "numero_identificacion", "text", "1fr", false, true)}
-                                            {renderInput("Lugar de ExpediciÃ³n", "lugar_expedicion")}
-                                            {renderInput("Fecha de ExpediciÃ³n", "fecha_expedicion", "date", "1fr", false, true)}
+                                            {renderInput("No. Identificación", "numero_identificacion", "text", "1fr", false, true)}
+                                            {renderInput("Lugar de Expedición", "lugar_expedicion")}
+                                            {renderInput("Fecha de Expedición", "fecha_expedicion", "date", "1fr", false, true)}
                                         </div>
                                         <div className="form-grid form-grid-3">
                                             {renderInput("Fecha Nacimiento", "fecha_nacimiento", "date")}
@@ -719,72 +719,72 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                             {renderInput("Nacionalidad", "nacionalidad")}
                                         </div>
                                         <div className="form-grid form-grid-3">
-                                            {renderInput("Correo ElectrÃ³nico", "correo_electronico", "email", "1fr", false, true)}
-                                            {renderSelect("Estado Civil", "estado_civil", [{value:'', label:'Seleccione...'}, {value:'Soltero (a)', label:'Soltero (a)'}, {value:'Casado (a)', label:'Casado (a)'}, {value:'Divorciado (a)', label:'Divorciado (a)'}, {value:'Viudo (a)', label:'Viudo (a)'}, {value:'UniÃ³n libre / UniÃ³n marital de hecho', label:'UniÃ³n libre / UniÃ³n marital de hecho'}])}
-                                            {renderInput("DirecciÃ³n/Barrio", "direccion_residencial", "text", "1fr", false, true)}
+                                            {renderInput("Correo Electrónico", "correo_electronico", "email", "1fr", false, true)}
+                                            {renderSelect("Estado Civil", "estado_civil", [{value:'', label:'Seleccione...'}, {value:'Soltero (a)', label:'Soltero (a)'}, {value:'Casado (a)', label:'Casado (a)'}, {value:'Divorciado (a)', label:'Divorciado (a)'}, {value:'Viudo (a)', label:'Viudo (a)'}, {value:'Unión libre / Unión marital de hecho', label:'Unión libre / Unión marital de hecho'}])}
+                                            {renderInput("Dirección/Barrio", "direccion_residencial", "text", "1fr", false, true)}
                                         </div>
                                         <div className="form-grid form-grid-3">
-                                            {renderInput("Celular/TelÃ©fono", "telefono_celular", "text", "1fr", false, true)}
+                                            {renderInput("Celular/Teléfono", "telefono_celular", "text", "1fr", false, true)}
                                             {renderInput("Ciudad", "ciudad")}
                                             {renderInput("Departamento", "departamento")}
-                                            {renderInput("PaÃ­s", "pais")}
+                                            {renderInput("País", "pais")}
                                         </div>
-                                        <h4 style={{ margin: '1rem 0 0', color: 'var(--text-main)', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>OcupaciÃ³n y Laboral</h4>
+                                        <h4 style={{ margin: '1rem 0 0', color: 'var(--text-main)', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Ocupación y Laboral</h4>
                                         <div className="form-grid form-grid-3">
-                                            {renderSelect("OcupaciÃ³n Principal", "ocupacion_profesion", [{value:'independiente', label:'Independiente'}, {value:'asalariado', label:'Asalariado'}, {value:'pensionado', label:'Pensionado'}, {value:'rentista', label:'Rentista'}])}
-                                            {renderSelect("Â¿Declara Renta?", "declara_renta", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
+                                            {renderSelect("Ocupación Principal", "ocupacion_profesion", [{value:'independiente', label:'Independiente'}, {value:'asalariado', label:'Asalariado'}, {value:'pensionado', label:'Pensionado'}, {value:'rentista', label:'Rentista'}])}
+                                            {renderSelect("¿Declara Renta?", "declara_renta", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                         </div>
                                         {!isInternalRole && (
                                             <div className="form-grid form-grid-3">
-                                                {renderSelect("Sector EconÃ³mico", "sector", [{value:'AgrÃ­cola', label:'AgrÃ­cola'}, {value:'Comercial', label:'Comercial'}, {value:'Manufactura', label:'Manufactura'}, {value:'MinerÃ­a', label:'MinerÃ­a'}, {value:'Servicios', label:'Servicios'}, {value:'TecnologÃ­a', label:'TecnologÃ­a'}, {value:'ConstrucciÃ³n', label:'ConstrucciÃ³n'}, {value:'Otro', label:'Otro'}])}
-                                                {formData.sector === 'Otro' && renderInput("Â¿CuÃ¡l sector?", "sector_otro", "text", "1fr", false, false)}
-                                                {renderInput("Actividad EconÃ³mica", "actividad_economica_principal", "text", "1fr", false, true)}
-                                                {renderCiiuInput("CÃ³digo CIIU", "codigo_ciiu")}
+                                                {renderSelect("Sector Económico", "sector", [{value:'Agrícola', label:'Agrícola'}, {value:'Comercial', label:'Comercial'}, {value:'Manufactura', label:'Manufactura'}, {value:'Minería', label:'Minería'}, {value:'Servicios', label:'Servicios'}, {value:'Tecnología', label:'Tecnología'}, {value:'Construcción', label:'Construcción'}, {value:'Otro', label:'Otro'}])}
+                                                {formData.sector === 'Otro' && renderInput("¿Cuál sector?", "sector_otro", "text", "1fr", false, false)}
+                                                {renderInput("Actividad Económica", "actividad_economica_principal", "text", "1fr", false, true)}
+                                                {renderCiiuInput("Código CIIU", "codigo_ciiu")}
                                             </div>
                                         )}
                                         <div className="form-grid form-grid-3">
                                             {renderInput("Empresa donde labora", "empresa_labora")}
                                             {renderInput("Cargo", "cargo")}
-                                            {renderInput("Ãrea", "area")}
+                                            {renderInput("Área", "area")}
                                         </div>
                                         <div className="form-grid form-grid-3">
-                                            {renderInput("DirecciÃ³n Corporativa", "direccion_corporativa")}
-                                            {renderInput("TelÃ©fono Corp.", "telefono_corporativo")}
+                                            {renderInput("Dirección Corporativa", "direccion_corporativa")}
+                                            {renderInput("Teléfono Corp.", "telefono_corporativo")}
                                             {renderInput("Ciudad Empresa", "ciudad_empresa_labora")}
                                             {renderInput("Departamento", "departamento_empresa_labora")}
-                                            {renderInput("PaÃ­s", "pais_empresa_labora")}
+                                            {renderInput("País", "pais_empresa_labora")}
                                         </div>
                                     </div>
                                 ) : (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                         <div className="form-grid form-grid-3">
-                                            {renderInput("RazÃ³n Social", "razon_social", "text", "2fr")}
-                                            {renderSelect("Tipo Empresa", "tipo_empresa", [{value:'privada', label:'Privada'}, {value:'publica', label:'PÃºblica'}, {value:'mixta', label:'Mixta'}, {value:'extranjera', label:'InversiÃ³n Extranjera'}])}
+                                            {renderInput("Razón Social", "razon_social", "text", "2fr")}
+                                            {renderSelect("Tipo Empresa", "tipo_empresa", [{value:'privada', label:'Privada'}, {value:'publica', label:'Pública'}, {value:'mixta', label:'Mixta'}, {value:'extranjera', label:'Inversión Extranjera'}])}
                                         </div>
                                         <div className="form-grid form-grid-3">
-                                            {renderInput("NIT (Sin dÃ­gito verif.)", "numero_identificacion", "text", "1fr", false, true)}
-                                            {renderInput("DirecciÃ³n Oficina Principal", "direccion_oficina_principal", "text", "2fr")}
+                                            {renderInput("NIT (Sin dígito verif.)", "numero_identificacion", "text", "1fr", false, true)}
+                                            {renderInput("Dirección Oficina Principal", "direccion_oficina_principal", "text", "2fr")}
                                         </div>
                                         <div className="form-grid form-grid-3">
                                             {renderInput("Ciudad", "ciudad_juridica")}
                                             {renderInput("Departamento", "departamento_juridica")}
-                                            {renderInput("TelÃ©fono", "telefono_juridica", "text", "1fr", false, true)}
+                                            {renderInput("Teléfono", "telefono_juridica", "text", "1fr", false, true)}
                                         </div>
                                         <div className="form-grid form-grid-3">
-                                            {renderSelect("Â¿Tiene sucursales?", "tiene_sucursales", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
-                                            {formData.tiene_sucursales === 'si' && renderInput("Ciudad/Depto/PaÃ­s de sucursales", "sucursales_info", "text", "2fr")}
+                                            {renderSelect("¿Tiene sucursales?", "tiene_sucursales", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
+                                            {formData.tiene_sucursales === 'si' && renderInput("Ciudad/Depto/País de sucursales", "sucursales_info", "text", "2fr")}
                                         </div>
                                         <div className="form-grid form-grid-3">
                                             {renderInput("Correo Corporativo", "correo_corporativo_juridica", "email")}
-                                            {renderInput("TelÃ©fono Corp.", "telefono_corporativo_juridica")}
+                                            {renderInput("Teléfono Corp.", "telefono_corporativo_juridica")}
                                             {renderInput("Celular Corp.", "celular_corporativo_juridica")}
                                         </div>
                                         <div className="form-grid form-grid-3">
-                                            {renderSelect("Sector EconÃ³mico", "sector_juridica", [{value:'AgrÃ­cola', label:'AgrÃ­cola'}, {value:'Comercial', label:'Comercial'}, {value:'Manufactura', label:'Manufactura'}, {value:'MinerÃ­a', label:'MinerÃ­a'}, {value:'Servicios', label:'Servicios'}, {value:'TecnologÃ­a', label:'TecnologÃ­a'}, {value:'ConstrucciÃ³n', label:'ConstrucciÃ³n'}, {value:'Otro', label:'Otro'}])}
-                                            {formData.sector_juridica === 'Otro' && renderInput("Â¿CuÃ¡l sector?", "sector_otro_juridica", "text", "1fr", false, false)}
+                                            {renderSelect("Sector Económico", "sector_juridica", [{value:'Agrícola', label:'Agrícola'}, {value:'Comercial', label:'Comercial'}, {value:'Manufactura', label:'Manufactura'}, {value:'Minería', label:'Minería'}, {value:'Servicios', label:'Servicios'}, {value:'Tecnología', label:'Tecnología'}, {value:'Construcción', label:'Construcción'}, {value:'Otro', label:'Otro'}])}
+                                            {formData.sector_juridica === 'Otro' && renderInput("¿Cuál sector?", "sector_otro_juridica", "text", "1fr", false, false)}
                                             
-                                            {renderInput("Actividad EconÃ³mica Principal", "actividad_economica_principal_juridica")}
-                                            {renderCiiuInput("CÃ³digo CIIU", "codigo_ciiu_juridica")}
+                                            {renderInput("Actividad Económica Principal", "actividad_economica_principal_juridica")}
+                                            {renderCiiuInput("Código CIIU", "codigo_ciiu_juridica")}
                                         </div>
                                         
                                         <h4 style={{ margin: '1rem 0 0', color: 'var(--text-main)', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Datos del Representante Legal</h4>
@@ -794,10 +794,10 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                             {renderInput("Segundo Apellido", "rep_legal_segundo_apellido", "text", "1fr", false, false)}
                                         </div>
                                         <div className="form-grid form-grid-3">
-                                            {renderSelect("Tipo ID", "rep_legal_tipo_id", [{value:'cc', label:'CC (CÃ©dula de CiudadanÃ­a)'}, {value:'ce', label:'CE (CÃ©dula de ExtranjerÃ­a)'}, {value:'pasaporte', label:'Pasaporte'}, {value:'ppt', label:'PPT (Permiso de ProtecciÃ³n Temporal)'}])}
-                                            {renderInput("No. IdentificaciÃ³n", "rep_legal_numero_id", "text", "1fr", false, true)}
-                                            {renderInput("Lugar ExpediciÃ³n", "rep_legal_lugar_expedicion")}
-                                            {renderInput("Fecha ExpediciÃ³n", "rep_legal_fecha_expedicion", "date")}
+                                            {renderSelect("Tipo ID", "rep_legal_tipo_id", [{value:'cc', label:'CC (Cédula de Ciudadanía)'}, {value:'ce', label:'CE (Cédula de Extranjería)'}, {value:'pasaporte', label:'Pasaporte'}, {value:'ppt', label:'PPT (Permiso de Protección Temporal)'}])}
+                                            {renderInput("No. Identificación", "rep_legal_numero_id", "text", "1fr", false, true)}
+                                            {renderInput("Lugar Expedición", "rep_legal_lugar_expedicion")}
+                                            {renderInput("Fecha Expedición", "rep_legal_fecha_expedicion", "date")}
                                         </div>
                                         <div className="form-grid form-grid-3">
                                             {renderInput("Fecha Nacimiento", "rep_legal_fecha_nacimiento", "date")}
@@ -805,14 +805,14 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                             {renderInput("Nacionalidad", "rep_legal_nacionalidad")}
                                         </div>
                                         <div className="form-grid form-grid-3">
-                                            {renderInput("DirecciÃ³n", "rep_legal_direccion", "text", "2fr")}
-                                            {renderInput("TelÃ©fono", "rep_legal_telefono")}
+                                            {renderInput("Dirección", "rep_legal_direccion", "text", "2fr")}
+                                            {renderInput("Teléfono", "rep_legal_telefono")}
                                         </div>
                                     </div>
                                 )}
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
-                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> AtrÃ¡s</button>
+                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
                                     <button className="btn-primary" onClick={() => avanzarPaso()}>Siguiente <ArrowRight size={18}/></button>
                                 </div>
                             </motion.div>
@@ -820,39 +820,39 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                         {/* PASO 14: PEPs (Solo para Roles Internos) */}
                         {paso === 14 && (
                             <motion.div key="p14" variants={formVariants} initial="hidden" animate="visible" exit="exit">
-                                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><ShieldCheck size={20}/> 6. Personas Expuestas PolÃ­ticamente (PEP)</h3>
+                                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><ShieldCheck size={20}/> 6. Personas Expuestas Políticamente (PEP)</h3>
                                 
                                 <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid #cbd5e1', marginBottom: '1.5rem', fontSize: '0.85rem', color: '#475569' }}>
-                                    <strong>DefiniciÃ³n PEP:</strong> Es aquella persona que desempeÃ±Ã³ o ejerce actualmente un cargo o funciÃ³n pÃºblica relevante para un paÃ­s. <br/><br/>
-                                    <strong>Reconocimiento PÃºblico:</strong> Son aquellas que debido a su destreza especial o habilidad obtienen notoriedad entre el pÃºblico.
+                                    <strong>Definición PEP:</strong> Es aquella persona que desempeñó o ejerce actualmente un cargo o función pública relevante para un país. <br/><br/>
+                                    <strong>Reconocimiento Público:</strong> Son aquellas que debido a su destreza especial o habilidad obtienen notoriedad entre el público.
                                 </div>
                                 <div className="form-grid form-grid-2">
-                                    {renderSelect("Â¿Es o fue funcionario entidad pÃºblica (Estado)?", "es_funcionario_publico", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
-                                    {renderSelect("Â¿VÃ­nculo familiar con persona PEP?", "vinculo_familiar_pep", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
-                                    {renderSelect("Â¿Ejerce algÃºn grado de poder pÃºblico?", "ejerce_poder_publico", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
-                                    {renderSelect("Â¿Maneja recursos pÃºblicos?", "maneja_recursos_publicos", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
-                                    {renderSelect("Â¿Goza de reconocimiento pÃºblico?", "goza_reconocimiento_publico", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
-                                    {renderSelect("Â¿Declara bajo juramento ser PEP?", "declara_ser_pep", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
+                                    {renderSelect("¿Es o fue funcionario entidad pública (Estado)?", "es_funcionario_publico", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
+                                    {renderSelect("¿Vínculo familiar con persona PEP?", "vinculo_familiar_pep", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
+                                    {renderSelect("¿Ejerce algún grado de poder público?", "ejerce_poder_publico", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
+                                    {renderSelect("¿Maneja recursos públicos?", "maneja_recursos_publicos", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
+                                    {renderSelect("¿Goza de reconocimiento público?", "goza_reconocimiento_publico", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
+                                    {renderSelect("¿Declara bajo juramento ser PEP?", "declara_ser_pep", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                 </div>
                                 <div style={{ marginTop: '1.5rem' }}>
-                                    {renderInput("Si respondió afirmativamente alguna, proporcione nombres, cargos, vínculo y entidad", "pep_detalles", "text", "1fr", ['es_funcionario_publico', 'vinculo_familiar_pep', 'ejerce_poder_publico', 'maneja_recursos_publicos', 'goza_reconocimiento_publico', 'declara_ser_pep'].some(k => formData[k] === 'si'), false)}
+                                    {renderInput("Si respondi� afirmativamente alguna, proporcione nombres, cargos, v�nculo y entidad", "pep_detalles", "text", "1fr", false, ['es_funcionario_publico', 'vinculo_familiar_pep', 'ejerce_poder_publico', 'maneja_recursos_publicos', 'goza_reconocimiento_publico', 'declara_ser_pep'].some(k => formData[k] === 'si'))}
                                 </div>
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
-                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> AtrÃ¡s</button>
+                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
                                     <button className="btn-primary" onClick={() => avanzarPaso()}>Siguiente <ArrowRight size={18}/></button>
                                 </div>
                             </motion.div>
                         )}
 
-                        {/* PASO 15: DECLARACIÃ“N PEP */}
+                        {/* PASO 15: DECLARACI�N PEP */}
                         {paso === 15 && (
                             <motion.div key="p15" variants={formVariants} initial="hidden" animate="visible" exit="exit">
-                                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><ShieldCheck size={20}/> Formato Persona PÃºblica o PolÃ­ticamente Expuesta</h3>
+                                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><ShieldCheck size={20}/> Formato Persona Pública o Políticamente Expuesta</h3>
                                 
                                 <div style={{ background: 'var(--surface)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', marginBottom: '1.5rem', fontSize: '0.85rem', lineHeight: '1.6', color: 'var(--text-main)' }}>
                                     <p style={{ textAlign: 'justify' }}>
-                                        Yo <strong>{formData.nombres} {formData.primer_apellido} {formData.segundo_apellido}</strong> identificado(a) con cÃ©dula de ciudadanÃ­a No <strong>{formData.numero_identificacion}</strong> expedida en <strong>{formData.lugar_expedicion || '_______________'}</strong> actuando en mi nombre y/o en representaciÃ³n de <strong>{formData.razon_social || '_______________'}</strong> y dando certeza de que todo lo consignado aquÃ­ es cierto, realizo la siguiente declaraciÃ³n de origen de fondos con el propÃ³sito de dar cumplimiento a lo seÃ±alado en la circular externa 07 de 1996 de la Superfinanciera, el estatuto orgÃ¡nico del sistema financiero EOSF decreto 663 de 1993, ley 190 de 1996 y para dar cumplimiento a lo establecido en la circular externa 100-000016 del 24 de diciembre del 2020 de la Superintendencia de Sociedades, la ley 1121 de 2006 y demÃ¡s normas concordantes.
+                                        Yo <strong>{formData.nombres} {formData.primer_apellido} {formData.segundo_apellido}</strong> identificado(a) con cédula de ciudadanía No <strong>{formData.numero_identificacion}</strong> expedida en <strong>{formData.lugar_expedicion || '_______________'}</strong> actuando en mi nombre y/o en representación de <strong>{formData.razon_social || '_______________'}</strong> y dando certeza de que todo lo consignado aquí es cierto, realizo la siguiente declaración de origen de fondos con el propósito de dar cumplimiento a lo señalado en la circular externa 07 de 1996 de la Superfinanciera, el estatuto orgánico del sistema financiero EOSF decreto 663 de 1993, ley 190 de 1996 y para dar cumplimiento a lo establecido en la circular externa 100-000016 del 24 de diciembre del 2020 de la Superintendencia de Sociedades, la ley 1121 de 2006 y demás normas concordantes.
                                     </p>
                                     
                                     <p>Declaro que mi familia en primer, segundo y tercer grado de afinidad son:</p>
@@ -860,34 +860,34 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                     <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', marginBottom: '1.5rem' }}>
                                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', marginBottom: '1rem', flexWrap: 'wrap' }}>
                                             <div style={{flex:2}}><label className="label">Nombres y Apellidos</label><input type="text" value={nuevoFamiliarPep.nombre} onChange={e=>setNuevoFamiliarPep({...nuevoFamiliarPep, nombre: e.target.value})} className="input-field"/></div>
-                                            <div style={{flex:1.5}}><label className="label">CÃ©dula o IdentificaciÃ³n</label><input type="text" value={nuevoFamiliarPep.identificacion} onChange={e=>setNuevoFamiliarPep({...nuevoFamiliarPep, identificacion: e.target.value})} className="input-field"/></div>
+                                            <div style={{flex:1.5}}><label className="label">Cédula o Identificación</label><input type="text" value={nuevoFamiliarPep.identificacion} onChange={e=>setNuevoFamiliarPep({...nuevoFamiliarPep, identificacion: e.target.value})} className="input-field"/></div>
                                             <div style={{flex:1.5}}><label className="label">Parentesco</label><input type="text" value={nuevoFamiliarPep.parentesco} onChange={e=>setNuevoFamiliarPep({...nuevoFamiliarPep, parentesco: e.target.value})} className="input-field"/></div>
-                                            <button className="btn-outline" onClick={() => handleAddList('pep_familiares_extendido', nuevoFamiliarPep, setNuevoFamiliarPep, {nombre:'', identificacion:'', parentesco:''})}>+ AÃ±adir</button>
+                                            <button className="btn-outline" onClick={() => handleAddList('pep_familiares_extendido', nuevoFamiliarPep, setNuevoFamiliarPep, {nombre:'', identificacion:'', parentesco:''})}>+ Añadir</button>
                                         </div>
                                         {formData.pep_familiares_extendido.map((fam, idx) => (
                                             <div key={idx} style={{ padding: '0.5rem', borderBottom: '1px solid var(--border)', fontSize: '0.9rem' }}>
-                                                â€¢ {fam.nombre} - CC: {fam.identificacion} - <b>{fam.parentesco}</b>
+                                                ⬢ {fam.nombre} - CC: {fam.identificacion} - <b>{fam.parentesco}</b>
                                             </div>
                                         ))}
                                     </div>
                                     
                                     <p style={{ textAlign: 'justify' }}>
-                                        <strong>{nombreEmpresaFull}</strong> es una Entidad debidamente establecida en Colombia, con sede en el Municipio de {formData.empresa_destino === 'selecta' ? 'la Estrella' : 'MedellÃ­n'} (Antioquia), se encuentra vigilada por la Superintendencia de sociedades, y tiene implementado un Sistema de Auto Control y GestiÃ³n del Riesgo de Lavado de Activos y de la FinanciaciÃ³n del Terrorismo (SAGRILAFT), en cumplimiento de lo establecido en la Circular BÃ¡sica JurÃ­dica 100-000016 DE 24 DE DICIEMBRE DE 2020 de las SuperSociedades desde 01 de septiembre de 2021, lo mismo que las recomendaciones y mejores prÃ¡cticas internacionales en esta materia.
+                                        <strong>{nombreEmpresaFull}</strong> es una Entidad debidamente establecida en Colombia, con sede en el Municipio de {formData.empresa_destino === 'selecta' ? 'la Estrella' : 'Medellín'} (Antioquia), se encuentra vigilada por la Superintendencia de sociedades, y tiene implementado un Sistema de Auto Control y Gestión del Riesgo de Lavado de Activos y de la Financiación del Terrorismo (SAGRILAFT), en cumplimiento de lo establecido en la Circular Básica Jurídica 100-000016 DE 24 DE DICIEMBRE DE 2020 de las SuperSociedades desde 01 de septiembre de 2021, lo mismo que las recomendaciones y mejores prácticas internacionales en esta materia.
                                     </p>
                                     <p style={{ textAlign: 'justify' }}>
-                                        Las polÃ­ticas, controles y procedimientos implementados, dentro de un concepto de administraciÃ³n del riesgo, son acciones que buscan la debida diligencia para prevenir el uso de nuestra instituciÃ³n por organizaciones criminales para propÃ³sitos ilÃ­citos. Dichas acciones incluyen entre otros aspectos, el conocimiento del cliente y de sus operaciones con nuestra Entidad, definiciÃ³n de segmentos de mercado por nosotros atendidos, monitoreo de transacciones, capacitaciÃ³n al personal y reportes de operaciones sospechosas a la autoridad competente.
+                                        Las políticas, controles y procedimientos implementados, dentro de un concepto de administración del riesgo, son acciones que buscan la debida diligencia para prevenir el uso de nuestra institución por organizaciones criminales para propósitos ilícitos. Dichas acciones incluyen entre otros aspectos, el conocimiento del cliente y de sus operaciones con nuestra Entidad, definición de segmentos de mercado por nosotros atendidos, monitoreo de transacciones, capacitación al personal y reportes de operaciones sospechosas a la autoridad competente.
                                     </p>
                                     <p>Por lo anterior manifiesto de manera voluntaria a <strong>{nombreEmpresaFull}</strong>:</p>
                                     <ol style={{ paddingLeft: '1.5rem', marginTop: '0.5rem' }}>
                                         <li style={{marginBottom:'0.5rem'}}>Los recursos que entregue en forma de pago, abono o cualquier servicio que nos preste por parte de {nombreEmpresaFull} proviene de mi trabajo o actividad comercial y de actividades legales.</li>
-                                        <li style={{marginBottom:'0.5rem'}}>Declaro que los recursos que le entregue a {nombreEmpresaFull} en cualquier parte del territorio colombiano no provienen de ninguna actividad ilÃ­cita de las contempladas en el CÃ³digo penal colombiano o actos de corrupciÃ³n pÃºblica o privada, ni efectuare transacciones destinadas a tales actividades o en favor de personas relacionadas con ellas.</li>
-                                        <li style={{marginBottom:'0.5rem'}}>No admitirÃ© que terceros efectÃºen depÃ³sitos a mis cuentas con fondos provenientes de actividades ilÃ­citas.</li>
-                                        <li style={{marginBottom:'0.5rem'}}>Autorizo a {nombreEmpresaFull} a cancelar el contrato o la relaciÃ³n comercial, en el caso que detecten operaciones inusuales o sospechosas en el giro de mis actividades o actos de corrupciÃ³n.</li>
-                                        <li>Exonero de toda responsabilidad a {nombreEmpresaFull}, si se llegare a presentar en mi nombre o de la empresa, cualquier asomo de ilegalidad en nuestras actividades, teniendo la certeza lo Ãºnico que hace es prestarnos un servicio bajo la exclusiva responsabilidad de nuestra parte por los valores entregados y su procedencia.</li>
+                                        <li style={{marginBottom:'0.5rem'}}>Declaro que los recursos que le entregue a {nombreEmpresaFull} en cualquier parte del territorio colombiano no provienen de ninguna actividad ilícita de las contempladas en el Código penal colombiano o actos de corrupción pública o privada, ni efectuare transacciones destinadas a tales actividades o en favor de personas relacionadas con ellas.</li>
+                                        <li style={{marginBottom:'0.5rem'}}>No admitiré que terceros efectúen depósitos a mis cuentas con fondos provenientes de actividades ilícitas.</li>
+                                        <li style={{marginBottom:'0.5rem'}}>Autorizo a {nombreEmpresaFull} a cancelar el contrato o la relación comercial, en el caso que detecten operaciones inusuales o sospechosas en el giro de mis actividades o actos de corrupción.</li>
+                                        <li>Exonero de toda responsabilidad a {nombreEmpresaFull}, si se llegare a presentar en mi nombre o de la empresa, cualquier asomo de ilegalidad en nuestras actividades, teniendo la certeza lo único que hace es prestarnos un servicio bajo la exclusiva responsabilidad de nuestra parte por los valores entregados y su procedencia.</li>
                                     </ol>
                                 </div>
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
-                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> AtrÃ¡s</button>
+                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
                                     <button className="btn-primary" onClick={() => avanzarPaso()}>Siguiente <ArrowRight size={18}/></button>
                                 </div>
                             </motion.div>
@@ -896,14 +896,14 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                         {/* PASO 3: TRIBUTARIA Y FINANCIERA */}
                         {paso === 3 && (
                             <motion.div key="p3" variants={formVariants} initial="hidden" animate="visible" exit="exit">
-                                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CreditCard size={20}/> 3. InformaciÃ³n Tributaria y Financiera</h3>
+                                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CreditCard size={20}/> 3. Información Tributaria y Financiera</h3>
                                 
                                 <h4 style={{ margin: '0 0 1rem 0', color: 'var(--text-main)' }}>Perfil Financiero (Valores en COP)</h4>
                                 <div style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem', border: '1px solid var(--border)' }}>
                                     <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
                                         <CurrencyInput label="Total Activos" name="activos" value={formData.activos} onChange={handleChange} required={!isGenericEmpleado} disabled={isDisabled('activos')} isError={!!camposACorregir['activos']} />
                                         <CurrencyInput label="Total Pasivos" name="pasivos" value={formData.pasivos} onChange={handleChange} required={!isGenericEmpleado} disabled={isDisabled('pasivos')} isError={!!camposACorregir['pasivos']} />
-                                        <CurrencyInput label="Patrimonio LÃ­quido" name="patrimonio" value={formData.patrimonio} onChange={handleChange} required={!isGenericEmpleado} disabled={isDisabled('patrimonio')} isError={!!camposACorregir['patrimonio']} />
+                                        <CurrencyInput label="Patrimonio Líquido" name="patrimonio" value={formData.patrimonio} onChange={handleChange} required={!isGenericEmpleado} disabled={isDisabled('patrimonio')} isError={!!camposACorregir['patrimonio']} />
                                     </div>
                                     <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
                                         <CurrencyInput label="Ingresos Mensuales" name="ingresos_mensuales" value={formData.ingresos_mensuales} onChange={handleChange} required={!isGenericEmpleado} disabled={isDisabled('ingresos_mensuales')} isError={!!camposACorregir['ingresos_mensuales']} />
@@ -920,22 +920,22 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                     <React.Fragment>
                                         <h4 style={{ margin: '1rem 0 0', color: 'var(--text-main)', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Operaciones Internacionales y Activos Virtuales</h4>
                                         <div className="form-grid form-grid-3">
-                                            {renderSelect("Â¿Realiza Operaciones con Activos Virtuales (Cripto)?", "activos_virtuales", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
-                                            {formData.activos_virtuales === 'si' && renderInput("Â¿CuÃ¡les activos virtuales?", "cuales_activos_virtuales")}
+                                            {renderSelect("¿Realiza Operaciones con Activos Virtuales (Cripto)?", "activos_virtuales", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
+                                            {formData.activos_virtuales === 'si' && renderInput("¿Cuáles activos virtuales?", "cuales_activos_virtuales")}
                                         </div>
                                         <div style={{ marginTop: '1rem' }}>
-                                            {renderCheckboxArray("Â¿Realiza alguna de estas Operaciones Internacionales?", "operaciones_internacionales", [
-                                                {value: 'importacion', label: 'ImportaciÃ³n'},
-                                                {value: 'exportacion', label: 'ExportaciÃ³n'},
+                                            {renderCheckboxArray("¿Realiza alguna de estas Operaciones Internacionales?", "operaciones_internacionales", [
+                                                {value: 'importacion', label: 'Importación'},
+                                                {value: 'exportacion', label: 'Exportación'},
                                                 {value: 'giros', label: 'Giros'},
                                                 {value: 'transferencias', label: 'Transferencias'},
-                                                {value: 'prestamos', label: 'PrÃ©stamos en m.e.'},
+                                                {value: 'prestamos', label: 'Préstamos en m.e.'},
                                                 {value: 'inversiones', label: 'Inversiones extranjeras'},
                                                 {value: 'ninguno', label: 'Ninguno de los anteriores'}
                                             ])}
                                         </div>
                                         <div className="form-grid form-grid-3" style={{ margin: "1rem 0" }}>
-                                            {renderSelect("Â¿Posee Productos Financieros en Exterior?", "posee_productos_exterior", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
+                                            {renderSelect("¿Posee Productos Financieros en Exterior?", "posee_productos_exterior", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                         </div>
                                     </React.Fragment>
                                 )}
@@ -944,19 +944,19 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                     <div style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', marginBottom: '1.5rem' }}>
                                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', marginBottom: '1rem', flexWrap: 'wrap' }}>
                                             <div style={{flex:1}}><input placeholder="Tipo Producto" value={nuevoProdExt.tipo} onChange={e=>setNuevoProdExt({...nuevoProdExt, tipo: e.target.value})} className="input-field"/></div>
-                                            <div style={{flex:1}}><input placeholder="IdentificaciÃ³n/No." value={nuevoProdExt.identificacion} onChange={e=>setNuevoProdExt({...nuevoProdExt, identificacion: e.target.value})} className="input-field"/></div>
+                                            <div style={{flex:1}}><input placeholder="Identificación/No." value={nuevoProdExt.identificacion} onChange={e=>setNuevoProdExt({...nuevoProdExt, identificacion: e.target.value})} className="input-field"/></div>
                                             <div style={{flex:1}}><input placeholder="Entidad" value={nuevoProdExt.entidad} onChange={e=>setNuevoProdExt({...nuevoProdExt, entidad: e.target.value})} className="input-field"/></div>
                                             <div style={{flex:0.5}}><input placeholder="Moneda" value={nuevoProdExt.moneda} onChange={e=>setNuevoProdExt({...nuevoProdExt, moneda: e.target.value})} className="input-field"/></div>
                                             <div style={{flex:1}}><input placeholder="Monto" type="number" value={nuevoProdExt.monto} onChange={e=>setNuevoProdExt({...nuevoProdExt, monto: e.target.value})} className="input-field"/></div>
-                                            <div style={{flex:1}}><input placeholder="PaÃ­s" value={nuevoProdExt.pais} onChange={e=>setNuevoProdExt({...nuevoProdExt, pais: e.target.value})} className="input-field"/></div>
-                                            <button className="btn-outline" onClick={()=>handleAddList('productos_exterior', nuevoProdExt, setNuevoProdExt, {tipo:'', identificacion:'', monto:'', moneda:'', entidad:'', ciudad:'', pais:''})}>AÃ±adir</button>
+                                            <div style={{flex:1}}><input placeholder="País" value={nuevoProdExt.pais} onChange={e=>setNuevoProdExt({...nuevoProdExt, pais: e.target.value})} className="input-field"/></div>
+                                            <button className="btn-outline" onClick={()=>handleAddList('productos_exterior', nuevoProdExt, setNuevoProdExt, {tipo:'', identificacion:'', monto:'', moneda:'', entidad:'', ciudad:'', pais:''})}>Añadir</button>
                                         </div>
-                                        {formData.productos_exterior.map((prod, idx) => <div key={idx} style={{fontSize:'0.85rem', color:'var(--text-muted)'}}>â€¢ {prod.tipo} ({prod.entidad}) - {prod.moneda} {prod.monto} en {prod.pais}</div>)}
+                                        {formData.productos_exterior.map((prod, idx) => <div key={idx} style={{fontSize:'0.85rem', color:'var(--text-muted)'}}>⬢ {prod.tipo} ({prod.entidad}) - {prod.moneda} {prod.monto} en {prod.pais}</div>)}
                                     </div>
                                 )}
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
-                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> AtrÃ¡s</button>
+                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
                                     <button className="btn-primary" onClick={() => avanzarPaso(formData.tipo_persona === 'juridica' ? 4 : 5)}>Siguiente <ArrowRight size={18}/></button>
                                 </div>
                             </motion.div>
@@ -967,48 +967,48 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                         {paso === 12 && (
                             <motion.div key="paso12" variants={formVariants} initial="hidden" animate="visible" exit="exit" className="form-step">
                                 <h3 style={{ fontSize: '1.3rem', color: 'var(--primary)', marginBottom: '1.5rem', borderBottom: '2px solid var(--border)', paddingBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <FileText size={22} /> IdentificaciÃ³n de Familiares y Conflicto de InterÃ©s
+                                    <FileText size={22} /> Identificación de Familiares y Conflicto de Interés
                                 </h3>
 
                                 <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.5rem', lineHeight: '1.5', textAlign: 'justify' }}>
-                                    <p>Este tipo de evento ocurre cuando el interÃ©s personal de un empleado, representante, proveedor, contratista y/o colaborador interfiere de manera directa o de algÃºn modo con los intereses propios de la empresa. A continuaciÃ³n, a tÃ­tulo de ejemplo y no exhaustivo o limitado, algunas de las situaciones que caracterizan los conflictos de interÃ©s:</p>
+                                    <p>Este tipo de evento ocurre cuando el interés personal de un empleado, representante, proveedor, contratista y/o colaborador interfiere de manera directa o de algún modo con los intereses propios de la empresa. A continuación, a título de ejemplo y no exhaustivo o limitado, algunas de las situaciones que caracterizan los conflictos de interés:</p>
                                     <ol style={{ marginLeft: '1.5rem', marginTop: '0.5rem' }}>
-                                        <li><strong>Desarrollo de actividades:</strong> no se permiten actividades paralelas, conflictivas con los negocios de {nombreEmpresaFull}, que puedan afectar o afecten el desempeÃ±o del colaborador, director o administrador dentro del horario de trabajo, que utilicen la estructura de la CompaÃ±Ã­a para fines particulares o que estÃ©n vinculadas a la competencia.</li>
-                                        <li><strong>ContrataciÃ³n de familiares:</strong> De acuerdo al Programa de transparencia y Ã©tica empresarial y demÃ¡s PolÃ­ticas internas, la contrataciÃ³n de parientes hasta el 3 grado de consanguinidad o afinidad (padres, hermanos, hijos, esposo(a) o compaÃ±ero(a) permanente, suegros, abuelos, nietos y cuÃ±ados), solo serÃ¡ permitida de forma excepcional y con aprobaciÃ³n previa y expresa de {nombreEmpresaFull} (ComitÃ© de Ã‰tica), siempre y cuando que no exista relaciÃ³n de subordinaciÃ³n entre ellos y que no trabajen en Ã¡reas o procesos en los que pueda haber conflicto de intereses.</li>
-                                        <li><strong>Relaciones comerciales privadas:</strong> los colaboradores, directores o administradores no deben tener relaciones comerciales, personales, financieras u otras relaciones directas o indirectas con competidores, clientes, proveedores y, socios comerciales y/o consultores que puedan interferir o incluso que parezca percibir con la independencia de cualquier decisiÃ³n tomado a nombre de {nombreEmpresaFull}</li>
-                                        <li><strong>PosiciÃ³n y poder de las autoridades:</strong> {nombreEmpresaFull} valora la Ã©tica y la transparencia en las relaciones con todas sus partes interesadas o terceros. Por lo tanto, ningÃºn colaborador, director o administrador debe utilizar su posiciÃ³n o autoridad en la CompaÃ±Ã­a para obtener ventajas personales de clientes, proveedores, socios comerciales, consultores y/o competidores.</li>
+                                        <li><strong>Desarrollo de actividades:</strong> no se permiten actividades paralelas, conflictivas con los negocios de {nombreEmpresaFull}, que puedan afectar o afecten el desempeño del colaborador, director o administrador dentro del horario de trabajo, que utilicen la estructura de la Compañía para fines particulares o que estén vinculadas a la competencia.</li>
+                                        <li><strong>Contratación de familiares:</strong> De acuerdo al Programa de transparencia y ética empresarial y demás Políticas internas, la contratación de parientes hasta el 3 grado de consanguinidad o afinidad (padres, hermanos, hijos, esposo(a) o compañero(a) permanente, suegros, abuelos, nietos y cuñados), solo será permitida de forma excepcional y con aprobación previa y expresa de {nombreEmpresaFull} (Comité de �0tica), siempre y cuando que no exista relación de subordinación entre ellos y que no trabajen en áreas o procesos en los que pueda haber conflicto de intereses.</li>
+                                        <li><strong>Relaciones comerciales privadas:</strong> los colaboradores, directores o administradores no deben tener relaciones comerciales, personales, financieras u otras relaciones directas o indirectas con competidores, clientes, proveedores y, socios comerciales y/o consultores que puedan interferir o incluso que parezca percibir con la independencia de cualquier decisión tomado a nombre de {nombreEmpresaFull}</li>
+                                        <li><strong>Posición y poder de las autoridades:</strong> {nombreEmpresaFull} valora la ética y la transparencia en las relaciones con todas sus partes interesadas o terceros. Por lo tanto, ningún colaborador, director o administrador debe utilizar su posición o autoridad en la Compañía para obtener ventajas personales de clientes, proveedores, socios comerciales, consultores y/o competidores.</li>
                                     </ol>
                                 </div>
 
                                 <div style={{ background: 'var(--surface)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', marginBottom: '2rem', ...(isDisabled('tiene_conflicto_interes') ? {opacity: 0.7} : {}), ...(camposACorregir['tiene_conflicto_interes'] ? {border: '2px solid #ef4444', background: '#fef2f2'} : {}) }}>
                                     <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '1rem', color: 'var(--text-main)' }}>
-                                        Declaro que a la fecha tengo situaciÃ³n(es) que pueda(n) presentar un potencial CONFLICTO DE INTERÃ‰S para el ejercicio del cargo que actualmente desempeÃ±o en {nombreEmpresaFull}, en mi relaciÃ³n con los siguientes empleados, proveedores, clientes entre otros:
+                                        Declaro que a la fecha tengo situación(es) que pueda(n) presentar un potencial CONFLICTO DE INTER�0S para el ejercicio del cargo que actualmente desempeño en {nombreEmpresaFull}, en mi relación con los siguientes empleados, proveedores, clientes entre otros:
                                     </label>
                                     <div style={{ display: 'flex', gap: '2rem' }}>
                                         <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: isDisabled('tiene_conflicto_interes') ? 'not-allowed' : 'pointer' }}>
                                             <input type="radio" name="tiene_conflicto_interes" value="no" checked={formData.tiene_conflicto_interes === 'no' || !formData.tiene_conflicto_interes} onChange={handleChange} disabled={isDisabled('tiene_conflicto_interes')} /> No
                                         </label>
                                         <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: isDisabled('tiene_conflicto_interes') ? 'not-allowed' : 'pointer' }}>
-                                            <input type="radio" name="tiene_conflicto_interes" value="si" checked={formData.tiene_conflicto_interes === 'si'} onChange={handleChange} disabled={isDisabled('tiene_conflicto_interes')} /> SÃ­
+                                            <input type="radio" name="tiene_conflicto_interes" value="si" checked={formData.tiene_conflicto_interes === 'si'} onChange={handleChange} disabled={isDisabled('tiene_conflicto_interes')} /> Sí
                                         </label>
                                     </div>
                                 </div>
 
                                 {formData.tiene_conflicto_interes === 'si' && (
                                     <div style={{ marginBottom: '2rem' }}>
-                                        <h4 style={{ margin: '0 0 1rem 0', color: 'var(--text-main)' }}>IdentificaciÃ³n de Familiares Conflicto de InterÃ©s</h4>
-                                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Relacionar Padres, hermanos, hijos, esposo(a) y/o compaÃ±ero(a) permanente.</p>
+                                        <h4 style={{ margin: '0 0 1rem 0', color: 'var(--text-main)' }}>Identificación de Familiares Conflicto de Interés</h4>
+                                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Relacionar Padres, hermanos, hijos, esposo(a) y/o compañero(a) permanente.</p>
                                         
                                         <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-                                            {renderSelect("Tipo IdentificaciÃ³n", "temp_familiar_tipo_id", [{value:'', label:'Seleccione...'}, {value:'cc', label:'CC (CÃ©dula de CiudadanÃ­a)'}, {value:'ce', label:'CE (CÃ©dula de ExtranjerÃ­a)'}, {value:'pasaporte', label:'Pasaporte'}, {value:'ppt', label:'PPT (Permiso de ProtecciÃ³n Temporal)'}, {value:'otro', label:'Otro'}], "1fr")}
-                                            {renderInput("No. IdentificaciÃ³n", "temp_familiar_id", "text", "1fr")}
+                                            {renderSelect("Tipo Identificación", "temp_familiar_tipo_id", [{value:'', label:'Seleccione...'}, {value:'cc', label:'CC (Cédula de Ciudadanía)'}, {value:'ce', label:'CE (Cédula de Extranjería)'}, {value:'pasaporte', label:'Pasaporte'}, {value:'ppt', label:'PPT (Permiso de Protección Temporal)'}, {value:'otro', label:'Otro'}], "1fr")}
+                                            {renderInput("No. Identificación", "temp_familiar_id", "text", "1fr")}
                                             {renderInput("Nombre Completo", "temp_familiar_nombre", "text", "2fr")}
                                             {renderInput("Parentesco", "temp_familiar_parentesco", "text", "1fr")}
-                                            {renderSelect("Â¿Administra recursos pÃºblicos?", "temp_familiar_recursos", [{value:'', label:'Seleccione...'}, {value:'si', label:'SÃ­'}, {value:'no', label:'No'}], "1fr")}
-                                            {renderSelect("Â¿Poder PÃºblico?", "temp_familiar_poder", [{value:'', label:'Seleccione...'}, {value:'si', label:'SÃ­'}, {value:'no', label:'No'}], "1fr")}
+                                            {renderSelect("¿Administra recursos públicos?", "temp_familiar_recursos", [{value:'', label:'Seleccione...'}, {value:'si', label:'Sí'}, {value:'no', label:'No'}], "1fr")}
+                                            {renderSelect("¿Poder Público?", "temp_familiar_poder", [{value:'', label:'Seleccione...'}, {value:'si', label:'Sí'}, {value:'no', label:'No'}], "1fr")}
                                             
                                             <button type="button" className="btn-primary" onClick={() => {
-                                                if(!formData.temp_familiar_id || !formData.temp_familiar_nombre) return alert("Complete los datos bÃ¡sicos del familiar.");
+                                                if(!formData.temp_familiar_id || !formData.temp_familiar_nombre) return alert("Complete los datos básicos del familiar.");
                                                 handleAddList('familiares_conflicto', {
                                                     tipo_id: formData.temp_familiar_tipo_id,
                                                     identificacion: formData.temp_familiar_id,
@@ -1017,7 +1017,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                                     administra_recursos: formData.temp_familiar_recursos,
                                                     poder_publico: formData.temp_familiar_poder
                                                 }, (empty) => setFormData(p => ({...p, ...empty})), { temp_familiar_tipo_id: '', temp_familiar_id: '', temp_familiar_nombre: '', temp_familiar_parentesco: '', temp_familiar_recursos: '', temp_familiar_poder: '' });
-                                            }}>+ AÃ±adir</button>
+                                            }}>+ Añadir</button>
                                         </div>
 
                                         {formData.familiares_conflicto?.length > 0 && (
@@ -1026,12 +1026,12 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                                     <thead>
                                                         <tr style={{ background: 'var(--surface)', borderBottom: '2px solid var(--border)' }}>
                                                             <th style={{ padding: '0.75rem', textAlign: 'left' }}>Tipo ID</th>
-                                                            <th style={{ padding: '0.75rem', textAlign: 'left' }}>IdentificaciÃ³n</th>
+                                                            <th style={{ padding: '0.75rem', textAlign: 'left' }}>Identificación</th>
                                                             <th style={{ padding: '0.75rem', textAlign: 'left' }}>Nombre Completo</th>
                                                             <th style={{ padding: '0.75rem', textAlign: 'left' }}>Parentesco</th>
-                                                            <th style={{ padding: '0.75rem', textAlign: 'left' }}>Recursos PÃºblicos</th>
-                                                            <th style={{ padding: '0.75rem', textAlign: 'left' }}>Poder PÃºblico</th>
-                                                            <th style={{ padding: '0.75rem', textAlign: 'center' }}>AcciÃ³n</th>
+                                                            <th style={{ padding: '0.75rem', textAlign: 'left' }}>Recursos Públicos</th>
+                                                            <th style={{ padding: '0.75rem', textAlign: 'left' }}>Poder Público</th>
+                                                            <th style={{ padding: '0.75rem', textAlign: 'center' }}>Acción</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -1056,7 +1056,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 )}
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
-                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> AtrÃ¡s</button>
+                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
                                     <button className="btn-primary" onClick={() => avanzarPaso()}>Siguiente <ArrowRight size={18}/></button>
                                 </div>
                             </motion.div>
@@ -1070,16 +1070,16 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
 
                                 <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
                                     <div style={{ flex: 1 }}>
-                                        <label className="label">Â¿Realiza operaciones internacionales?</label>
+                                        <label className="label">¿Realiza operaciones internacionales?</label>
                                         <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                                            <label><input type="radio" name="realiza_operaciones_internacionales" value="si" onChange={(e) => setFormData(p => ({...p, realiza_operaciones_internacionales: 'si'}))} checked={formData.realiza_operaciones_internacionales === 'si'} /> SÃ­</label>
+                                            <label><input type="radio" name="realiza_operaciones_internacionales" value="si" onChange={(e) => setFormData(p => ({...p, realiza_operaciones_internacionales: 'si'}))} checked={formData.realiza_operaciones_internacionales === 'si'} /> Sí</label>
                                             <label><input type="radio" name="realiza_operaciones_internacionales" value="no" onChange={(e) => setFormData(p => ({...p, realiza_operaciones_internacionales: 'no', operaciones_internacionales: []}))} checked={formData.realiza_operaciones_internacionales !== 'si'} /> No</label>
                                         </div>
                                     </div>
                                     <div style={{ flex: 1 }}>
-                                        <label className="label">Â¿Posee productos financieros en el exterior?</label>
+                                        <label className="label">¿Posee productos financieros en el exterior?</label>
                                         <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                                            <label><input type="radio" name="posee_productos_exterior" value="si" onChange={handleChange} checked={formData.posee_productos_exterior === 'si'} /> SÃ­</label>
+                                            <label><input type="radio" name="posee_productos_exterior" value="si" onChange={handleChange} checked={formData.posee_productos_exterior === 'si'} /> Sí</label>
                                             <label><input type="radio" name="posee_productos_exterior" value="no" onChange={handleChange} checked={formData.posee_productos_exterior === 'no'} /> No</label>
                                         </div>
                                     </div>
@@ -1089,7 +1089,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                     <div style={{ background: 'var(--surface)', padding: '1.5rem', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem' }}>
                                         <h4 style={{ margin: '0 0 1rem 0' }}>Tipos de Operaciones Internacionales</h4>
                                         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                                            {['ImportaciÃ³n', 'ExportaciÃ³n', 'PrÃ©stamos', 'Inversiones', 'Pago de Servicios', 'Remesas'].map(op => (
+                                            {['Importación', 'Exportación', 'Préstamos', 'Inversiones', 'Pago de Servicios', 'Remesas'].map(op => (
                                                 <label key={op} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                                     <input type="checkbox" checked={(formData.operaciones_internacionales || []).includes(op)} onChange={(e) => {
                                                         const arr = formData.operaciones_internacionales || [];
@@ -1102,20 +1102,20 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 )}
 
                                 <div style={{ background: 'var(--surface)', padding: '1.5rem', borderRadius: 'var(--radius-md)' }}>
-                                    <label className="label">Â¿Realiza operaciones con Activos Virtuales (Criptomonedas, Tokens, etc)?</label>
+                                    <label className="label">¿Realiza operaciones con Activos Virtuales (Criptomonedas, Tokens, etc)?</label>
                                     <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                                        <label><input type="radio" name="activos_virtuales" value="si" onChange={handleChange} checked={formData.activos_virtuales === 'si'} /> SÃ­</label>
+                                        <label><input type="radio" name="activos_virtuales" value="si" onChange={handleChange} checked={formData.activos_virtuales === 'si'} /> Sí</label>
                                         <label><input type="radio" name="activos_virtuales" value="no" onChange={handleChange} checked={formData.activos_virtuales === 'no'} /> No</label>
                                     </div>
                                     {formData.activos_virtuales === 'si' && (
                                         <div style={{ marginTop: '1rem' }}>
-                                            {renderInput("Â¿CuÃ¡les activos virtuales?", "cuales_activos_virtuales")}
+                                            {renderInput("¿Cuáles activos virtuales?", "cuales_activos_virtuales")}
                                         </div>
                                     )}
                                 </div>
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
-                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> AtrÃ¡s</button>
+                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
                                     <button className="btn-primary" onClick={() => avanzarPaso()}>Siguiente <ArrowRight size={18}/></button>
                                 </div>
                             </motion.div>
@@ -1125,35 +1125,35 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Building2 size={20}/> 4. Accionistas (Ben. Finales) y PEPs</h3>
                                 
                                 <div style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', marginBottom: '2rem' }}>
-                                    <h4 style={{ margin: '0 0 1rem 0' }}>IdentificaciÃ³n de accionistas (&gt; 5% capital social)</h4>
+                                    <h4 style={{ margin: '0 0 1rem 0' }}>Identificación de accionistas (&gt; 5% capital social)</h4>
                                     <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-                                        <i>Nota: Si por polÃ­ticas de privacidad de la compaÃ±Ã­a decide no listar a los beneficiarios finales aquÃ­, <b>serÃ¡ obligatorio adjuntar el Certificado de ComposiciÃ³n Accionaria</b> en el paso final de documentos.</i>
+                                        <i>Nota: Si por políticas de privacidad de la compañía decide no listar a los beneficiarios finales aquí, <b>será obligatorio adjuntar el Certificado de Composición Accionaria</b> en el paso final de documentos.</i>
                                     </p>
                                     <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 70px 1fr 1fr auto', gap: '0.75rem', alignItems: 'flex-end', marginBottom: '1rem' }}>
                                         <div><label className="label" style={{ fontSize: '0.8rem' }}>Nombre Socio</label><input type="text" value={nuevoAccionista.nombre} onChange={e=>setNuevoAccionista({...nuevoAccionista, nombre: e.target.value})} className="input-field"/></div>
-                                        <div><label className="label" style={{ fontSize: '0.8rem' }}>CÃ©dula</label><input type="text" value={nuevoAccionista.identificacion} onChange={e=>setNuevoAccionista({...nuevoAccionista, identificacion: e.target.value})} className="input-field"/></div>
+                                        <div><label className="label" style={{ fontSize: '0.8rem' }}>Cédula</label><input type="text" value={nuevoAccionista.identificacion} onChange={e=>setNuevoAccionista({...nuevoAccionista, identificacion: e.target.value})} className="input-field"/></div>
                                         <div><label className="label" style={{ fontSize: '0.8rem' }}>% Part.</label><input type="number" min="0" max="100" value={nuevoAccionista.porcentaje} onChange={e=>setNuevoAccionista({...nuevoAccionista, porcentaje: e.target.value})} className="input-field" style={{ padding: '0.5rem' }}/></div>
                                         <div>
-                                            <label className="label" style={{ fontSize: '0.8rem' }}>Â¿Adm. rec. pÃºblicos?</label>
+                                            <label className="label" style={{ fontSize: '0.8rem' }}>¿Adm. rec. públicos?</label>
                                             <select className="input-field" value={nuevoAccionista.administra_recursos} onChange={e => setNuevoAccionista({...nuevoAccionista, administra_recursos: e.target.value})}>
                                                 <option value="no">No</option>
-                                                <option value="si">SÃ­</option>
+                                                <option value="si">Sí</option>
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="label" style={{ fontSize: '0.8rem' }}>Â¿Recon. pÃºblico?</label>
+                                            <label className="label" style={{ fontSize: '0.8rem' }}>¿Recon. público?</label>
                                             <select className="input-field" value={nuevoAccionista.goza_reconocimiento} onChange={e => setNuevoAccionista({...nuevoAccionista, goza_reconocimiento: e.target.value})}>
                                                 <option value="no">No</option>
-                                                <option value="si">SÃ­</option>
+                                                <option value="si">Sí</option>
                                             </select>
                                         </div>
                                         <button className="btn-outline" style={{ padding: '0.55rem 1rem' }} onClick={() => handleAddList('accionistas', nuevoAccionista, setNuevoAccionista, {tipo_id:'cc', identificacion:'', nombre:'', porcentaje:'', administra_recursos:'no', goza_reconocimiento:'no'})}>+ Agregar</button>
                                     </div>
                                     {formData.accionistas.map((acc, idx) => (
                                         <div key={idx} style={{ padding: '0.5rem', borderBottom: '1px solid var(--border)', fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <div>ðŸ‘¤ {acc.nombre} (CC: {acc.identificacion}) - <b>{acc.porcentaje}%</b></div>
+                                            <div>�x� {acc.nombre} (CC: {acc.identificacion}) - <b>{acc.porcentaje}%</b></div>
                                             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                                Admin. Recursos: <b>{acc.administra_recursos === 'si' ? 'SÃ­' : 'No'}</b> | Reconoc. PÃºblico: <b>{acc.goza_reconocimiento === 'si' ? 'SÃ­' : 'No'}</b>
+                                                Admin. Recursos: <b>{acc.administra_recursos === 'si' ? 'Sí' : 'No'}</b> | Reconoc. Público: <b>{acc.goza_reconocimiento === 'si' ? 'Sí' : 'No'}</b>
                                             </div>
                                         </div>
                                     ))}
@@ -1161,25 +1161,25 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
 
 
 
-                                <h4 style={{ margin: '2rem 0 1rem 0', color: 'var(--text-main)', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Personas Expuestas PolÃ­ticamente (PEP) y Conflictos de InterÃ©s</h4>
+                                <h4 style={{ margin: '2rem 0 1rem 0', color: 'var(--text-main)', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Personas Expuestas Políticamente (PEP) y Conflictos de Interés</h4>
                                 <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid #cbd5e1', marginBottom: '1.5rem', fontSize: '0.85rem', color: '#475569' }}>
-                                    <strong>DefiniciÃ³n PEP:</strong> Es aquella persona que desempeÃ±Ã³ o ejerce actualmente un cargo o funciÃ³n pÃºblica relevante para un paÃ­s (ej: Jefes de Estado, altos funcionarios gubernamentales, militares, judiciales, directivos de empresas estatales). <br/><br/>
-                                    <strong>Reconocimiento PÃºblico:</strong> Son aquellas que debido a su destreza especial o habilidad (artes, farÃ¡ndula, deporte, ciencias, youtubers, lÃ­deres religiosos) obtienen notoriedad entre el pÃºblico.
+                                    <strong>Definición PEP:</strong> Es aquella persona que desempeñó o ejerce actualmente un cargo o función pública relevante para un país (ej: Jefes de Estado, altos funcionarios gubernamentales, militares, judiciales, directivos de empresas estatales). <br/><br/>
+                                    <strong>Reconocimiento Público:</strong> Son aquellas que debido a su destreza especial o habilidad (artes, farándula, deporte, ciencias, youtubers, líderes religiosos) obtienen notoriedad entre el público.
                                 </div>
                                 <div className="form-grid form-grid-2">
-                                    {renderSelect("Â¿Es o fue funcionario entidad pÃºblica (Estado)?", "es_funcionario_publico", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
-                                    {renderSelect("Â¿VÃ­nculo familiar con persona PEP?", "vinculo_familiar_pep", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
-                                    {renderSelect("Â¿Ejerce algÃºn grado de poder pÃºblico?", "ejerce_poder_publico", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
-                                    {renderSelect("Â¿Maneja recursos pÃºblicos?", "maneja_recursos_publicos", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
-                                    {renderSelect("Â¿Goza de reconocimiento pÃºblico?", "goza_reconocimiento_publico", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
-                                    {renderSelect("Â¿Declara bajo juramento ser PEP?", "declara_ser_pep", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
+                                    {renderSelect("¿Es o fue funcionario entidad pública (Estado)?", "es_funcionario_publico", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
+                                    {renderSelect("¿Vínculo familiar con persona PEP?", "vinculo_familiar_pep", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
+                                    {renderSelect("¿Ejerce algún grado de poder público?", "ejerce_poder_publico", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
+                                    {renderSelect("¿Maneja recursos públicos?", "maneja_recursos_publicos", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
+                                    {renderSelect("¿Goza de reconocimiento público?", "goza_reconocimiento_publico", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
+                                    {renderSelect("¿Declara bajo juramento ser PEP?", "declara_ser_pep", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                 </div>
                                 <div style={{ marginTop: '1.5rem' }}>
-                                    {renderInput("Si respondió afirmativamente alguna, proporcione nombres, cargos, vínculo y entidad", "pep_detalles", "text", "1fr", ['es_funcionario_publico', 'vinculo_familiar_pep', 'ejerce_poder_publico', 'maneja_recursos_publicos', 'goza_reconocimiento_publico', 'declara_ser_pep'].some(k => formData[k] === 'si'), false)}
+                                    {renderInput("Si respondi� afirmativamente alguna, proporcione nombres, cargos, v�nculo y entidad", "pep_detalles", "text", "1fr", false, ['es_funcionario_publico', 'vinculo_familiar_pep', 'ejerce_poder_publico', 'maneja_recursos_publicos', 'goza_reconocimiento_publico', 'declara_ser_pep'].some(k => formData[k] === 'si'))}
                                 </div>
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
-                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> AtrÃ¡s</button>
+                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
                                     <button className="btn-primary" onClick={() => avanzarPaso()}>Siguiente <ArrowRight size={18}/></button>
                                 </div>
                             </motion.div>
@@ -1192,20 +1192,20 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                                     <div>
-                                        <h4 style={{ margin: '0 0 1rem 0' }}>InformaciÃ³n Comercial</h4>
+                                        <h4 style={{ margin: '0 0 1rem 0' }}>Información Comercial</h4>
                                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', marginBottom: '1rem', flexWrap:'wrap' }}>
                                             <div style={{flex:2}}><input placeholder="Empresa/Referencia Comercial" value={nuevaRefComercial.referencia} onChange={e=>setNuevaRefComercial({...nuevaRefComercial, referencia: e.target.value})} className="input-field"/></div>
-                                            <div style={{flex:2}}><input placeholder="DirecciÃ³n" value={nuevaRefComercial.direccion} onChange={e=>setNuevaRefComercial({...nuevaRefComercial, direccion: e.target.value})} className="input-field"/></div>
+                                            <div style={{flex:2}}><input placeholder="Dirección" value={nuevaRefComercial.direccion} onChange={e=>setNuevaRefComercial({...nuevaRefComercial, direccion: e.target.value})} className="input-field"/></div>
                                             <div style={{flex:1}}><input placeholder="Ciudad" value={nuevaRefComercial.ciudad} onChange={e=>setNuevaRefComercial({...nuevaRefComercial, ciudad: e.target.value})} className="input-field"/></div>
                                             <div style={{flex:1}}><input placeholder="Contacto" value={nuevaRefComercial.contacto} onChange={e=>setNuevaRefComercial({...nuevaRefComercial, contacto: e.target.value})} className="input-field"/></div>
-                                            <div style={{flex:1}}><input placeholder="TelÃ©fono" value={nuevaRefComercial.telefono} onChange={e=>setNuevaRefComercial({...nuevaRefComercial, telefono: e.target.value})} className="input-field"/></div>
-                                            <button className="btn-outline" onClick={()=>handleAddList('referencias_comerciales', nuevaRefComercial, setNuevaRefComercial, {referencia:'', direccion:'', ciudad:'', contacto:'', telefono:''})}>AÃ±adir</button>
+                                            <div style={{flex:1}}><input placeholder="Teléfono" value={nuevaRefComercial.telefono} onChange={e=>setNuevaRefComercial({...nuevaRefComercial, telefono: e.target.value})} className="input-field"/></div>
+                                            <button className="btn-outline" onClick={()=>handleAddList('referencias_comerciales', nuevaRefComercial, setNuevaRefComercial, {referencia:'', direccion:'', ciudad:'', contacto:'', telefono:''})}>Añadir</button>
                                         </div>
-                                        {formData.referencias_comerciales.map((ref, idx) => <div key={idx} style={{fontSize:'0.9rem', color:'var(--text-muted)'}}>â€¢ {ref.referencia} - {ref.contacto} - Tel: {ref.telefono} - {ref.ciudad}</div>)}
+                                        {formData.referencias_comerciales.map((ref, idx) => <div key={idx} style={{fontSize:'0.9rem', color:'var(--text-muted)'}}>⬢ {ref.referencia} - {ref.contacto} - Tel: {ref.telefono} - {ref.ciudad}</div>)}
                                     </div>
 
                                     <div>
-                                        <h4 style={{ margin: '0 0 1rem 0' }}>InformaciÃ³n Bancaria</h4>
+                                        <h4 style={{ margin: '0 0 1rem 0' }}>Información Bancaria</h4>
                                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', marginBottom: '1rem', flexWrap:'wrap' }}>
                                             <div style={{flex:2}}><input placeholder="Banco" value={nuevaRefBancaria.banco} onChange={e=>setNuevaRefBancaria({...nuevaRefBancaria, banco: e.target.value})} className="input-field"/></div>
                                             <div style={{flex:2}}><input placeholder="# Cuenta" value={nuevaRefBancaria.cuenta} onChange={e=>setNuevaRefBancaria({...nuevaRefBancaria, cuenta: e.target.value})} className="input-field"/></div>
@@ -1215,42 +1215,42 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                                 </select>
                                             </div>
                                             <div style={{flex:1}}><input placeholder="Ciudad" value={nuevaRefBancaria.ciudad} onChange={e=>setNuevaRefBancaria({...nuevaRefBancaria, ciudad: e.target.value})} className="input-field"/></div>
-                                            <div style={{flex:1}}><input placeholder="TelÃ©fono" value={nuevaRefBancaria.telefono} onChange={e=>setNuevaRefBancaria({...nuevaRefBancaria, telefono: e.target.value})} className="input-field"/></div>
-                                            <button className="btn-outline" onClick={()=>handleAddList('referencias_bancarias', nuevaRefBancaria, setNuevaRefBancaria, {banco:'', cuenta:'', tipo:'Ahorros', ciudad:'', telefono:''})}>AÃ±adir</button>
+                                            <div style={{flex:1}}><input placeholder="Teléfono" value={nuevaRefBancaria.telefono} onChange={e=>setNuevaRefBancaria({...nuevaRefBancaria, telefono: e.target.value})} className="input-field"/></div>
+                                            <button className="btn-outline" onClick={()=>handleAddList('referencias_bancarias', nuevaRefBancaria, setNuevaRefBancaria, {banco:'', cuenta:'', tipo:'Ahorros', ciudad:'', telefono:''})}>Añadir</button>
                                         </div>
-                                        {formData.referencias_bancarias.map((ref, idx) => <div key={idx} style={{fontSize:'0.9rem', color:'var(--text-muted)'}}>â€¢ {ref.banco} - {ref.tipo} No. {ref.cuenta} - {ref.ciudad}</div>)}
+                                        {formData.referencias_bancarias.map((ref, idx) => <div key={idx} style={{fontSize:'0.9rem', color:'var(--text-muted)'}}>⬢ {ref.banco} - {ref.tipo} No. {ref.cuenta} - {ref.ciudad}</div>)}
                                     </div>
                                 </div>
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
-                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> AtrÃ¡s</button>
+                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
                                     <button className="btn-primary" onClick={() => avanzarPaso()}>Siguiente <ArrowRight size={18}/></button>
                                 </div>
                             </motion.div>
                         )}
 
-                        {/* PASO 6: Ã‰TICA Y CUMPLIMIENTO */}
+                        {/* PASO 6: �0TICA Y CUMPLIMIENTO */}
                         {paso === 6 && (
                             <motion.div key="p6" variants={formVariants} initial="hidden" animate="visible" exit="exit">
-                                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><ShieldCheck size={20}/> 6. Ã‰tica y Cumplimiento</h3>
+                                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><ShieldCheck size={20}/> 6. �0tica y Cumplimiento</h3>
                                 
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                                     <div style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
-                                        <h4 style={{ margin: '0 0 1rem 0' }}>PolÃ­ticas y Comportamientos Ã‰ticos</h4>
+                                        <h4 style={{ margin: '0 0 1rem 0' }}>Políticas y Comportamientos �0ticos</h4>
                                         <div className="form-grid form-grid-2" style={{ marginBottom: "1.5rem" }}>
-                                            {renderSelect("Â¿PrevenciÃ³n de corrupciÃ³n y soborno?", "politica_corrupcion", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
-                                            {renderSelect("Â¿Tiene cÃ³digo de Ã©tica y/o conducta?", "codigo_etica_conducta", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
-                                            {renderSelect("Â¿Tiene comitÃ© de Ã©tica y cumplimiento?", "tiene_comite_etica", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
-                                            {renderSelect("Â¿Tiene canales de denuncia?", "canales_denuncia", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
-                                            {renderSelect("Â¿Ha sido acusada de corrupciÃ³n?", "acusada_corrupcion", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
-                                            {renderSelect("Â¿Tiene oficial de cumplimiento?", "tiene_oficial_cumplimiento", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
+                                            {renderSelect("¿Prevención de corrupción y soborno?", "politica_corrupcion", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
+                                            {renderSelect("¿Tiene código de ética y/o conducta?", "codigo_etica_conducta", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
+                                            {renderSelect("¿Tiene comité de ética y cumplimiento?", "tiene_comite_etica", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
+                                            {renderSelect("¿Tiene canales de denuncia?", "canales_denuncia", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
+                                            {renderSelect("¿Ha sido acusada de corrupción?", "acusada_corrupcion", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
+                                            {renderSelect("¿Tiene oficial de cumplimiento?", "tiene_oficial_cumplimiento", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                             {formData.tiene_oficial_cumplimiento === 'si' && renderInput("Nombre del Oficial de Cumplimiento", "nombre_oficial_cumplimiento")}
                                         </div>
                                     </div>
                                 </div>
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
-                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> AtrÃ¡s</button>
+                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
                                     <button className="btn-primary" onClick={() => avanzarPaso()}>Siguiente <ArrowRight size={18}/></button>
                                 </div>
                             </motion.div>
@@ -1259,27 +1259,27 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                         {/* PASO 7: SOSTENIBILIDAD ESG */}
                         {paso === 7 && (
                             <motion.div key="p7" variants={formVariants} initial="hidden" animate="visible" exit="exit">
-                                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Globe size={20}/> 7. PolÃ­ticas y Comportamientos de Sostenibilidad (ESG)</h3>
+                                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Globe size={20}/> 7. Políticas y Comportamientos de Sostenibilidad (ESG)</h3>
                                 
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                                     <div style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                            {renderCheckboxArray("1. Â¿La empresa identifica y gestiona riesgos relacionados con factores (ESG)?", "esg_gestiona_riesgos", [{value:'Ambientales', label:'Ambientales'}, {value:'Sociales', label:'Sociales'}, {value:'Gobernanza', label:'Gobernanza'}, {value:'No', label:'No'}])}
+                                            {renderCheckboxArray("1. ¿La empresa identifica y gestiona riesgos relacionados con factores (ESG)?", "esg_gestiona_riesgos", [{value:'Ambientales', label:'Ambientales'}, {value:'Sociales', label:'Sociales'}, {value:'Gobernanza', label:'Gobernanza'}, {value:'No', label:'No'}])}
                                             
-                                            {renderCheckboxArray("2. Â¿La empresa cuenta con polÃ­ticas, procedimientos o lineamientos relacionados con?", "esg_politicas", [{value:'Sostenibilidad', label:'Sostenibilidad'}, {value:'Aspectos ambientales', label:'Aspectos ambientales'}, {value:'Sociales', label:'Sociales'}, {value:'Gobernanza', label:'Gobernanza'}, {value:'No', label:'No'}])}
+                                            {renderCheckboxArray("2. ¿La empresa cuenta con políticas, procedimientos o lineamientos relacionados con?", "esg_politicas", [{value:'Sostenibilidad', label:'Sostenibilidad'}, {value:'Aspectos ambientales', label:'Aspectos ambientales'}, {value:'Sociales', label:'Sociales'}, {value:'Gobernanza', label:'Gobernanza'}, {value:'No', label:'No'}])}
                                             
                                             <div className="form-grid form-grid-3">
-                                                {renderSelect("3. Â¿Utiliza materias primas o insumos con criterios de sostenibilidad?", "esg_materias_sostenibles", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
-                                                {renderSelect("4. Â¿EvalÃºa a sus proveedores con criterios legales, Ã©ticos o ambientales?", "esg_evalua_proveedores", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
+                                                {renderSelect("3. ¿Utiliza materias primas o insumos con criterios de sostenibilidad?", "esg_materias_sostenibles", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
+                                                {renderSelect("4. ¿Evalúa a sus proveedores con criterios legales, éticos o ambientales?", "esg_evalua_proveedores", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                             </div>
                                             {formData.esg_evalua_proveedores === 'si' && (
                                                 <div className="form-grid form-grid-3">
-                                                    {renderInput("Â¿CuÃ¡les criterios evalÃºa?", "esg_evalua_cuales", "text", "1fr")}
+                                                    {renderInput("¿Cuáles criterios evalúa?", "esg_evalua_cuales", "text", "1fr")}
                                                 </div>
                                             )}
 
                                             <div className="form-grid form-grid-3">
-                                                {renderSelect("5. Â¿En los Ãºltimos 5 aÃ±os ha sido sancionada/investigada por asuntos ESG?", "esg_sancionada", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
+                                                {renderSelect("5. ¿En los últimos 5 años ha sido sancionada/investigada por asuntos ESG?", "esg_sancionada", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                             </div>
                                             {formData.esg_sancionada === 'si' && (
                                                 <div className="form-grid form-grid-3">
@@ -1287,44 +1287,44 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                                 </div>
                                             )}
 
-                                            {renderCheckboxArray("6. Â¿La empresa implementa alguna de las siguientes prÃ¡cticas ambientales?", "esg_practicas_ambientales", [
+                                            {renderCheckboxArray("6. ¿La empresa implementa alguna de las siguientes prácticas ambientales?", "esg_practicas_ambientales", [
                                                 {value:'Uso eficiente del agua', label:'Uso eficiente del agua'},
-                                                {value:'Uso eficiente de la energÃ­a', label:'Uso eficiente de la energÃ­a'},
-                                                {value:'GestiÃ³n de residuos', label:'GestiÃ³n y disposiciÃ³n adecuada de residuos'},
-                                                {value:'Reciclaje', label:'Reciclaje o reutilizaciÃ³n de materiales'},
+                                                {value:'Uso eficiente de la energía', label:'Uso eficiente de la energía'},
+                                                {value:'Gestión de residuos', label:'Gestión y disposición adecuada de residuos'},
+                                                {value:'Reciclaje', label:'Reciclaje o reutilización de materiales'},
                                                 {value:'Residuos peligrosos', label:'Manejo adecuado de residuos peligrosos'},
                                                 {value:'Insumos sostenibles', label:'Uso de materias primas sostenibles'},
                                                 {value:'Empaques sostenibles', label:'Uso de empaques sostenibles o reciclables'},
-                                                {value:'ReducciÃ³n emisiones', label:'Medidas para reducir emisiones/huella de carbono'},
+                                                {value:'Reducción emisiones', label:'Medidas para reducir emisiones/huella de carbono'},
                                                 {value:'Licencias ambientales', label:'Cuenta con licencias ambientales vigentes'},
                                                 {value:'Programas sostenibilidad', label:'Desarrolla programas de sostenibilidad'},
                                                 {value:'Otros', label:'Otros (especifique)'}
                                             ])}
                                             {formData.esg_practicas_ambientales.includes('Otros') && (
                                                 <div className="form-grid form-grid-3">
-                                                    {renderInput("Â¿CuÃ¡les otras prÃ¡cticas?", "esg_practicas_ambientales_otros", "text", "1fr")}
+                                                    {renderInput("¿Cuáles otras prácticas?", "esg_practicas_ambientales_otros", "text", "1fr")}
                                                 </div>
                                             )}
 
                                             <div className="form-grid form-grid-3">
-                                                {renderSelect("7. Â¿Garantiza el cumplimiento de legislaciÃ³n laboral y seguridad social?", "esg_legislacion_laboral", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
-                                                {renderSelect("8. Â¿Cuenta con un SG-SST implementado?", "esg_sgsst", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}, {value:'no_aplica', label:'No Aplica'}])}
+                                                {renderSelect("7. ¿Garantiza el cumplimiento de legislación laboral y seguridad social?", "esg_legislacion_laboral", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
+                                                {renderSelect("8. ¿Cuenta con un SG-SST implementado?", "esg_sgsst", [{value:'no', label:'No'}, {value:'si', label:'Sí'}, {value:'no_aplica', label:'No Aplica'}])}
                                             </div>
 
                                             <div className="form-grid form-grid-3">
-                                                {renderSelect("9. Â¿Cuenta con polÃ­ticas para respetar los derechos humanos?", "esg_derechos_humanos", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
-                                                {renderSelect("10. Â¿ProhÃ­be y previene el trabajo infantil o forzoso?", "esg_prohibe_trabajo_infantil", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
+                                                {renderSelect("9. ¿Cuenta con políticas para respetar los derechos humanos?", "esg_derechos_humanos", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
+                                                {renderSelect("10. ¿Prohíbe y previene el trabajo infantil o forzoso?", "esg_prohibe_trabajo_infantil", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                             </div>
 
                                             <div className="form-grid form-grid-3">
-                                                {renderSelect("11. Â¿Promueve un entorno libre de discriminaciÃ³n y acoso?", "esg_entorno_libre_discriminacion", [{value:'no', label:'No'}, {value:'si', label:'SÃ­'}])}
+                                                {renderSelect("11. ¿Promueve un entorno libre de discriminación y acoso?", "esg_entorno_libre_discriminacion", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
-                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> AtrÃ¡s</button>
+                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
                                     <button className="btn-primary" onClick={() => avanzarPaso()}>Siguiente <ArrowRight size={18}/></button>
                                 </div>
                             </motion.div>
@@ -1337,14 +1337,14 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                                     <div style={{ background: 'var(--surface)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
-                                        <h4 style={{ margin: '0 0 1rem 0' }}>DeclaraciÃ³n de Origen de Fondos</h4>
+                                        <h4 style={{ margin: '0 0 1rem 0' }}>Declaración de Origen de Fondos</h4>
                                         <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem', lineHeight: '1.5' }}>
-                                            <p>Declaro expresamente a {formData.empresa_destino === 'selecta' ? 'SELECTA COMPAÃ‘ÃA DE CEREALES' : 'COSECHAS BEBIDAS NATURALES S.A.S.'} que:</p>
+                                            <p>Declaro expresamente a {formData.empresa_destino === 'selecta' ? 'SELECTA COMPA�ÍA DE CEREALES' : 'COSECHAS BEBIDAS NATURALES S.A.S.'} que:</p>
                                             <ol style={{ margin: '0.5rem 0 0.5rem 1.5rem', padding: 0 }}>
-                                                <li>La informaciÃ³n que he suministrado en este documento es veraz y verificable y me comprometo a actualizarla anualmente.</li>
-                                                <li>Tanto mis actividades, profesiÃ³n u oficio son lÃ­citas, las ejerzo dentro del marco legal y los recursos que poseo no provienen de actividades ilÃ­citas de las contempladas en el CÃ³digo Penal Colombiano o en cualquier norma que lo sustituya, adicione o modifique.</li>
-                                                <li>Los recursos que se deriven del desarrollo de este contrato, no serÃ¡n destinados a la financiaciÃ³n del terrorismo, actividades terroristas o grupos terroristas.</li>
-                                                <li>Acepto que {formData.empresa_destino === 'selecta' ? 'SELECTA COMPAÃ‘ÃA DE CEREALES' : 'COSECHAS BEBIDAS NATURALES S.A.S.'} estÃ¡ en la obligaciÃ³n legal de solicitar las aclaraciones que estime pertinente, en el evento en que se presenten circunstancias con base en las cuales se pueda tener dudas razonables sobre mis transacciones, asÃ­ como del origen de mis fondos, evento en el cual suministrarÃ© las aclaraciones que sean necesarias del caso.</li>
+                                                <li>La información que he suministrado en este documento es veraz y verificable y me comprometo a actualizarla anualmente.</li>
+                                                <li>Tanto mis actividades, profesión u oficio son lícitas, las ejerzo dentro del marco legal y los recursos que poseo no provienen de actividades ilícitas de las contempladas en el Código Penal Colombiano o en cualquier norma que lo sustituya, adicione o modifique.</li>
+                                                <li>Los recursos que se deriven del desarrollo de este contrato, no serán destinados a la financiación del terrorismo, actividades terroristas o grupos terroristas.</li>
+                                                <li>Acepto que {formData.empresa_destino === 'selecta' ? 'SELECTA COMPA�ÍA DE CEREALES' : 'COSECHAS BEBIDAS NATURALES S.A.S.'} está en la obligación legal de solicitar las aclaraciones que estime pertinente, en el evento en que se presenten circunstancias con base en las cuales se pueda tener dudas razonables sobre mis transacciones, así como del origen de mis fondos, evento en el cual suministraré las aclaraciones que sean necesarias del caso.</li>
                                                 <li>Los recursos que poseo provienen de la(s) siguiente(s) actividad(es):</li>
                                             </ol>
                                         </div>
@@ -1353,7 +1353,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 </div>
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
-                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> AtrÃ¡s</button>
+                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
                                     <button className="btn-primary" onClick={() => avanzarPaso()}>Siguiente <ArrowRight size={18}/></button>
                                 </div>
                             </motion.div>
@@ -1364,7 +1364,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                             <motion.div key="p9" variants={formVariants} initial="hidden" animate="visible" exit="exit">
                                 <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><UploadCloud size={20}/> 9. Soportes Documentales</h3>
                                 {!isInternalRole && (
-                                    <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Adjunte los documentos exigidos. Tenga en cuenta las vigencias requeridas para CÃ¡mara de Comercio (30 dÃ­as), ComposiciÃ³n Accionaria (3 meses) y Balance (corte aÃ±o anterior).</p>
+                                    <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Adjunte los documentos exigidos. Tenga en cuenta las vigencias requeridas para Cámara de Comercio (30 días), Composición Accionaria (3 meses) y Balance (corte año anterior).</p>
                                 )}
                                 {isInternalRole && (
                                     <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Adjunte su documento de identidad vigente para continuar con el proceso.</p>
@@ -1372,23 +1372,23 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
 
                                 <div className="form-grid form-grid-2" style={{ marginBottom: "1.5rem" }}>
                                     {(isInternalRole ? [
-                                        { id: 'identificacion_frontal', label: 'CÃ©dula (Frente o PDF)' },
-                                        { id: 'identificacion_reversa', label: 'CÃ©dula (Reverso - Si es foto)' }
+                                        { id: 'identificacion_frontal', label: 'Cédula (Frente o PDF)' },
+                                        { id: 'identificacion_reversa', label: 'Cédula (Reverso - Si es foto)' }
                                     ] : formData.tipo_persona === 'natural' ? [
                                         { id: 'rut', label: 'RUT' },
-                                        { id: 'identificacion_frontal', label: 'CÃ©dula (Frente o PDF)' },
-                                        { id: 'identificacion_reversa', label: 'CÃ©dula (Reverso - Si es foto)' },
-                                        { id: 'certificacion_bancaria', label: 'CertificaciÃ³n Bancaria (Opcional)' },
+                                        { id: 'identificacion_frontal', label: 'Cédula (Frente o PDF)' },
+                                        { id: 'identificacion_reversa', label: 'Cédula (Reverso - Si es foto)' },
+                                        { id: 'certificacion_bancaria', label: 'Certificación Bancaria (Opcional)' },
                                         { id: 'certificado_naturales', label: 'Certificado Personas Naturales' },
                                         { id: 'formato_pep', label: 'Formato de PEPs' }
                                     ] : [
                                         { id: 'rut', label: 'RUT' },
-                                        { id: 'cc_comercio', label: 'CÃ¡mara de Comercio', requiereFecha: true, maxDays: 30, errorMsg: 'vencido (>30 dÃ­as)' },
-                                        { id: 'cedula_rep_legal_frontal', label: 'CÃ©dula Rep. Legal (Frente o PDF)' },
-                                        { id: 'cedula_rep_legal_reversa', label: 'CÃ©dula Rep. Legal (Reverso - Si es foto)' },
+                                        { id: 'cc_comercio', label: 'Cámara de Comercio', requiereFecha: true, maxDays: 30, errorMsg: 'vencido (>30 días)' },
+                                        { id: 'cedula_rep_legal_frontal', label: 'Cédula Rep. Legal (Frente o PDF)' },
+                                        { id: 'cedula_rep_legal_reversa', label: 'Cédula Rep. Legal (Reverso - Si es foto)' },
                                         { id: 'certificacion_bancaria', label: 'Certificado Bancario (Opcional)' },
-                                        { id: 'balance_empresa', label: 'Balance de la Empresa', requiereFecha: true, tipoValidacion: 'corte_anterior', errorMsg: 'debe ser de Dic del aÃ±o anterior' },
-                                        { id: 'composicion_accionaria', label: 'ComposiciÃ³n Accionaria', requiereFecha: true, maxDays: 90, errorMsg: 'vencida (>3 meses)' }
+                                        { id: 'balance_empresa', label: 'Balance de la Empresa', requiereFecha: true, tipoValidacion: 'corte_anterior', errorMsg: 'debe ser de Dic del año anterior' },
+                                        { id: 'composicion_accionaria', label: 'Composición Accionaria', requiereFecha: true, maxDays: 90, errorMsg: 'vencida (>3 meses)' }
                                     ]).map(doc => {
                                         const isExteriorCC = doc.id === 'cc_comercio' && formData.exterior_tributario === 'si';
                                         
@@ -1418,15 +1418,15 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                             const isImage = file.type.startsWith('image/');
 
                                             if (!isPdf && !(isIdentificacion && isImage)) {
-                                                return showToast(isIdentificacion ? 'Para la cÃ©dula, solo se permiten documentos en formato PDF o ImÃ¡genes (JPG/PNG).' : 'Por seguridad legal, solo se permiten documentos en formato PDF.');
+                                                return showToast(isIdentificacion ? 'Para la cédula, solo se permiten documentos en formato PDF o Imágenes (JPG/PNG).' : 'Por seguridad legal, solo se permiten documentos en formato PDF.');
                                             }
 
                                             if (doc.requiereFecha) {
-                                                if (!fechasDocumentos[doc.id]) return showToast(`Por favor ingresa la fecha de expediciÃ³n de ${doc.label}`);
-                                                if (isExpired) return showToast(`El documento ${doc.label} es invÃ¡lido: ${doc.errorMsg || 'vencido'}.`);
+                                                if (!fechasDocumentos[doc.id]) return showToast(`Por favor ingresa la fecha de expedición de ${doc.label}`);
+                                                if (isExpired) return showToast(`El documento ${doc.label} es inválido: ${doc.errorMsg || 'vencido'}.`);
                                             }
                                             
-                                            // Guardar el archivo fÃ­sico en el nuevo estado temporal
+                                            // Guardar el archivo físico en el nuevo estado temporal
                                             setArchivosFisicos(prev => ({...prev, [doc.id]: file}));
                                             setFormData({...formData, archivos_cargados: {...formData.archivos_cargados, [doc.id]: true}});
                                         };
@@ -1468,7 +1468,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                                         
                                                         {doc.requiereFecha && (
                                                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
-                                                                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Fecha de ExpediciÃ³n:</label>
+                                                                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Fecha de Expedición:</label>
                                                                 <input type="date" className="input-field" style={{ width: '150px', padding: '0.25rem' }} 
                                                                        value={fechasDocumentos[doc.id] || ''} 
                                                                        onChange={(e) => setFechasDocumentos({...fechasDocumentos, [doc.id]: e.target.value})}
@@ -1490,9 +1490,9 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 </div>
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
-                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> AtrÃ¡s</button>
+                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
                                     <button className="btn-primary" onClick={() => {
-                                        // ValidaciÃ³n de que todos estÃ¡n cargados (menos el bancario)
+                                        // Validación de que todos están cargados (menos el bancario)
                                         let reqs = [];
                                         if (isInternalRole) {
                                             reqs = ['identificacion_frontal']; // Frontal o PDF completo
@@ -1513,41 +1513,41 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                             </motion.div>
                         )}
 
-                        {/* PASO 10: FIRMA ELECTRÃ“NICA OTP */}
+                        {/* PASO 10: FIRMA ELECTR�NICA OTP */}
                         {paso === 10 && (
                             <motion.div key="p10" variants={formVariants} initial="hidden" animate="visible" exit="exit" style={{ textAlign: 'center' }}>
                                 <Lock size={48} color="var(--primary)" style={{ margin: '0 auto 1rem' }} />
-                                <h3 style={{ marginBottom: '1rem' }}>AutorizaciÃ³n de Tratamiento y Firma (Ley 527)</h3>
+                                <h3 style={{ marginBottom: '1rem' }}>Autorización de Tratamiento y Firma (Ley 527)</h3>
                                 
                                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '2rem' }}>
-                                    Al firmar electrÃ³nicamente, usted ratifica su <b>AutorizaciÃ³n para el tratamiento de datos personales</b> y la <b>DeclaraciÃ³n de Origen de Fondos</b> aceptadas en el primer y quinto paso de este formulario, conforme a la Ley 527 de 1999.
+                                    Al firmar electrónicamente, usted ratifica su <b>Autorización para el tratamiento de datos personales</b> y la <b>Declaración de Origen de Fondos</b> aceptadas en el primer y quinto paso de este formulario, conforme a la Ley 527 de 1999.
                                 </p>
 
                                 {!otpEnviado ? (
                                     <button className="btn-primary" style={{ margin: '0 auto' }} disabled={!terminosAceptados || cargando} onClick={enviarOTP}>
-                                        {cargando ? 'Generando cÃ³digo seguro...' : <><Smartphone size={18}/> Solicitar CÃ³digo de Firma OTP (Correo)</>}
+                                        {cargando ? 'Generando código seguro...' : <><Smartphone size={18}/> Solicitar Código de Firma OTP (Correo)</>}
                                     </button>
                                 ) : (
                                     <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
                                         <div style={{ background: 'var(--success-bg)', color: 'var(--success-text)', padding: '1rem', borderRadius: 'var(--radius-sm)', marginBottom: '1.5rem', fontWeight: '500' }}>
-                                            âœ“ CÃ³digo de 6 dÃ­gitos enviado por correo electrÃ³nico.
+                                            �S Código de 6 dígitos enviado por correo electrónico.
                                         </div>
                                         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '2rem' }}>
                                             <input type="text" maxLength={6} placeholder="Ej: 123456" value={codigoOTP} onChange={(e) => setCodigoOTP(e.target.value)} className="input-field" style={{ width: '150px', textAlign: 'center', fontSize: '1.25rem', letterSpacing: '0.2em' }} />
                                         </div>
                                         <button className="btn-primary" style={{ margin: '0 auto', background: 'var(--text-main)' }} onClick={handleSubmit} disabled={cargando}>
-                                            {cargando ? 'Firmando y evaluando antecedentes...' : 'Firmar ElectrÃ³nicamente y Enviar'}
+                                            {cargando ? 'Firmando y evaluando antecedentes...' : 'Firmar Electrónicamente y Enviar'}
                                         </button>
                                     </motion.div>
                                 )}
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-start' }}>
-                                    <button className="btn-outline" onClick={() => retrocederPaso()} disabled={cargando}><ArrowLeft size={18}/> AtrÃ¡s</button>
+                                    <button className="btn-outline" onClick={() => retrocederPaso()} disabled={cargando}><ArrowLeft size={18}/> Atrás</button>
                                 </div>
                             </motion.div>
                         )}
 
-                        {/* PASO 11: Ã‰XITO */}
+                        {/* PASO 11: �0XITO */}
                         {paso === 11 && resultadoApi && (
                             <motion.div key="p11" variants={formVariants} initial="hidden" animate="visible" exit="exit" style={{ textAlign: 'center', padding: '2rem 0' }}>
                                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', bounce: 0.5 }}>
@@ -1565,10 +1565,10 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
 
                                 <div style={{ background: '#1e293b', color: '#10b981', fontFamily: 'monospace', padding: '1.5rem', borderRadius: 'var(--radius-md)', textAlign: 'left', marginBottom: '2rem', fontSize: '0.85rem', wordBreak: 'break-all' }}>
                                     <div style={{ color: '#94a3b8', marginBottom: '0.5rem' }}>--- LEY 527 DE 1999 - AUDIT TRAIL & OTP LOG ---</div>
-                                    <div>[OK] TransacciÃ³n Hash (SHA-256): {auditHash}</div>
+                                    <div>[OK] Transacción Hash (SHA-256): {auditHash}</div>
                                     <div>[OK] Nombre y Documento registrados y verificados.</div>
-                                    <div>[OK] Identidad Autenticada vÃ­a Correo ElectrÃ³nico (OTP).</div>
-                                    <div>[OK] Trazabilidad IP y Timestamp registrada con Ã©xito.</div>
+                                    <div>[OK] Identidad Autenticada vía Correo Electrónico (OTP).</div>
+                                    <div>[OK] Trazabilidad IP y Timestamp registrada con éxito.</div>
                                     <div>[OK] ID Radicado Expediente: {resultadoApi?.id || 'N/A'}</div>
                                     <div style={{ color: resultadoApi?.estado_actual === 'ALERTA_CRITICA' ? '#ef4444' : '#10b981', marginTop: '0.5rem' }}>[RESULT] Estado: {resultadoApi?.estado_actual || 'FINALIZADO'} | Score: {resultadoApi?.score_riesgo || 0}/100</div>
                                 </div>
