@@ -7,7 +7,8 @@ const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { S3Client, PutObjectCommand, CopyObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, PutObjectCommand, CopyObjectCommand, GetObjectCommand, ListObjectsV2Command } = require('@aws-sdk/client-s3');
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { generarEvidenciaPDF } = require('./utils/pdfGenerator');
 const { calcularRiesgoConsolidado } = require('./utils/riskEngine');
 const { generarFormularioFinalPDF } = require('./utils/pdfFinalGenerator');
@@ -1477,6 +1478,50 @@ app.post('/api/v1/solicitudes/:id/devolver', async (req, res) => {
         });
     } catch (error) {
         return res.status(500).json({ error: "Error al devolver la solicitud", detalle: error.message });
+    }
+});
+
+app.get('/api/v1/archivos/explorar', async (req, res) => {
+    try {
+        const prefix = req.query.prefix || 'sagrilaft/';
+        const command = new ListObjectsV2Command({
+            Bucket: process.env.R2_BUCKET_NAME,
+            Prefix: prefix,
+            Delimiter: '/'
+        });
+        
+        const response = await s3Client.send(command);
+        
+        const folders = (response.CommonPrefixes || []).map(p => p.Prefix);
+        const files = (response.Contents || []).filter(f => f.Key !== prefix).map(f => ({
+            key: f.Key,
+            size: f.Size,
+            lastModified: f.LastModified
+        }));
+        
+        res.json({ folders, files, currentPrefix: prefix });
+    } catch (err) {
+        console.error("Error explorando R2:", err);
+        res.status(500).json({ error: "Error explorando el repositorio" });
+    }
+});
+
+app.post('/api/v1/archivos/firmar', async (req, res) => {
+    try {
+        const { key } = req.body;
+        if (!key) return res.status(400).json({ error: "Se requiere la key del archivo" });
+        
+        const command = new GetObjectCommand({
+            Bucket: process.env.R2_BUCKET_NAME,
+            Key: key
+        });
+        
+        // El enlace expira en 5 minutos (300 segundos)
+        const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 300 });
+        res.json({ url: signedUrl });
+    } catch (err) {
+        console.error("Error firmando URL:", err);
+        res.status(500).json({ error: "Error generando enlace seguro" });
     }
 });
 

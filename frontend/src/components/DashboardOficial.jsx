@@ -5,6 +5,7 @@ import { jsPDF } from 'jspdf';
 import { AREAS_Y_CARGOS } from '../utils/areasYCargos';
 import * as XLSX from 'xlsx';
 import autoTable from 'jspdf-autotable';
+import ExploradorDocumental from './ExploradorDocumental';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Search, Download, Filter, FileText, AlertTriangle, 
@@ -594,9 +595,12 @@ export default function DashboardOficial() {
                 className="card"
                 whileHover={{ y: -4, boxShadow: 'var(--shadow-lg)' }}
                 style={{ 
-                    padding: '1rem', marginBottom: '1rem', cursor: 'pointer',
+                    padding: '1rem', cursor: 'pointer',
                     borderLeft: `4px solid ${colorClase}`,
-                    position: 'relative'
+                    position: 'relative',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column'
                 }}
             >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
@@ -617,14 +621,14 @@ export default function DashboardOficial() {
                 </div>
                 
                 {sol.estado_actual === 'REVISION_PREVIA' && (
-                    <div style={{ marginTop: '1rem' }}>
+                    <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
                         <button 
                             className="btn-primary" 
                             style={{ width: '100%', padding: '0.5rem', fontSize: '0.8rem' }}
                             onClick={(e) => handleTusDatos(e, sol)}
                             disabled={cargandoTusDatos === sol.id}
                         >
-                            {cargandoTusDatos === sol.id ? '🔄 Consultando...' : '🚀 Ejecutar TusDatos'}
+                            {cargandoTusDatos === sol.id ? '⏳ Consultando...' : '🔎 Ejecutar TusDatos'}
                         </button>
                     </div>
                 )}
@@ -732,6 +736,12 @@ export default function DashboardOficial() {
                 >
                     Jurisdicciones (Regiones)
                 </button>
+                <button 
+                    onClick={() => setActiveTab('repositorio')}
+                    style={{ padding: '0.75rem 1.5rem', background: 'transparent', border: 'none', borderBottom: activeTab === 'repositorio' ? '2px solid var(--primary)' : '2px solid transparent', color: activeTab === 'repositorio' ? 'var(--primary)' : 'var(--text-muted)', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                    Repositorio Documental
+                </button>
             </div>
 
             
@@ -820,7 +830,7 @@ export default function DashboardOficial() {
                     })}
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem', alignItems: 'start' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem', alignItems: 'stretch' }}>
                     <AnimatePresence mode="popLayout">
                         {filtrarPorEstado(estadoActivo).map(sol => (
                             <motion.div
@@ -830,6 +840,7 @@ export default function DashboardOficial() {
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.9 }}
                                 transition={{ duration: 0.2 }}
+                                style={{ height: '100%' }}
                             >
                                 <TarjetaRadicado sol={sol} />
                             </motion.div>
@@ -1065,6 +1076,12 @@ export default function DashboardOficial() {
                             </table>
                         </div>
                     </div>
+                </div>
+            )}
+
+            {activeTab === 'repositorio' && (
+                <div style={{ animation: 'fadeIn 0.3s ease' }}>
+                    <ExploradorDocumental />
                 </div>
             )}
 

@@ -102,6 +102,16 @@ export const sagrilaftService = {
     recalcularScoresMasivo: async () => {
         const response = await api.post('/admin/recalcular-scores');
         return response.data;
+    },
+
+    explorarArchivos: async (prefix = 'sagrilaft/') => {
+        const response = await api.get('/archivos/explorar', { params: { prefix } });
+        return response.data;
+    },
+
+    firmarArchivoUrl: async (key) => {
+        const response = await api.post('/archivos/firmar', { key });
+        return response.data;
     }
 };
 
