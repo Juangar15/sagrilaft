@@ -408,6 +408,20 @@ export default function DashboardOficial() {
         }
     };
 
+    const abrirDocumentoSeguro = async (e, urlOriginal) => {
+        e.preventDefault();
+        try {
+            const urlObj = new URL(urlOriginal);
+            const key = urlObj.pathname.substring(1);
+            const res = await sagrilaftService.firmarArchivoUrl(key);
+            if (res.url) {
+                window.open(res.url, '_blank');
+            }
+        } catch (err) {
+            alert('Error al generar el enlace de acceso seguro.');
+        }
+    };
+
     const handleTusDatos = async (e, solicitud) => {
         e.stopPropagation(); // Evitar que abra la tarjeta
         setCargandoTusDatos(solicitud.id);
@@ -1277,7 +1291,7 @@ export default function DashboardOficial() {
                                                 <div style={{ marginTop: '1rem' }}>
                                                     <h5 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-main)', borderBottom: '2px solid var(--border)', paddingBottom: '0.25rem' }}>Archivos Adjuntos (Cloudflare R2)</h5>
                                                     {Object.entries(solicitudSeleccionada.datos_formulario.archivos_cargados).map(([k, v]) => {
-                                                        const urlLink = <a href={v} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 'bold' }}>Ver Documento 📄</a>;
+                                                        const urlLink = <a href="#" onClick={(e) => abrirDocumentoSeguro(e, v)} style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 'bold' }}>Ver Documento 📄</a>;
                                                         if (k === 'reporte_tusdatos') {
                                                             return (
                                                                 <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.4rem 0', borderBottom: '1px solid var(--border)', alignItems: 'center' }}>
