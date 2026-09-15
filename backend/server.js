@@ -1218,14 +1218,15 @@ async function copyFileInR2(sourceUrl, destinationFolder, filename) {
 app.post('/api/v1/solicitudes/:id/asignar-cargo', async (req, res) => {
     try {
         const { id } = req.params;
-        const { area_asignada, cargo_asignado, estado_vinculacion } = req.body;
+        // Fix: read 'area' and 'cargo' from req.body as that's what frontend sends
+        const { area, cargo, estado_vinculacion } = req.body;
         
         const { data: sol, error: errSol } = await supabase.from('solicitudes_sagrilaft').select('*').eq('id', id).single();
         if (errSol) throw errSol;
 
         let datosFormulario = sol.datos_formulario || {};
-        datosFormulario.area_asignada = area_asignada;
-        datosFormulario.cargo_asignado = cargo_asignado;
+        datosFormulario.area_asignada = area;
+        datosFormulario.cargo_asignado = cargo;
         datosFormulario.estado_vinculacion = estado_vinculacion;
 
         const { data, error } = await supabase.from('solicitudes_sagrilaft').update({ 

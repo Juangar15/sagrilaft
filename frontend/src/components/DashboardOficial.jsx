@@ -8,7 +8,7 @@ import autoTable from 'jspdf-autotable';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Search, Download, Filter, FileText, AlertTriangle, 
-    CheckCircle, Clock, X, Building2, User, Globe, ShieldCheck, Edit3, LogOut, ChevronDown, ChevronUp
+    CheckCircle, Clock, X, Building2, User, Globe, ShieldCheck, Edit3, LogOut, ChevronDown, ChevronUp, Briefcase
 } from 'lucide-react';
 
 export default function DashboardOficial() {
@@ -230,7 +230,18 @@ export default function DashboardOficial() {
             setCargando(true);
             await sagrilaftService.asignarCargo(solicitudSeleccionada.id, formAsignacion);
             showToast("Área y cargo asignados. Solicitud enviada a Revisión Previa.", "success");
-            setSolicitudSeleccionada({ ...solicitudSeleccionada, estado_actual: 'REVISION_PREVIA' });
+            
+            const updatedForm = { 
+                ...solicitudSeleccionada.datos_formulario, 
+                area_asignada: formAsignacion.area, 
+                cargo_asignado: formAsignacion.cargo,
+                estado_vinculacion: formAsignacion.estado_vinculacion
+            };
+            setSolicitudSeleccionada({ 
+                ...solicitudSeleccionada, 
+                estado_actual: 'REVISION_PREVIA',
+                datos_formulario: updatedForm
+            });
             
             const data = await sagrilaftService.obtenerSolicitudes();
             setSolicitudes(data || []);
@@ -596,6 +607,11 @@ export default function DashboardOficial() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '0.25rem' }}>
                     <Building2 size={14} /> {sol.tipo_vinculacion}
                 </div>
+                {sol.datos_formulario?.area_asignada && sol.datos_formulario?.cargo_asignado && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '0.25rem' }}>
+                        <Briefcase size={14} /> {sol.datos_formulario.area_asignada} - {sol.datos_formulario.cargo_asignado}
+                    </div>
+                )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
                     <Clock size={14} /> {new Date(sol.fecha_creacion).toLocaleDateString()}
                 </div>
@@ -1080,6 +1096,11 @@ export default function DashboardOficial() {
                                     <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                                         Entidad: {solicitudSeleccionada.razon_social} | NIT: {solicitudSeleccionada.nit_cedula}
                                     </p>
+                                    {solicitudSeleccionada.datos_formulario?.area_asignada && solicitudSeleccionada.datos_formulario?.cargo_asignado && (
+                                        <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                            <Briefcase size={14} /> {solicitudSeleccionada.datos_formulario.area_asignada} - {solicitudSeleccionada.datos_formulario.cargo_asignado}
+                                        </p>
+                                    )}
                                 </div>
                                 <button onClick={() => setSolicitudSeleccionada(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
                                     <X size={24} />
