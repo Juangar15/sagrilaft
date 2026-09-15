@@ -12,6 +12,7 @@ const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { generarEvidenciaPDF } = require('./utils/pdfGenerator');
 const { calcularRiesgoConsolidado } = require('./utils/riskEngine');
 const { generarFormularioFinalPDF } = require('./utils/pdfFinalGenerator');
+const { generarDeclaracionPEPPDF } = require('./utils/pdfPepGenerator');
 const multer = require('multer');
 const axios = require('axios');
 
@@ -389,6 +390,20 @@ app.post('/api/v1/onboarding', upload.any(), async (req, res) => {
 
         // Juntamos la metadata de archivos con el form
         formData.archivos_cargados = { ...formData.archivos_cargados, ...archivosSubidos };
+
+        // Generar PDF PEP si aplica
+        const isPepEmpleado = ['empleado', 'prestacion_servicios', 'contratista', 'accionista'].includes(formData.clase_vinculacion) && 
+            ['es_funcionario_publico', 'vinculo_familiar_pep', 'ejerce_poder_publico', 'maneja_recursos_publicos', 'goza_reconocimiento_publico', 'declara_ser_pep'].some(k => formData[k] === 'si');
+            
+        if (isPepEmpleado && process.env.R2_ACCOUNT_ID) {
+            try {
+                const pepPdfBuffer = await generarDeclaracionPEPPDF(formData);
+                const pepUrl = await uploadFileToR2(pepPdfBuffer, `Formato_PEP_${nit}.pdf`, `recepcion/${nit}`, 'application/pdf');
+                formData.archivos_cargados.formato_pep = pepUrl;
+            } catch (e) {
+                console.error("Error generando PDF PEP:", e);
+            }
+        }
 
         let resultId;
 
