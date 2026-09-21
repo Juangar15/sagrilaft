@@ -314,7 +314,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         }
     };
 
-    const nombreEmpresaFull = formData.empresa_destino === 'selecta' ? 'SELECTA COMPAÍA DE CEREALES S.A.S.' : 'COSECHAS BEBIDAS NATURALES S.A.S.';
+    const nombreEmpresaFull = formData.empresa_destino === 'selecta' ? 'SELECTA COMPAÑÍA DE CEREALES S.A.S.' : 'COSECHAS BEBIDAS NATURALES S.A.S.';
     const correoEmpresa = formData.empresa_destino === 'selecta' ? 'oficialdecumplimiento@cerealesselecta.com' : 'oficialdecumplimiento@cosechasexpress.com';
     const direccionEmpresa = formData.empresa_destino === 'selecta' ? 'CARRERA 48B NO. 99 SUR 59 La Estrella, en Antioquia' : 'CALLE 12 SUR # 50 G 21, Medellín, Antioquia';
     const isInternalRole = ['empleado', 'prestacion_servicios', 'contratista', 'accionista'].includes(formData.clase_vinculacion);
@@ -670,7 +670,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 )}
                                 <div style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: 'var(--radius-md)', textAlign: 'left', marginBottom: '2rem', border: '1px solid var(--border)' }}>
                                     <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1rem', textAlign: 'justify' }}>
-                                        <b>6. AUTORIZACIN PARA EL TRATAMIENTO DE DATOS PERSONALES</b><br/><br/>
+                                        <b>6. AUTORIZACIÓN PARA EL TRATAMIENTO DE DATOS PERSONALES</b><br/><br/>
                                         Dando cumplimiento a lo dispuesto en la Ley 1581 de 2012 "Por el cual se dictan disposiciones generales para la protección de datos personales" y de conformidad con lo señalado en el Decreto 1377 de 2013, con la firma de este documento manifiesto que he sido informado por {nombreEmpresaFull} de lo siguiente:<br/><br/>
                                         <ol style={{ margin: '0 0 1rem 1.5rem', padding: 0 }}>
                                             <li>{nombreEmpresaFull} actuará como responsable del tratamiento de los datos personales de los cuales soy titular y podrá recolectar, usar y tratar dichos datos conforme a su política de privacidad.</li>
@@ -1155,7 +1155,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                     </div>
                                     {formData.accionistas.map((acc, idx) => (
                                         <div key={idx} style={{ padding: '0.5rem', borderBottom: '1px solid var(--border)', fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <div>x {acc.nombre} (CC: {acc.identificacion}) - <b>{acc.porcentaje}%</b></div>
+                                            <div>× {acc.nombre} (CC: {acc.identificacion}) - <b>{acc.porcentaje}%</b></div>
                                             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                                                 Admin. Recursos: <b>{acc.administra_recursos === 'si' ? 'Sí' : 'No'}</b> | Reconoc. Público: <b>{acc.goza_reconocimiento === 'si' ? 'Sí' : 'No'}</b>
                                             </div>
@@ -1343,12 +1343,12 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                     <div style={{ background: 'var(--surface)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
                                         <h4 style={{ margin: '0 0 1rem 0' }}>Declaración de Origen de Fondos</h4>
                                         <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem', lineHeight: '1.5' }}>
-                                            <p>Declaro expresamente a {formData.empresa_destino === 'selecta' ? 'SELECTA COMPAÍA DE CEREALES' : 'COSECHAS BEBIDAS NATURALES S.A.S.'} que:</p>
+                                            <p>Declaro expresamente a {formData.empresa_destino === 'selecta' ? 'SELECTA COMPAÑÍA DE CEREALES' : 'COSECHAS BEBIDAS NATURALES S.A.S.'} que:</p>
                                             <ol style={{ margin: '0.5rem 0 0.5rem 1.5rem', padding: 0 }}>
                                                 <li>La información que he suministrado en este documento es veraz y verificable y me comprometo a actualizarla anualmente.</li>
                                                 <li>Tanto mis actividades, profesión u oficio son lícitas, las ejerzo dentro del marco legal y los recursos que poseo no provienen de actividades ilícitas de las contempladas en el Código Penal Colombiano o en cualquier norma que lo sustituya, adicione o modifique.</li>
                                                 <li>Los recursos que se deriven del desarrollo de este contrato, no serán destinados a la financiación del terrorismo, actividades terroristas o grupos terroristas.</li>
-                                                <li>Acepto que {formData.empresa_destino === 'selecta' ? 'SELECTA COMPAÍA DE CEREALES' : 'COSECHAS BEBIDAS NATURALES S.A.S.'} está en la obligación legal de solicitar las aclaraciones que estime pertinente, en el evento en que se presenten circunstancias con base en las cuales se pueda tener dudas razonables sobre mis transacciones, así como del origen de mis fondos, evento en el cual suministraré las aclaraciones que sean necesarias del caso.</li>
+                                                <li>Acepto que {formData.empresa_destino === 'selecta' ? 'SELECTA COMPAÑÍA DE CEREALES' : 'COSECHAS BEBIDAS NATURALES S.A.S.'} está en la obligación legal de solicitar las aclaraciones que estime pertinente, en el evento en que se presenten circunstancias con base en las cuales se pueda tener dudas razonables sobre mis transacciones, así como del origen de mis fondos, evento en el cual suministraré las aclaraciones que sean necesarias del caso.</li>
                                                 <li>Los recursos que poseo provienen de la(s) siguiente(s) actividad(es):</li>
                                             </ol>
                                         </div>
@@ -1517,7 +1517,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                             </motion.div>
                         )}
 
-                        {/* PASO 10: FIRMA ELECTRNICA OTP */}
+                        {/* PASO 10: FIRMA ELECTRÓNICA OTP */}
                         {paso === 10 && (
                             <motion.div key="p10" variants={formVariants} initial="hidden" animate="visible" exit="exit" style={{ textAlign: 'center' }}>
                                 <Lock size={48} color="var(--primary)" style={{ margin: '0 auto 1rem' }} />
@@ -1534,7 +1534,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 ) : (
                                     <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
                                         <div style={{ background: 'var(--success-bg)', color: 'var(--success-text)', padding: '1rem', borderRadius: 'var(--radius-sm)', marginBottom: '1.5rem', fontWeight: '500' }}>
-                                            ✅ Código de 6 dígitos enviado por correo electrónico.
+                                            ✅  Código de 6 dígitos enviado por correo electrónico.
                                         </div>
                                         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '2rem' }}>
                                             <input type="text" maxLength={6} placeholder="Ej: 123456" value={codigoOTP} onChange={(e) => setCodigoOTP(e.target.value)} className="input-field" style={{ width: '150px', textAlign: 'center', fontSize: '1.25rem', letterSpacing: '0.2em' }} />
