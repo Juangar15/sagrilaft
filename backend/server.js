@@ -979,11 +979,16 @@ const otpCache = new Map();
 // POST /api/v1/otp/send - Send OTP via Email
 app.post('/api/v1/otp/send', async (req, res) => {
     const { email, empresa_destino } = req.body;
-    if (!email) return res.status(400).json({ error: 'Falta correo electrónico' });
+    if (!email || typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        console.error("OTP fail, invalid email:", email);
+        return res.status(400).json({ error: "El correo electrónico proporcionado es inválido o está vacío. Por favor vuelva al Paso 2 y asegúrese de escribir un correo válido." });
+    }
+    console.log("OTP SEND -> email:", email, "type:", typeof email, "body:", req.body);
 
     const nombreEmpresaFull = empresa_destino === 'selecta' ? 'SELECTA COMPAÑÍA DE CEREALES S.A.S.' : 'COSECHAS BEBIDAS NATURALES S.A.S.';
     const aliasEmpresa = empresa_destino === 'selecta' ? 'Selecta Compliance' : 'Cosechas Compliance';
 
+    console.log('EMAIL RECIBIDO PARA OTP:', email, 'TIPO:', typeof email);
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     otpCache.set(email, { code, expiresAt: Date.now() + 15 * 60 * 1000, ip: req.ip });
 

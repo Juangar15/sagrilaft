@@ -393,6 +393,10 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                     showToast("Faltan campos obligatorios de identificación personal.");
                     return false;
                 }
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.correo_electronico)) {
+                    showToast("El correo electrónico ingresado no tiene un formato válido (ej. correo@empresa.com).");
+                    return false;
+                }
                 if (!isInternalRole && (!d.actividad_economica_principal || !d.codigo_ciiu)) {
                     showToast("Faltan campos obligatorios: Actividad Económica y Código CIIU.");
                     return false;
