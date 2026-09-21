@@ -435,12 +435,13 @@ app.post('/api/v1/onboarding', upload.any(), async (req, res) => {
             // Mantenemos la última firma en audit_info para fácil acceso, y el historial completo en historial_firmas
             formData.historial_firmas = historialAnterior;
 
+            const estado_inicial = ['empleado', 'prestacion_servicios', 'contratista', 'accionista'].includes(tipo_vinculacion) ? 'ASIGNACION_CARGO' : 'REVISION_PREVIA';
             const { error: errUpdate } = await supabase
                 .from('solicitudes_sagrilaft')
                 .update({
                     datos_formulario: formData,
                     campos_a_corregir: {}, // Limpiamos correcciones
-                    estado_actual: 'ASIGNACION_CARGO',
+                    estado_actual: estado_inicial,
                     razon_social: razon_social,
                     nit_cedula: nit
                 })
@@ -454,13 +455,14 @@ app.post('/api/v1/onboarding', upload.any(), async (req, res) => {
                 formData.historial_firmas = [{ ...formData.audit_info, tipo: 'FIRMA_INICIAL' }];
             }
 
+            const estado_inicial = ['empleado', 'prestacion_servicios', 'contratista', 'accionista'].includes(tipo_vinculacion) ? 'ASIGNACION_CARGO' : 'REVISION_PREVIA';
             const { data: nuevaSolicitud, error: errorSolicitud } = await supabase
                 .from('solicitudes_sagrilaft')
                 .insert([{
                     nit_cedula: nit,
                     razon_social: razon_social,
                     tipo_vinculacion: tipo_vinculacion,
-                    estado_actual: 'ASIGNACION_CARGO',
+                    estado_actual: estado_inicial,
                     token_asociado: token,
                     datos_formulario: formData
                 }])
@@ -471,13 +473,14 @@ app.post('/api/v1/onboarding', upload.any(), async (req, res) => {
             resultId = nuevaSolicitud.id;
         }
 
+        const estado_inicial = ['empleado', 'prestacion_servicios', 'contratista', 'accionista'].includes(tipo_vinculacion) ? 'ASIGNACION_CARGO' : 'REVISION_PREVIA';
         // Retornamos éxito inmediatamente
         return res.status(201).json({
-            mensaje: "Formulario recibido exitosamente. En asignación de cargo.",
+            mensaje: "Formulario recibido exitosamente.",
             resultado: {
                 id: resultId,
-                estado: "ASIGNACION_CARGO",
-                mensaje: "El área de cumplimiento asignará el cargo antes de continuar."
+                estado: estado_inicial,
+                mensaje: estado_inicial === 'ASIGNACION_CARGO' ? "El área de cumplimiento asignará el cargo antes de continuar." : "El formulario ha pasado a revisión previa."
             }
         });
 

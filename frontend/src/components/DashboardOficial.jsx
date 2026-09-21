@@ -412,7 +412,7 @@ export default function DashboardOficial() {
         e.preventDefault();
         try {
             const urlObj = new URL(urlOriginal);
-            const key = urlObj.pathname.substring(1);
+            const key = decodeURIComponent(urlObj.pathname.substring(1));
             const res = await sagrilaftService.firmarArchivoUrl(key);
             if (res.url) {
                 window.open(res.url, '_blank');

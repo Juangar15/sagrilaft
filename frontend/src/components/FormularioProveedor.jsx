@@ -148,6 +148,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         nit_digito: '',
         accionistas_confidencial: false,
         cert_laft_aceptado: false,
+        cert_pep_aceptado: false,
         cert_laft_razon: ''
     });
 
@@ -517,6 +518,22 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                     showToast(`El documento de soporte es obligatorio. Por favor suba todos los archivos antes de continuar.`);
                     return false;
                 }
+            }
+        }
+        if (pasoActual === 15 || pasoActual === 16) {
+            if (!d.cert_pep_aceptado) {
+                showToast("Debe aceptar y firmar la declaración PEP para continuar.");
+                return false;
+            }
+        }
+        if (pasoActual === 17) {
+            if (!d.cert_laft_razon) {
+                showToast("Debe ingresar la razón por la cual no comparte la información accionaria.");
+                return false;
+            }
+            if (!d.cert_laft_aceptado) {
+                showToast("Debe aceptar y firmar la certificación LA/FT para continuar.");
+                return false;
             }
         }
         return true;
@@ -951,6 +968,11 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                         <li>Exonero de toda responsabilidad a {nombreEmpresaFull}, si se llegare a presentar en mi nombre o de la empresa, cualquier asomo de ilegalidad en nuestras actividades, teniendo la certeza lo único que hace es prestarnos un servicio bajo la exclusiva responsabilidad de nuestra parte por los valores entregados y su procedencia.</li>
                                     </ol>
                                 </div>
+                                
+                                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '1rem', background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', marginBottom: '1rem' }}>
+                                    <input type="checkbox" checked={formData.cert_pep_aceptado === true} onChange={(e) => setFormData({...formData, cert_pep_aceptado: e.target.checked})} style={{ marginTop: '0.25rem', width: '18px', height: '18px' }} />
+                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}><strong>Acepto y firmo electrónicamente</strong> la presente Declaración de Persona Expuesta Públicamente y Origen de Fondos.</span>
+                                </label>
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
                                     <button type="button" className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
                                     <button className="btn-primary" onClick={() => avanzarPaso()}>Siguiente <ArrowRight size={18}/></button>
@@ -1467,6 +1489,11 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                         <li>Exonero de toda responsabilidad a {nombreEmpresaFull}, si se llegare a presentar en mi nombre o de la empresa, cualquier asomo de ilegalidad en nuestras actividades, teniendo la certeza lo único que hace es prestarnos un servicio bajo la exclusiva responsabilidad de nuestra parte por los valores entregados y su procedencia.</li>
                                     </ol>
                                 </div>
+                                
+                                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '1rem', background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', marginBottom: '1rem' }}>
+                                    <input type="checkbox" checked={formData.cert_pep_aceptado === true} onChange={(e) => setFormData({...formData, cert_pep_aceptado: e.target.checked})} style={{ marginTop: '0.25rem', width: '18px', height: '18px' }} />
+                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}><strong>Acepto y firmo electrónicamente</strong> la presente Declaración de Persona Expuesta Públicamente y Origen de Fondos.</span>
+                                </label>
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
                                     <button type="button" className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
                                     <button className="btn-primary" onClick={() => avanzarPaso()}>Siguiente <ArrowRight size={18}/></button>
