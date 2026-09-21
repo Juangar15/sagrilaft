@@ -325,7 +325,11 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
             setOtpEnviado(true);
             showToast("Código de firma enviado a su correo electrónico.");
         } catch (error) {
-            showToast(error.message);
+            if (error.message === 'Network Error') {
+                showToast("Error de red: La conexión falló o los archivos adjuntos son demasiado pesados para el servidor.");
+            } else {
+                showToast(error.message);
+            }
         } finally {
             setCargando(false);
         }
@@ -602,7 +606,11 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
             setResultadoApi(response.resultado);
             setPaso(11);
         } catch (error) {
-            showToast(error.message);
+            if (error.message === 'Network Error') {
+                showToast("Error de red: La conexión falló o los archivos adjuntos son demasiado pesados para el servidor.");
+            } else {
+                showToast(error.message);
+            }
         } finally {
             setCargando(false);
         }
