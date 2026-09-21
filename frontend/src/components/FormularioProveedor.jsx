@@ -286,6 +286,12 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         resetStateFn(emptyState);
     };
 
+    const handleRemoveList = (listName, index) => {
+        const arr = [...(formData[listName] || [])];
+        arr.splice(index, 1);
+        setFormData({...formData, [listName]: arr});
+    };
+
     const enviarOTP = async () => {
         setCargando(true);
         try {
@@ -813,7 +819,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 )}
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
-                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
+                                    <button type="button" className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
                                     <button className="btn-primary" onClick={() => avanzarPaso()}>Siguiente <ArrowRight size={18}/></button>
                                 </div>
                             </motion.div>
@@ -840,7 +846,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 </div>
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
-                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
+                                    <button type="button" className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
                                     <button className="btn-primary" onClick={() => avanzarPaso()}>Siguiente <ArrowRight size={18}/></button>
                                 </div>
                             </motion.div>
@@ -866,11 +872,12 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                             <div style={{flex:2}}><label className="label">Nombres y Apellidos</label><input type="text" value={nuevoFamiliarPep.nombre} onChange={e=>setNuevoFamiliarPep({...nuevoFamiliarPep, nombre: e.target.value})} className="input-field"/></div>
                                             <div style={{flex:1.5}}><label className="label">Cédula o Identificación</label><input type="text" value={nuevoFamiliarPep.identificacion} onChange={e=>setNuevoFamiliarPep({...nuevoFamiliarPep, identificacion: e.target.value})} className="input-field"/></div>
                                             <div style={{flex:1.5}}><label className="label">Parentesco</label><input type="text" value={nuevoFamiliarPep.parentesco} onChange={e=>setNuevoFamiliarPep({...nuevoFamiliarPep, parentesco: e.target.value})} className="input-field"/></div>
-                                            <button className="btn-outline" onClick={() => handleAddList('pep_familiares_extendido', nuevoFamiliarPep, setNuevoFamiliarPep, {nombre:'', identificacion:'', parentesco:''})}>+ Añadir</button>
+                                            <button type="button" className="btn-outline" onClick={() => handleAddList('pep_familiares_extendido', nuevoFamiliarPep, setNuevoFamiliarPep, {nombre:'', identificacion:'', parentesco:''})}>+ Añadir</button>
                                         </div>
                                         {formData.pep_familiares_extendido.map((fam, idx) => (
-                                            <div key={idx} style={{ padding: '0.5rem', borderBottom: '1px solid var(--border)', fontSize: '0.9rem' }}>
-                                                ⬢ {fam.nombre} - CC: {fam.identificacion} - <b>{fam.parentesco}</b>
+                                            <div key={idx} style={{ padding: '0.5rem', borderBottom: '1px solid var(--border)', fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <div>• {fam.nombre} - CC: {fam.identificacion} - <b>{fam.parentesco}</b></div>
+                                                <button type="button" className="btn-outline" style={{ padding: '0.2rem 0.5rem', fontSize: '0.8rem', color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => handleRemoveList('pep_familiares_extendido', idx)}>Eliminar</button>
                                             </div>
                                         ))}
                                     </div>
@@ -891,7 +898,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                     </ol>
                                 </div>
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
-                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
+                                    <button type="button" className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
                                     <button className="btn-primary" onClick={() => avanzarPaso()}>Siguiente <ArrowRight size={18}/></button>
                                 </div>
                             </motion.div>
@@ -953,14 +960,19 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                             <div style={{flex:0.5}}><input placeholder="Moneda" value={nuevoProdExt.moneda} onChange={e=>setNuevoProdExt({...nuevoProdExt, moneda: e.target.value})} className="input-field"/></div>
                                             <div style={{flex:1}}><input placeholder="Monto" type="number" value={nuevoProdExt.monto} onChange={e=>setNuevoProdExt({...nuevoProdExt, monto: e.target.value})} className="input-field"/></div>
                                             <div style={{flex:1}}><input placeholder="País" value={nuevoProdExt.pais} onChange={e=>setNuevoProdExt({...nuevoProdExt, pais: e.target.value})} className="input-field"/></div>
-                                            <button className="btn-outline" onClick={()=>handleAddList('productos_exterior', nuevoProdExt, setNuevoProdExt, {tipo:'', identificacion:'', monto:'', moneda:'', entidad:'', ciudad:'', pais:''})}>Añadir</button>
+                                            <button type="button" className="btn-outline" onClick={()=>handleAddList('productos_exterior', nuevoProdExt, setNuevoProdExt, {tipo:'', identificacion:'', monto:'', moneda:'', entidad:'', ciudad:'', pais:''})}>Añadir</button>
                                         </div>
-                                        {formData.productos_exterior.map((prod, idx) => <div key={idx} style={{fontSize:'0.85rem', color:'var(--text-muted)'}}>⬢ {prod.tipo} ({prod.entidad}) - {prod.moneda} {prod.monto} en {prod.pais}</div>)}
+                                        {formData.productos_exterior.map((prod, idx) => (
+                                            <div key={idx} style={{fontSize:'0.85rem', color:'var(--text-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.25rem 0', borderBottom: '1px solid var(--border)'}}>
+                                                <div>• {prod.tipo} ({prod.entidad}) - {prod.moneda} {prod.monto} en {prod.pais}</div>
+                                                <button type="button" className="btn-outline" style={{ padding: '0.2rem 0.5rem', fontSize: '0.8rem', color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => handleRemoveList('productos_exterior', idx)}>Eliminar</button>
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
-                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
+                                    <button type="button" className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
                                     <button className="btn-primary" onClick={() => avanzarPaso(formData.tipo_persona === 'juridica' ? 4 : 5)}>Siguiente <ArrowRight size={18}/></button>
                                 </div>
                             </motion.div>
@@ -1060,7 +1072,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 )}
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
-                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
+                                    <button type="button" className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
                                     <button className="btn-primary" onClick={() => avanzarPaso()}>Siguiente <ArrowRight size={18}/></button>
                                 </div>
                             </motion.div>
@@ -1119,7 +1131,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 </div>
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
-                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
+                                    <button type="button" className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
                                     <button className="btn-primary" onClick={() => avanzarPaso()}>Siguiente <ArrowRight size={18}/></button>
                                 </div>
                             </motion.div>
@@ -1151,14 +1163,15 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                                 <option value="si">Sí</option>
                                             </select>
                                         </div>
-                                        <button className="btn-outline" style={{ padding: '0.55rem 1rem' }} onClick={() => handleAddList('accionistas', nuevoAccionista, setNuevoAccionista, {tipo_id:'cc', identificacion:'', nombre:'', porcentaje:'', administra_recursos:'no', goza_reconocimiento:'no'})}>+ Agregar</button>
+                                        <button type="button" className="btn-outline" style={{ padding: '0.55rem 1rem' }} onClick={() => handleAddList('accionistas', nuevoAccionista, setNuevoAccionista, {tipo_id:'cc', identificacion:'', nombre:'', porcentaje:'', administra_recursos:'no', goza_reconocimiento:'no'})}>+ Agregar</button>
                                     </div>
                                     {formData.accionistas.map((acc, idx) => (
-                                        <div key={idx} style={{ padding: '0.5rem', borderBottom: '1px solid var(--border)', fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <div>× {acc.nombre} (CC: {acc.identificacion}) - <b>{acc.porcentaje}%</b></div>
+                                        <div key={idx} style={{ padding: '0.5rem', borderBottom: '1px solid var(--border)', fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+                                            <div style={{flex: 1}}>• {acc.nombre} (CC: {acc.identificacion}) - <b>{acc.porcentaje}%</b></div>
                                             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                                                 Admin. Recursos: <b>{acc.administra_recursos === 'si' ? 'Sí' : 'No'}</b> | Reconoc. Público: <b>{acc.goza_reconocimiento === 'si' ? 'Sí' : 'No'}</b>
                                             </div>
+                                            <button type="button" className="btn-outline" style={{ padding: '0.2rem 0.5rem', fontSize: '0.8rem', color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => handleRemoveList('accionistas', idx)}>Eliminar</button>
                                         </div>
                                     ))}
                                 </div>
@@ -1183,7 +1196,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 </div>
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
-                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
+                                    <button type="button" className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
                                     <button className="btn-primary" onClick={() => avanzarPaso()}>Siguiente <ArrowRight size={18}/></button>
                                 </div>
                             </motion.div>
@@ -1203,9 +1216,14 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                             <div style={{flex:1}}><input placeholder="Ciudad" value={nuevaRefComercial.ciudad} onChange={e=>setNuevaRefComercial({...nuevaRefComercial, ciudad: e.target.value})} className="input-field"/></div>
                                             <div style={{flex:1}}><input placeholder="Contacto" value={nuevaRefComercial.contacto} onChange={e=>setNuevaRefComercial({...nuevaRefComercial, contacto: e.target.value})} className="input-field"/></div>
                                             <div style={{flex:1}}><input placeholder="Teléfono" value={nuevaRefComercial.telefono} onChange={e=>setNuevaRefComercial({...nuevaRefComercial, telefono: e.target.value})} className="input-field"/></div>
-                                            <button className="btn-outline" onClick={()=>handleAddList('referencias_comerciales', nuevaRefComercial, setNuevaRefComercial, {referencia:'', direccion:'', ciudad:'', contacto:'', telefono:''})}>Añadir</button>
+                                            <button type="button" className="btn-outline" onClick={()=>handleAddList('referencias_comerciales', nuevaRefComercial, setNuevaRefComercial, {referencia:'', direccion:'', ciudad:'', contacto:'', telefono:''})}>Añadir</button>
                                         </div>
-                                        {formData.referencias_comerciales.map((ref, idx) => <div key={idx} style={{fontSize:'0.9rem', color:'var(--text-muted)'}}>⬢ {ref.referencia} - {ref.contacto} - Tel: {ref.telefono} - {ref.ciudad}</div>)}
+                                        {formData.referencias_comerciales.map((ref, idx) => (
+                                            <div key={idx} style={{fontSize:'0.9rem', color:'var(--text-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.25rem 0', borderBottom: '1px solid var(--border)'}}>
+                                                <div>• {ref.referencia} - {ref.contacto} - Tel: {ref.telefono} - {ref.ciudad}</div>
+                                                <button type="button" className="btn-outline" style={{ padding: '0.2rem 0.5rem', fontSize: '0.8rem', color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => handleRemoveList('referencias_comerciales', idx)}>Eliminar</button>
+                                            </div>
+                                        ))}
                                     </div>
 
                                     <div>
@@ -1220,14 +1238,19 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                             </div>
                                             <div style={{flex:1}}><input placeholder="Ciudad" value={nuevaRefBancaria.ciudad} onChange={e=>setNuevaRefBancaria({...nuevaRefBancaria, ciudad: e.target.value})} className="input-field"/></div>
                                             <div style={{flex:1}}><input placeholder="Teléfono" value={nuevaRefBancaria.telefono} onChange={e=>setNuevaRefBancaria({...nuevaRefBancaria, telefono: e.target.value})} className="input-field"/></div>
-                                            <button className="btn-outline" onClick={()=>handleAddList('referencias_bancarias', nuevaRefBancaria, setNuevaRefBancaria, {banco:'', cuenta:'', tipo:'Ahorros', ciudad:'', telefono:''})}>Añadir</button>
+                                            <button type="button" className="btn-outline" onClick={()=>handleAddList('referencias_bancarias', nuevaRefBancaria, setNuevaRefBancaria, {banco:'', cuenta:'', tipo:'Ahorros', ciudad:'', telefono:''})}>Añadir</button>
                                         </div>
-                                        {formData.referencias_bancarias.map((ref, idx) => <div key={idx} style={{fontSize:'0.9rem', color:'var(--text-muted)'}}>⬢ {ref.banco} - {ref.tipo} No. {ref.cuenta} - {ref.ciudad}</div>)}
+                                        {formData.referencias_bancarias.map((ref, idx) => (
+                                            <div key={idx} style={{fontSize:'0.9rem', color:'var(--text-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.25rem 0', borderBottom: '1px solid var(--border)'}}>
+                                                <div>• {ref.banco} - {ref.tipo} No. {ref.cuenta} - {ref.ciudad}</div>
+                                                <button type="button" className="btn-outline" style={{ padding: '0.2rem 0.5rem', fontSize: '0.8rem', color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => handleRemoveList('referencias_bancarias', idx)}>Eliminar</button>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
-                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
+                                    <button type="button" className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
                                     <button className="btn-primary" onClick={() => avanzarPaso()}>Siguiente <ArrowRight size={18}/></button>
                                 </div>
                             </motion.div>
@@ -1254,7 +1277,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 </div>
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
-                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
+                                    <button type="button" className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
                                     <button className="btn-primary" onClick={() => avanzarPaso()}>Siguiente <ArrowRight size={18}/></button>
                                 </div>
                             </motion.div>
@@ -1328,7 +1351,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 </div>
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
-                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
+                                    <button type="button" className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
                                     <button className="btn-primary" onClick={() => avanzarPaso()}>Siguiente <ArrowRight size={18}/></button>
                                 </div>
                             </motion.div>
@@ -1357,7 +1380,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 </div>
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
-                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
+                                    <button type="button" className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
                                     <button className="btn-primary" onClick={() => avanzarPaso()}>Siguiente <ArrowRight size={18}/></button>
                                 </div>
                             </motion.div>
@@ -1494,7 +1517,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 </div>
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
-                                    <button className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
+                                    <button type="button" className="btn-outline" onClick={() => retrocederPaso()}><ArrowLeft size={18}/> Atrás</button>
                                     <button className="btn-primary" onClick={() => {
                                         // Validación de que todos están cargados (menos el bancario)
                                         let reqs = [];
@@ -1546,7 +1569,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 )}
 
                                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-start' }}>
-                                    <button className="btn-outline" onClick={() => retrocederPaso()} disabled={cargando}><ArrowLeft size={18}/> Atrás</button>
+                                    <button type="button" className="btn-outline" onClick={() => retrocederPaso()} disabled={cargando}><ArrowLeft size={18}/> Atrás</button>
                                 </div>
                             </motion.div>
                         )}
@@ -1578,7 +1601,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 </div>
 
                                 <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                                    <button className="btn-outline" onClick={() => window.location.reload()}>Finalizar y Salir</button>
+                                    <button type="button" className="btn-outline" onClick={() => window.location.reload()}>Finalizar y Salir</button>
                                 </div>
                             </motion.div>
                         )}
