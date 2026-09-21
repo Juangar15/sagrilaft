@@ -9,14 +9,21 @@ async function generarDeclaracionPEPPDF(formData) {
             doc.on('data', buffers.push.bind(buffers));
             doc.on('end', () => resolve(Buffer.concat(buffers)));
 
-            const empresaFull = formData.empresa_destino === 'selecta' ? 'SELECTA COMPAÑIA DE CEREALES S.A.S' : 'COSECHAS BEBIDAS NATURALES S.A.S';
+            const empresaFull = formData.empresa_destino === 'selecta' ? 'SELECTA COMPAÑÍA DE CEREALES S.A.S.' : 'EMPAQUES ANTIOQUIA S.A.S.';
             const municipio = formData.empresa_destino === 'selecta' ? 'la Estrella' : 'Medellín';
 
             doc.fontSize(14).font('Helvetica-Bold').text('FORMATO PERSONA PÚBLICA O POLÍTICAMENTE EXPUESTA', { align: 'center' });
             doc.moveDown(2);
 
+            const nombreFirma = formData.tipo_persona === 'juridica' 
+                ? `${formData.rep_legal_nombres || ''} ${formData.rep_legal_primer_apellido || ''} ${formData.rep_legal_segundo_apellido || ''}`.trim()
+                : `${formData.nombres || ''} ${formData.primer_apellido || ''} ${formData.segundo_apellido || ''}`.trim();
+            const cedula = formData.tipo_persona === 'juridica' ? formData.rep_legal_numero_id : formData.numero_identificacion;
+            const exp = formData.tipo_persona === 'juridica' ? (formData.rep_legal_lugar_expedicion || '_______________') : (formData.lugar_expedicion || '_______________');
+            const razon = formData.representacion_de || formData.razon_social || '_______________';
+
             doc.fontSize(10).font('Helvetica');
-            const p1 = `Yo ${formData.nombres || ''} ${formData.primer_apellido || ''} ${formData.segundo_apellido || ''} identificado(a) con cédula de ciudadanía No ${formData.numero_identificacion} expedida en ${formData.lugar_expedicion || '_______________'} actuando en mi nombre y/o en representación de ${formData.razon_social || '_______________'} y dando certeza de que todo lo consignado aquí es cierto, realizo la siguiente declaración de origen de fondos con el propósito de dar cumplimiento a lo señalado en la circular externa 07 de 1996 de la Superfinanciera, el estatuto orgánico del sistema financiero EOSF decreto 663 de 1993, ley 190 de 1996 y para dar cumplimiento a lo establecido en la circular externa 100-000016 del 24 de diciembre del 2020 de la Superintendencia de Sociedades, la ley 1121 de 2006 y demás normas concordantes.`;
+            const p1 = `Yo ${nombreFirma} identificado(a) con cédula de ciudadanía No ${cedula} expedida en ${exp} actuando en mi nombre y/o en representación de ${razon} y dando certeza de que todo lo consignado aquí es cierto, realizo la siguiente declaración de origen de fondos con el propósito de dar cumplimiento a lo señalado en la circular externa 07 de 1996 de la Superfinanciera, el estatuto orgánico del sistema financiero EOSF decreto 663 de 1993, ley 190 de 1996 y para dar cumplimiento a lo establecido en la circular externa 100-000016 del 24 de diciembre del 2020 de la Superintendencia de Sociedades, la ley 1121 de 2006 y demás normas concordantes.`;
             doc.text(p1, { align: 'justify' });
             doc.moveDown();
 
@@ -68,8 +75,8 @@ async function generarDeclaracionPEPPDF(formData) {
             doc.text('FIRMA ELECTRÓNICA Y ACEPTACIÓN');
             doc.font('Helvetica').fontSize(9);
             const authInfo = formData.audit_info || {};
-            doc.text(`Nombre: ${formData.nombres || ''} ${formData.primer_apellido || ''}`);
-            doc.text(`Identificación: ${formData.numero_identificacion}`);
+            doc.text(`Nombre: ${nombreFirma}`);
+            doc.text(`Identificación: ${cedula}`);
             doc.text(`Fecha y Hora: ${authInfo.timestamp || new Date().toISOString()}`);
             doc.text(`IP de Origen: ${authInfo.ip || 'Registrada en plataforma'}`);
             doc.text(`Geolocalización: ${authInfo.location?.latitude || 'N/A'}, ${authInfo.location?.longitude || 'N/A'}`);

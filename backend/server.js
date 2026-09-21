@@ -13,6 +13,7 @@ const { generarEvidenciaPDF } = require('./utils/pdfGenerator');
 const { calcularRiesgoConsolidado } = require('./utils/riskEngine');
 const { generarFormularioFinalPDF } = require('./utils/pdfFinalGenerator');
 const { generarDeclaracionPEPPDF } = require('./utils/pdfPepGenerator');
+const { generarCertificadoLAFTPDF } = require('./utils/pdfLaftGenerator');
 const multer = require('multer');
 const axios = require('axios');
 
@@ -391,17 +392,27 @@ app.post('/api/v1/onboarding', upload.any(), async (req, res) => {
         // Juntamos la metadata de archivos con el form
         formData.archivos_cargados = { ...formData.archivos_cargados, ...archivosSubidos };
 
-        // Generar PDF PEP si aplica
-        const isPepEmpleado = ['empleado', 'prestacion_servicios', 'contratista', 'accionista'].includes(formData.clase_vinculacion) && 
-            ['es_funcionario_publico', 'vinculo_familiar_pep', 'ejerce_poder_publico', 'maneja_recursos_publicos', 'goza_reconocimiento_publico', 'declara_ser_pep'].some(k => formData[k] === 'si');
+        // Generar PDF PEP si aplica (para empleados y terceros)
+        const isPep = ['es_funcionario_publico', 'vinculo_familiar_pep', 'ejerce_poder_publico', 'maneja_recursos_publicos', 'goza_reconocimiento_publico', 'declara_ser_pep'].some(k => formData[k] === 'si');
             
-        if (isPepEmpleado && process.env.R2_ACCOUNT_ID) {
+        if (isPep && process.env.R2_ACCOUNT_ID) {
             try {
                 const pepPdfBuffer = await generarDeclaracionPEPPDF(formData);
                 const pepUrl = await uploadFileToR2(pepPdfBuffer, `Formato_PEP_${nit}.pdf`, `recepcion/${nit}`, 'application/pdf');
                 formData.archivos_cargados.formato_pep = pepUrl;
             } catch (e) {
                 console.error("Error generando PDF PEP:", e);
+            }
+        }
+        
+        // Generar PDF Certificacion LA/FT si aplica (terceros juridicos)
+        if (formData.accionistas_confidencial && formData.cert_laft_aceptado && process.env.R2_ACCOUNT_ID) {
+            try {
+                const laftPdfBuffer = await generarCertificadoLAFTPDF(formData);
+                const laftUrl = await uploadFileToR2(laftPdfBuffer, `Certificacion_LAFT_${nit}.pdf`, `recepcion/${nit}`, 'application/pdf');
+                formData.archivos_cargados.certificacion_laft = laftUrl;
+            } catch (e) {
+                console.error("Error generando PDF LAFT:", e);
             }
         }
 

@@ -358,8 +358,8 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
             return [
                 { id: 1, label: 'Inicio' },
                 { id: 2, label: 'Identificación' },
-                { id: 4, label: 'Accionistas y PEP', condition: f => f.tipo_persona === 'juridica' },
                 { id: 3, label: 'Financiera' },
+                { id: 4, label: 'Accionistas y PEP', condition: f => f.tipo_persona === 'juridica' },
                 { id: 16, label: 'Declaración PEP', condition: () => isPepTercero },
                 { id: 17, label: 'Cert. LA/FT', condition: f => f.accionistas_confidencial === true },
                 { id: 5, label: 'Referencias' },
@@ -994,7 +994,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                                 {value: 'exportacion', label: 'Exportación'},
                                                 {value: 'giros', label: 'Giros'},
                                                 {value: 'transferencias', label: 'Transferencias'},
-                                                {value: 'prestamos', label: 'Préstamos en m.e.'},
+                                                {value: 'prestamos', label: 'Préstamos en M.E.'},
                                                 {value: 'inversiones', label: 'Inversiones extranjeras'},
                                                 {value: 'ninguno', label: 'Ninguno de los anteriores'}
                                             ])}
@@ -1482,7 +1482,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 
                                 <div style={{ background: 'var(--surface)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', marginBottom: '1.5rem', fontSize: '0.85rem', lineHeight: '1.8', color: 'var(--text-main)' }}>
                                     <p><strong>Ciudad:</strong> {formData.ciudad_juridica || formData.ciudad || '___________'}, {new Date().getFullYear()}</p>
-                                    <p><strong>Señores</strong><br/>{nombreEmpresaFull}<br/>Ciudad.</p>
+                                    <p><strong>Señores</strong><br/>{nombreEmpresaFull}<br/>{formData.empresa_destino === 'selecta' ? 'La Estrella, Antioquia' : 'Medellín, Antioquia'}</p>
                                     <p><strong>Asunto: Certificación.</strong></p>
                                     <p>Cordial saludo,</p>
                                     <p style={{ textAlign: 'justify' }}>
@@ -1506,8 +1506,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                     <div style={{ borderTop: '2px solid var(--border)', marginTop: '2rem', paddingTop: '1.5rem' }}>
                                         <p><strong>Cordialmente,</strong></p>
                                         <div style={{ marginTop: '1rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                                            <div>____________________________________</div>
-                                            <div style={{ marginTop: '0.25rem' }}>FIRMA</div>
+                                            <div style={{ marginBottom: '0.5rem' }}>☑ <strong>Firmado electrónicamente aceptando los términos</strong></div>
                                             <div><strong>{`${formData.rep_legal_nombres || ''} ${formData.rep_legal_primer_apellido || ''}`.trim()}</strong></div>
                                             <div>{formData.razon_social || ''}</div>
                                             <div>NIT: {formData.numero_identificacion || ''}{formData.nit_digito ? `-${formData.nit_digito}` : ''}</div>
@@ -1538,16 +1537,16 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                     <div style={{ background: 'var(--surface)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
                                         <h4 style={{ margin: '0 0 1rem 0' }}>Declaración de Origen de Fondos</h4>
                                         <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem', lineHeight: '1.5' }}>
-                                            <p>Declaro expresamente a {formData.empresa_destino === 'selecta' ? 'SELECTA COMPAÑÍA DE CEREALES' : 'COSECHAS BEBIDAS NATURALES S.A.S.'} que:</p>
+                                            <p>Declaro expresamente a <strong>{nombreEmpresaFull}</strong> que:</p>
                                             <ol style={{ margin: '0.5rem 0 0.5rem 1.5rem', padding: 0 }}>
                                                 <li>La información que he suministrado en este documento es veraz y verificable y me comprometo a actualizarla anualmente.</li>
                                                 <li>Tanto mis actividades, profesión u oficio son lícitas, las ejerzo dentro del marco legal y los recursos que poseo no provienen de actividades ilícitas de las contempladas en el Código Penal Colombiano o en cualquier norma que lo sustituya, adicione o modifique.</li>
-                                                <li>Los recursos que se deriven del desarrollo de este contrato, no serán destinados a la financiación del terrorismo, actividades terroristas o grupos terroristas.</li>
-                                                <li>Acepto que {formData.empresa_destino === 'selecta' ? 'SELECTA COMPAÑÍA DE CEREALES' : 'COSECHAS BEBIDAS NATURALES S.A.S.'} está en la obligación legal de solicitar las aclaraciones que estime pertinente, en el evento en que se presenten circunstancias con base en las cuales se pueda tener dudas razonables sobre mis transacciones, así como del origen de mis fondos, evento en el cual suministraré las aclaraciones que sean necesarias del caso.</li>
+                                                <li>Los recursos que se deriven del desarrollo de este contrato no serán destinados a la financiación del terrorismo, actividades terroristas o grupos terroristas.</li>
+                                                <li>Acepto que <strong>{nombreEmpresaFull}</strong> está en la obligación legal de solicitar las aclaraciones que estime pertinentes, en el evento en que se presenten circunstancias con base en las cuales se puedan tener dudas razonables sobre mis transacciones, así como sobre el origen de mis fondos, evento en el cual suministraré las aclaraciones que sean necesarias.</li>
                                                 <li>Los recursos que poseo provienen de la(s) siguiente(s) actividad(es):</li>
                                             </ol>
                                         </div>
-                                        {renderInput("ORIGEN DE FONDOS (Especifique de donde provienen el origen de sus fondos):", "origen_fondos", "text")}
+                                        {renderInput("ORIGEN DE FONDOS: Especifique de dónde provienen sus recursos:", "origen_fondos", "text", "1fr", false, true)}
                                     </div>
                                 </div>
 
