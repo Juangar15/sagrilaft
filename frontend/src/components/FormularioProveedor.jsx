@@ -305,7 +305,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
     const enviarOTP = async () => {
         setCargando(true);
         try {
-            const email = formData.correo_electronico;
+            const email = formData.tipo_persona === 'juridica' ? formData.correo_corporativo_juridica : formData.correo_electronico;
             if (!email) {
                 showToast("No hay un correo electrónico asociado para enviar el código.");
                 setCargando(false);
@@ -542,7 +542,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         setCargando(true);
         try {
             // 1. Verify OTP
-            const email = formData.correo_electronico;
+            const email = formData.tipo_persona === 'juridica' ? formData.correo_corporativo_juridica : formData.correo_electronico;
             const isEmpresa = formData.tipo_persona === 'juridica';
             const idSujeto = formData.numero_identificacion;
             const nombreSujeto = isEmpresa ? formData.razon_social : `${formData.nombres || ''} ${formData.primer_apellido || ''} ${formData.segundo_apellido || ''}`.trim();
