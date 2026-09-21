@@ -622,6 +622,12 @@ export default function DashboardOficial() {
                     <span className={`badge ${badgeClase}`}>Score: {(sol.score_riesgo !== null && sol.score_riesgo !== undefined && sol.estado_actual !== 'REVISION_PREVIA') ? sol.score_riesgo : '-'}</span>
                 </div>
                 <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', color: 'var(--text-main)' }}>{sol.razon_social}</h4>
+                {sol.datos_formulario?.riesgo_anterior && (
+                    <div style={{ background: 'var(--surface-hover)', padding: '0.35rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem', border: '1px dashed var(--border)' }}>
+                        <span style={{ display: 'block', marginBottom: '2px' }}>🔄 Anterior: <b style={{ color: sol.datos_formulario.riesgo_anterior.riesgo === 'rojo' ? 'var(--danger)' : sol.datos_formulario.riesgo_anterior.riesgo === 'amarillo' ? 'var(--warning-text)' : 'var(--success-text)' }}>{sol.datos_formulario.riesgo_anterior.riesgo.toUpperCase()}</b> (Score: {sol.datos_formulario.riesgo_anterior.score})</span>
+                        <span style={{ fontSize: '0.7rem' }}>Movido en R2 el {sol.datos_formulario.riesgo_anterior.fecha}</span>
+                    </div>
+                )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '0.25rem' }}>
                     <Building2 size={14} /> {sol.tipo_vinculacion}
                 </div>
