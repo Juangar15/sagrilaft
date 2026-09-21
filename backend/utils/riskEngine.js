@@ -46,8 +46,10 @@ async function calcularRiesgoConsolidado(datos_formulario, alertas_manuales = []
     // 1. TUS DATOS (si existe)
     const dict_hallazgos = datos_formulario.monitor_fuentes?.dict_hallazgos || {};
     const tdResult = calcularTusDatosScore(dict_hallazgos);
-    puntos_totales += tdResult.score;
-    desglose.push(...tdResult.desglose);
+    // puntos_totales += tdResult.score; // Solicitado: Tus Datos no suma puntos
+    // Modificamos el desglose para mostrar 0 puntos visualmente
+    const desgloseCero = tdResult.desglose.map(d => ({...d, puntos: 0}));
+    desglose.push(...desgloseCero);
 
     // 2. EVALUAR JURISDICCIÓN (Riesgo Geográfico)
     let dpto = datos_formulario.departamento_principal || datos_formulario.departamento || datos_formulario.departamento_empresa || '';
