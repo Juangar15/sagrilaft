@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { sagrilaftService } from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
+import colombiaData from '../utils/colombia.json';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { 
@@ -248,7 +249,7 @@ export default function FormularioEmpleado() {
                                     {renderInput("Dirección", "direccion_residencial", "text", "1fr", false, true)}
                                 </div>
                                 <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
-                                    {renderInput("Ciudad", "ciudad")}
+                                    {renderSelect("Ciudad", "ciudad", formData.departamento ? (colombiaData.find(d => d.departamento === formData.departamento)?.ciudades.map(c => ({value: c, label: c})) || [{value: "Otra", label: "Otra"}]) : [], "1fr", true)}
                                     {renderInput("Ocupación / Oficio", "ocupacion_profesion")}
                                     {renderSelect("¿Declara Renta?", "declara_renta", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                 </div>

@@ -629,9 +629,9 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
         if (fuentes_caidas) {
             estadoGeneral = "FUENTES_INCOMPLETAS";
         } else {
-            if (scoreFinal <= 33.33) {
+            if (scoreFinal <= 3) {
                 estadoGeneral = "APROBADO_LIMPIO";
-            } else if (scoreFinal <= 66.66) {
+            } else if (scoreFinal <= 6) {
                 estadoGeneral = "REVISION_MANUAL";
             } else {
                 estadoGeneral = "ALERTA_CRITICA";
@@ -848,8 +848,8 @@ app.post('/api/v1/solicitudes/:id/tusdatos/retry', async (req, res) => {
         const scoreFinal = resultadoRiesgo.puntaje_total;
         newFormulario.desglose_riesgo = resultadoRiesgo;
 
-        if (scoreFinal <= 33.33 && !finalData.hallazgo) estadoGeneral = "APROBADO_LIMPIO";
-        else if (scoreFinal <= 66.66 && !finalData.hallazgo) estadoGeneral = "REVISION_MANUAL";
+        if (scoreFinal <= 3 && !finalData.hallazgo) estadoGeneral = "APROBADO_LIMPIO";
+        else if (scoreFinal <= 6 && !finalData.hallazgo) estadoGeneral = "REVISION_MANUAL";
 
         await supabase.from('solicitudes_sagrilaft').update({
             estado_actual: estadoGeneral,
@@ -952,8 +952,8 @@ app.post('/api/v1/solicitudes/:id/tusdatos/sync', async (req, res) => {
         if (fuentes_caidas) {
             estadoGeneral = "FUENTES_INCOMPLETAS";
         } else if (!coincidencia_api) {
-            if (scoreFinal <= 33.33) estadoGeneral = "APROBADO_LIMPIO";
-            else if (scoreFinal <= 66.66) estadoGeneral = "REVISION_MANUAL";
+            if (scoreFinal <= 3) estadoGeneral = "APROBADO_LIMPIO";
+            else if (scoreFinal <= 6) estadoGeneral = "REVISION_MANUAL";
             else estadoGeneral = "ALERTA_CRITICA";
         }
 
@@ -1147,8 +1147,8 @@ app.post('/api/v1/admin/recalcular-scores', async (req, res) => {
 
                 let nuevoEstado = sol.estado_actual;
                 if (['APROBADO_LIMPIO', 'RECHAZADO', 'REVISION_MANUAL', 'ALERTA_CRITICA'].includes(sol.estado_actual)) {
-                    if (puntajeNuevo <= 33.33) nuevoEstado = 'APROBADO_LIMPIO';
-                    else if (puntajeNuevo <= 66.66) nuevoEstado = 'REVISION_MANUAL';
+                    if (puntajeNuevo <= 3) nuevoEstado = 'APROBADO_LIMPIO';
+                    else if (puntajeNuevo <= 6) nuevoEstado = 'REVISION_MANUAL';
                     else nuevoEstado = 'ALERTA_CRITICA';
                 }
 
@@ -1285,14 +1285,14 @@ async function reubicarCarpetaR2(sol, puntajeNuevo, estadoNuevo) {
 
     let oldScore = sol.score_riesgo || 0;
     let oldColor = 'verde';
-    if (oldScore >= 33.34 && oldScore <= 66.66) oldColor = 'amarillo';
-    if (oldScore > 66.66) oldColor = 'rojo';
+    if (oldScore >= 4 && oldScore <= 6) oldColor = 'amarillo';
+    if (oldScore >= 7) oldColor = 'rojo';
     const oldStatusFolder = sol.estado_actual === 'APROBADO_LIMPIO' ? 'aceptados' : 'no_aceptados';
 
     let newScore = puntajeNuevo || 0;
     let newColor = 'verde';
-    if (newScore >= 33.34 && newScore <= 66.66) newColor = 'amarillo';
-    if (newScore > 66.66) newColor = 'rojo';
+    if (newScore >= 4 && newScore <= 6) newColor = 'amarillo';
+    if (newScore >= 7) newColor = 'rojo';
     const newStatusFolder = estadoNuevo === 'APROBADO_LIMPIO' ? 'aceptados' : 'no_aceptados';
 
     let oldFolderR2 = '';
@@ -1404,8 +1404,8 @@ app.post('/api/v1/solicitudes/:id/migrar-cloudflare', async (req, res) => {
         
         let score = sol.score_riesgo || 0;
         let colorSemaforo = 'verde';
-        if (score >= 33.34 && score <= 66.66) colorSemaforo = 'amarillo';
-        if (score > 66.66) colorSemaforo = 'rojo';
+        if (score >= 4 && score <= 6) colorSemaforo = 'amarillo';
+        if (score >= 7) colorSemaforo = 'rojo';
 
         const folderRoot = isEmpleado ? `sagrilaft/empleados/${year}` : `sagrilaft/terceros/${year}`;
         
@@ -1469,8 +1469,8 @@ app.post('/api/v1/solicitudes/:id/aprobar_definitivo', async (req, res) => {
         const score = scoreRecalculado.puntaje_total;
         
         let colorSemaforo = 'verde';
-        if (score >= 33.34 && score <= 66.66) colorSemaforo = 'amarillo';
-        if (score > 66.66) colorSemaforo = 'rojo';
+        if (score >= 4 && score <= 6) colorSemaforo = 'amarillo';
+        if (score >= 7) colorSemaforo = 'rojo';
 
         const folderRoot = isEmpleado ? `sagrilaft/empleados/${year}` : `sagrilaft/terceros/${year}`;
         

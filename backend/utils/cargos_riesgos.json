@@ -1,0 +1,542 @@
+{
+  "COORDINADOR DE GESTION AMBIENTAL": {
+    "cargo": "Coordinador de Gestión Ambiental",
+    "area": "Calidad",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "ANALISTA DE CALIDAD": {
+    "cargo": "Analista de Calidad",
+    "area": "Calidad",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "DIRECTOR CALIDAD": {
+    "cargo": "Director Calidad",
+    "area": "Calidad",
+    "riesgo": "Alto",
+    "puntaje": 3
+  },
+  "COORDINADOR DE CALIDAD": {
+    "cargo": "Coordinador de Calidad",
+    "area": "Calidad",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "DIRECTORA DE SISTEMAS INTEGRADOS DE GESTION": {
+    "cargo": "Directora de Sistemas Integrados de Gestión",
+    "area": "Calidad",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "AUXILIAR COMERCIAL": {
+    "cargo": "Auxiliar Comercial",
+    "area": "Comercial",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "AUXILIAR DE FACTURACION": {
+    "cargo": "Auxiliar de Facturación",
+    "area": "Comercial",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "EJECUTIVA COMERCIAL": {
+    "cargo": "Ejecutiva Comercial",
+    "area": "Comercial",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "MERCA-IMPULSADORA": {
+    "cargo": "Merca-Impulsadora",
+    "area": "Comercial",
+    "riesgo": "Bajo",
+    "puntaje": 1
+  },
+  "ASESORA-MERCAIMPULSADORA": {
+    "cargo": "Asesora-Mercaimpulsadora",
+    "area": "Comercial",
+    "riesgo": "Bajo",
+    "puntaje": 1
+  },
+  "ESPECIALISTA EN FRANQUICIAS": {
+    "cargo": "Especialista en Franquicias",
+    "area": "Comercial",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "DISENADOR GRAFICO": {
+    "cargo": "Diseñador Gráfico",
+    "area": "Comercial",
+    "riesgo": "Bajo",
+    "puntaje": 1
+  },
+  "ANALISTA DE DATOS": {
+    "cargo": "Analista de Datos",
+    "area": "Comercial",
+    "riesgo": "Alto",
+    "puntaje": 3
+  },
+  "ANALISTA DE MERCADEO": {
+    "cargo": "Analista de Mercadeo",
+    "area": "Comercial",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "COORDINADOR ESTRATEGIA DIGITAL": {
+    "cargo": "Coordinador Estrategia Digital",
+    "area": "Comercial",
+    "riesgo": "Bajo",
+    "puntaje": 1
+  },
+  "AUXILIAR DE SERVICIO AL CLIENTE": {
+    "cargo": "Auxiliar de Servicio al Cliente",
+    "area": "Comercial",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "DIRECTORA ADMINISTRATIVA BOGOTA": {
+    "cargo": "Directora Administrativa Bogotá",
+    "area": "Comercial",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "COORDINADOR SERVICIO AL CLIENTE": {
+    "cargo": "Coordinador Servicio al Cliente",
+    "area": "Comercial",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "DIRECTOR (A) COMERCIAL": {
+    "cargo": "Director (a) Comercial",
+    "area": "Comercial",
+    "riesgo": "Alto",
+    "puntaje": 3
+  },
+  "COORDINADOR MERCADEO": {
+    "cargo": "Coordinador Mercadeo",
+    "area": "Comercial",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "GERENTE COMERCIAL": {
+    "cargo": "Gerente Comercial",
+    "area": "Comercial",
+    "riesgo": "Alto",
+    "puntaje": 3
+  },
+  "AUXILIAR DE COMPRAS": {
+    "cargo": "Auxiliar de Compras",
+    "area": "Compras",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "ANALISTA DE COMPRAS": {
+    "cargo": "Analista de Compras",
+    "area": "Compras",
+    "riesgo": "Alto",
+    "puntaje": 3
+  },
+  "DIRECTOR (A) COMPRAS": {
+    "cargo": "Director (a) Compras",
+    "area": "Compras",
+    "riesgo": "Alto",
+    "puntaje": 3
+  },
+  "AUXILIAR CONTABILIDAD": {
+    "cargo": "Auxiliar Contabilidad",
+    "area": "Contabilidad",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "AUXILIAR DE ARCHIVO": {
+    "cargo": "Auxiliar de Archivo",
+    "area": "Contabilidad",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "DIRECTOR (A) ADMINISTRATIVO (A) Y FINANCIERO (A)": {
+    "cargo": "Director (a) Administrativo (a) y Financiero (a)",
+    "area": "Contabilidad",
+    "riesgo": "Alto",
+    "puntaje": 3
+  },
+  "GERENTE CONTABLE": {
+    "cargo": "Gerente Contable",
+    "area": "Contabilidad",
+    "riesgo": "Alto",
+    "puntaje": 3
+  },
+  "DIRECTOR CONTABLE": {
+    "cargo": "Director contable",
+    "area": "Contabilidad",
+    "riesgo": "Alto",
+    "puntaje": 3
+  },
+  "ANALISTA DE EXPORTACIONES": {
+    "cargo": "Analista de Exportaciones",
+    "area": "Exportaciones",
+    "riesgo": "Alto",
+    "puntaje": 3
+  },
+  "AUXILIAR ADMINISTRATIVA SAGRILAFT": {
+    "cargo": "Auxiliar Administrativa Sagrilaft",
+    "area": "Gerencia",
+    "riesgo": "Alto",
+    "puntaje": 3
+  },
+  "ASISTENTE DE GERENCIA": {
+    "cargo": "Asistente de Gerencia",
+    "area": "Gerencia",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "GERENTE GENERAL": {
+    "cargo": "Gerente General",
+    "area": "Gerencia",
+    "riesgo": "Alto",
+    "puntaje": 3
+  },
+  "ANALISTA DE INGENIERIA": {
+    "cargo": "Analista de Ingeniería",
+    "area": "Ingenieria",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "DIRECTOR DE INGENIERIA": {
+    "cargo": "Director de Ingeniería",
+    "area": "Ingenieria",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "AUXILIAR DE INVESTIGACION Y DESARROLLO": {
+    "cargo": "Auxiliar de Investigación y Desarrollo",
+    "area": "Investigación y desarrollo",
+    "riesgo": "Bajo",
+    "puntaje": 1
+  },
+  "DIRECTOR DE INVESTIGACION Y DESARROLLO": {
+    "cargo": "Director de Investigación y Desarrollo",
+    "area": "Investigación y desarrollo",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "ANALISTA DE INVESTIGACION Y DESARROLLO": {
+    "cargo": "Analista de Investigación y Desarrollo",
+    "area": "Investigación y desarrollo",
+    "riesgo": "Bajo",
+    "puntaje": 1
+  },
+  "COORDINADORA DE INVESTIGACION Y DESARROLLO": {
+    "cargo": "Coordinadora de Investigación y Desarrollo",
+    "area": "Investigación y desarrollo",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "AUDITOR (A)": {
+    "cargo": "Auditor (a)",
+    "area": "Juridica",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "ABOGADA AUXILIAR": {
+    "cargo": "Abogada Auxiliar",
+    "area": "Juridica",
+    "riesgo": "Alto",
+    "puntaje": 3
+  },
+  "GERENTE JURIDICO": {
+    "cargo": "Gerente Jurídico",
+    "area": "Juridica",
+    "riesgo": "Alto",
+    "puntaje": 3
+  },
+  "AUXILIAR ADMINISTRATIVO/A": {
+    "cargo": "Auxiliar Administrativo/a",
+    "area": "Juridica",
+    "riesgo": "Bajo",
+    "puntaje": 1
+  },
+  "AUXILIAR DE LOGISTICA": {
+    "cargo": "Auxiliar de Logística",
+    "area": "Logistica",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "COORDINADOR DE LOGISTICA": {
+    "cargo": "Coordinador de Logística",
+    "area": "Logistica",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "CONDUCTOR": {
+    "cargo": "Conductor",
+    "area": "Logistica",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "OPERARIO DE MONTACARGAS": {
+    "cargo": "Operario de Montacargas",
+    "area": "Logistica",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "LIDER LOGISTICO": {
+    "cargo": "Líder Logístico",
+    "area": "Logistica",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "GERENTE DE LOGISTICA": {
+    "cargo": "Gerente de Logística",
+    "area": "Logistica",
+    "riesgo": "Alto",
+    "puntaje": 3
+  },
+  "MONTACARGUISTA": {
+    "cargo": "Montacarguista",
+    "area": "Logistica",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "AUXILIAR DE MANTENIMIENTO DE OBRA CIVIL": {
+    "cargo": "Auxiliar de Mantenimiento de Obra Civil",
+    "area": "Mantenimiento",
+    "riesgo": "Bajo",
+    "puntaje": 1
+  },
+  "AUXILIAR DE MANTENIMIENTO": {
+    "cargo": "Auxiliar de Mantenimiento",
+    "area": "Mantenimiento",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "ANALISTA DE MANTENIMIENTO": {
+    "cargo": "Analista de Mantenimiento",
+    "area": "Mantenimiento",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "LIDER DE MANTENIMIENTO": {
+    "cargo": "Líder de Mantenimiento",
+    "area": "Mantenimiento",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "JEFE DE MANTENIMIENTO": {
+    "cargo": "Jefe de Mantenimiento",
+    "area": "Mantenimiento",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "CONTROLADOR DE PROCESO": {
+    "cargo": "Controlador de Proceso",
+    "area": "Producción",
+    "riesgo": "Bajo",
+    "puntaje": 1
+  },
+  "ANALISTA DE PRODUCCION": {
+    "cargo": "Analista de Producción",
+    "area": "Producción",
+    "riesgo": "Bajo",
+    "puntaje": 1
+  },
+  "OPERARIO DE PRODUCCION": {
+    "cargo": "Operario de Producción",
+    "area": "Producción",
+    "riesgo": "Bajo",
+    "puntaje": 1
+  },
+  "LIDER DE PROCESO": {
+    "cargo": "Líder de Proceso",
+    "area": "Producción",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "AUXILIAR DE PRODUCCION": {
+    "cargo": "Auxiliar de Producción",
+    "area": "Producción",
+    "riesgo": "Bajo",
+    "puntaje": 1
+  },
+  "AUXILIAR LOGISTICO Y DOMICILIARIO": {
+    "cargo": "Auxiliar Logístico y Domiciliario",
+    "area": "Producción",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "LIDER DE PRODUCCION": {
+    "cargo": "Líder de Producción",
+    "area": "Producción",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "AUXILIAR DE INVENTARIOS": {
+    "cargo": "Auxiliar de Inventarios",
+    "area": "Producción",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "COORDINADOR DE PRODUCCION": {
+    "cargo": "Coordinador de Producción",
+    "area": "Producción",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "AUXILIAR ADMINISTRATIVA Y DE INVENTARIOS": {
+    "cargo": "Auxiliar Administrativa y de Inventarios",
+    "area": "Producción",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "ANALISTA DE INVENTARIOS": {
+    "cargo": "Analista de Inventarios",
+    "area": "Producción",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "DIRECTOR DE INVENTARIOS": {
+    "cargo": "Director de Inventarios",
+    "area": "Producción",
+    "riesgo": "Alto",
+    "puntaje": 3
+  },
+  "DIRECTOR (A) DE PLANEACION Y PRODUCCION": {
+    "cargo": "Director (a) de Planeación y Producción",
+    "area": "Producción",
+    "riesgo": "Alto",
+    "puntaje": 3
+  },
+  "GERENTE TECNICO": {
+    "cargo": "Gerente Técnico",
+    "area": "Producción",
+    "riesgo": "Alto",
+    "puntaje": 3
+  },
+  "AUXILIAR DE CALIDAD": {
+    "cargo": "Auxiliar de Calidad",
+    "area": "Producción",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "AUXILIAR DE ALMACEN": {
+    "cargo": "Auxiliar de Almacén",
+    "area": "Producción",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "COORDINADOR DE ALMACEN": {
+    "cargo": "Coordinador de Almacén",
+    "area": "Producción",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "DIRECTOR(A) DE PRODUCCION": {
+    "cargo": "Director(a) de Producción",
+    "area": "Producción",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "CONTROLADOR DE ENVASADO NIVEL 2": {
+    "cargo": "Controlador de Envasado Nivel 2",
+    "area": "Producción",
+    "riesgo": "Bajo",
+    "puntaje": 1
+  },
+  "CONTROLADOR TECNICO DE MAQUINA": {
+    "cargo": "Controlador tecnico de maquina",
+    "area": "Producción",
+    "riesgo": "Bajo",
+    "puntaje": 1
+  },
+  "AUXILIAR SISTEMAS": {
+    "cargo": "Auxiliar Sistemas",
+    "area": "Sistemas",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "DIRECTORA DE SISTEMAS": {
+    "cargo": "Directora de Sistemas",
+    "area": "Sistemas",
+    "riesgo": "Alto",
+    "puntaje": 3
+  },
+  "PROGRAMADOR": {
+    "cargo": "Programador",
+    "area": "Sistemas",
+    "riesgo": "Alto",
+    "puntaje": 3
+  },
+  "AUXILIAR ADMINISTRATIVO Y DE TALENTO HUMANO": {
+    "cargo": "Auxiliar Administrativo y de Talento Humano",
+    "area": "Talento humano",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "ANALISTA DE SST": {
+    "cargo": "Analista de SST",
+    "area": "Talento humano",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "AUXILIAR DE TALENTO HUMANO": {
+    "cargo": "Auxiliar de Talento Humano",
+    "area": "Talento humano",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "GESTORA DE BIENESTAR Y CULTURA": {
+    "cargo": "Gestora de Bienestar y cultura",
+    "area": "Talento humano",
+    "riesgo": "Bajo",
+    "puntaje": 1
+  },
+  "COORDINADOR DE NOMINA": {
+    "cargo": "Coordinador de Nomina",
+    "area": "Talento humano",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "COORDINADOR DE SST": {
+    "cargo": "Coordinador de SST",
+    "area": "Talento humano",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "OPERARIO DE SERVICIOS GENERALES": {
+    "cargo": "Operario de Servicios Generales",
+    "area": "Talento humano",
+    "riesgo": "Bajo",
+    "puntaje": 1
+  },
+  "GERENTE DE TALENTO HUMANO": {
+    "cargo": "Gerente de Talento Humano",
+    "area": "Talento humano",
+    "riesgo": "Alto",
+    "puntaje": 3
+  },
+  "MENSAJERO": {
+    "cargo": "Mensajero",
+    "area": "Talento humano",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "ANALISTA DE SELECCION Y CULTURA": {
+    "cargo": "Analista de selección y cultura",
+    "area": "Talento humano",
+    "riesgo": "Medio",
+    "puntaje": 2
+  },
+  "OFICIAL DE CUMPLIMIENTO": {
+    "cargo": "Oficial de cumplimiento",
+    "area": "Gerencia",
+    "riesgo": "Alto",
+    "puntaje": 3
+  },
+  "COORDINADOR DE COMPRAS": {
+    "cargo": "Coordinador de Compras",
+    "area": "Compras",
+    "riesgo": "Medio",
+    "puntaje": 2
+  }
+}

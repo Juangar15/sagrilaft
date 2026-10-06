@@ -39,32 +39,41 @@ function calcularTusDatosScore(dict_hallazgos) {
     return { score: Math.min(score, 60), desglose };
 }
 
+const fs = require('fs');
+const path = require('path');
+
+let cargosData = {};
+try {
+    const p = path.join(__dirname, 'cargos_riesgos.json');
+    cargosData = JSON.parse(fs.readFileSync(p, 'utf-8'));
+} catch(e) {
+    console.warn("No se pudo cargar cargos_riesgos.json");
+}
+
 async function calcularRiesgoConsolidado(datos_formulario, alertas_manuales = [], calificacion_oficial = 'Bajo') {
     let puntos_totales = 0;
     let desglose = [];
 
-    // 1. TUS DATOS (si existe)
+    // 1. TUS DATOS (si existe) - NO SUMA PUNTOS
     const dict_hallazgos = datos_formulario.monitor_fuentes?.dict_hallazgos || {};
     const tdResult = calcularTusDatosScore(dict_hallazgos);
-    // puntos_totales += tdResult.score; // Solicitado: Tus Datos no suma puntos
-    // Modificamos el desglose para mostrar 0 puntos visualmente
     const desgloseCero = tdResult.desglose.map(d => ({...d, puntos: 0}));
     desglose.push(...desgloseCero);
 
-    // 2. EVALUAR JURISDICCIÓN (Riesgo Geográfico)
-    let dpto = datos_formulario.departamento_principal || datos_formulario.departamento || datos_formulario.departamento_empresa || '';
-    let mun = datos_formulario.municipio_principal || datos_formulario.ciudad_principal || datos_formulario.municipio || datos_formulario.ciudad || datos_formulario.municipio_empresa || datos_formulario.ciudad_empresa || '';
+    // 2. RIESGO GEOGRÁFICO (Max 3 puntos)
+    let dpto = datos_formulario.departamento_principal || datos_formulario.departamento || datos_formulario.departamento_empresa || datos_formulario.departamento_empresa_labora || datos_formulario.departamento_juridica || '';
+    let mun = datos_formulario.municipio_principal || datos_formulario.ciudad_principal || datos_formulario.municipio || datos_formulario.ciudad || datos_formulario.municipio_empresa || datos_formulario.ciudad_empresa || datos_formulario.ciudad_empresa_labora || datos_formulario.ciudad_juridica || '';
     
     if (dpto.trim() || mun.trim()) {
         const { data } = await supabase.from('sagrilaft_jurisdicciones').select('departamento, municipio, nivel_riesgo').limit(2000);
         if (data && data.length > 0) {
-            const normalizeStr = (str) => (str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+            const normalizeStr = (str) => (str || '').normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
             const j = data.find(jd => normalizeStr(jd.departamento) === normalizeStr(dpto) && normalizeStr(jd.municipio) === normalizeStr(mun));
             if (j) {
                 let ptsJur = 0;
                 const nivel = (j.nivel_riesgo || 'BAJO').toUpperCase();
-                if (nivel === 'ALTO') ptsJur = 20;
-                else if (nivel === 'MEDIO') ptsJur = 10;
+                if (nivel === 'ALTO') ptsJur = 3;
+                else if (nivel === 'MEDIO') ptsJur = 1;
 
                 if (ptsJur > 0) {
                     puntos_totales += ptsJur;
@@ -74,32 +83,19 @@ async function calcularRiesgoConsolidado(datos_formulario, alertas_manuales = []
         }
     }
 
-    // 3. PEP
-    const esPep = String(datos_formulario.es_pep).toLowerCase() === 'si' || 
-                  String(datos_formulario.declara_ser_pep).toLowerCase() === 'si' ||
-                  String(datos_formulario.vinculo_familiar_pep).toLowerCase() === 'si';
-    if (esPep) {
-        puntos_totales += 15;
-        desglose.push({ categoria: 'PEP (Persona Expuesta Políticamente)', detalle: 'El sujeto o vinculado es PEP declarado', puntos: 15, tipo: 'AUTOMATICO' });
+    // 3. RIESGO POR CARGO (Max 3 puntos)
+    let cargo = (datos_formulario.cargo_asignado || datos_formulario.cargo || '').normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().trim();
+    cargo = cargo.replace(/\s+/g, ' '); // quitar multiples espacios
+    if (cargo && cargosData[cargo]) {
+        const infoCargo = cargosData[cargo];
+        puntos_totales += infoCargo.puntaje;
+        desglose.push({ categoria: 'Riesgo por Cargo', detalle: `Cargo: ${infoCargo.cargo} (Riesgo ${infoCargo.riesgo})`, puntos: infoCargo.puntaje, tipo: 'AUTOMATICO' });
     }
 
-    // 4. ALERTAS MANUALES (Oficial)
-    if (alertas_manuales && alertas_manuales.length > 0) {
-        let ptsManuales = alertas_manuales.length * 15;
-        puntos_totales += ptsManuales;
-        desglose.push({
-            categoria: 'Alertas Cualitativas (Manuales)',
-            detalle: alertas_manuales.join(', '),
-            puntos: ptsManuales,
-            tipo: 'MANUAL'
-        });
-    }
-
-    // 5. CALIFICACIÓN DEL OFICIAL (Juicio Experto)
+    // 4. CALIFICACIÓN DEL OFICIAL (Max 4 puntos)
     let ptsOficial = 0;
-    if (calificacion_oficial.toLowerCase() === 'bajo') ptsOficial = 0;
-    if (calificacion_oficial.toLowerCase() === 'medio') ptsOficial = 10;
-    if (calificacion_oficial.toLowerCase() === 'alto') ptsOficial = 20;
+    if (calificacion_oficial.toLowerCase() === 'medio') ptsOficial = 2;
+    if (calificacion_oficial.toLowerCase() === 'alto') ptsOficial = 4;
 
     if (ptsOficial > 0) {
         puntos_totales += ptsOficial;
@@ -115,11 +111,11 @@ async function calcularRiesgoConsolidado(datos_formulario, alertas_manuales = []
         desglose.push({ categoria: 'Sin factores de riesgo', detalle: 'No se detectaron alertas', puntos: 0, tipo: 'AUTOMATICO' });
     }
 
-    // 6. CALCULAR CATEGORÍA FINAL (0-33 BAJO | 34-66 MEDIO | 67-100 ALTO)
-    const puntaje_final = Math.min(puntos_totales, 100);
+    // 5. CALCULAR CATEGORÍA FINAL (0-3 BAJO | 4-6 MEDIO | 7-10 ALTO)
+    const puntaje_final = Math.min(puntos_totales, 10);
     let nivel_final = 'BAJO';
-    if (puntaje_final >= 34 && puntaje_final <= 66) nivel_final = 'MEDIO';
-    if (puntaje_final > 66) nivel_final = 'ALTO';
+    if (puntaje_final >= 4 && puntaje_final <= 6) nivel_final = 'MEDIO';
+    if (puntaje_final >= 7) nivel_final = 'ALTO';
 
     return {
         puntaje_total: puntaje_final,
