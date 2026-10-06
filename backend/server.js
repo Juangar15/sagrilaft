@@ -1162,7 +1162,8 @@ app.post('/api/v1/admin/recalcular-scores', async (req, res) => {
                 await supabase.from('solicitudes_sagrilaft').update({
                     score_riesgo: puntajeNuevo,
                     datos_formulario: solModificada.datos_formulario,
-                    estado_actual: nuevoEstado
+                    estado_actual: nuevoEstado,
+                    desglose_riesgo: calc
                 }).eq('id', sol.id);
 
                 if (puntajeViejo !== puntajeNuevo) {
