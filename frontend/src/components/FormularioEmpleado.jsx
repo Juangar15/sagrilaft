@@ -175,7 +175,7 @@ export default function FormularioEmpleado() {
         </div>
     );
 
-    const renderSelect = (label, name, options, width = "1fr", required = true) => {
+    const renderSelect = (label, name, options, width = "1fr", required = true, forceDisabled = false) => {
         return (
         <div>
             <label className={required ? "label required" : "label"}>{label}</label>

@@ -635,7 +635,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
     )};
 
     const renderCiiuInput = (label, name, width = "1fr") => {
-        const disabled = isDisabled(name);
+        const disabled = isDisabled(name) || forceDisabled;
         return (
         <div style={{ position: 'relative' }}>
             <label className={!disabled ? "label required" : "label"}>{label}</label>
@@ -643,8 +643,8 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         </div>
     )};
 
-    const renderSelect = (label, name, options, width = "1fr", required = true) => {
-        const disabled = isDisabled(name);
+    const renderSelect = (label, name, options, width = "1fr", required = true, forceDisabled = false) => {
+        const disabled = isDisabled(name) || forceDisabled;
         return (
         <div style={{ position: 'relative' }}>
             <label className={required && !disabled ? "label required" : "label"}>{label}</label>
@@ -808,8 +808,8 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                         </div>
                                         <div className="form-grid form-grid-3">
                                             {renderInput("Celular/Teléfono", "telefono_celular", "text", "1fr", false, true)}
-                                            {renderSelect("Ciudad", "ciudad", formData.departamento ? (colombiaData.find(d => d.departamento === formData.departamento)?.ciudades.map(c => ({value: c, label: c})) || [{value: "Otra", label: "Otra"}]) : [], "1fr", true)}
                                             {renderSelect("Departamento", "departamento", [...colombiaData.map(d => ({value: d.departamento, label: d.departamento})), {value: "Otro / Extranjero", label: "Otro / Extranjero"}], "1fr", true)}
+                                            {renderSelect("Ciudad", "ciudad", formData.departamento ? (colombiaData.find(d => d.departamento === formData.departamento)?.ciudades.map(c => ({value: c, label: c})) || [{value: "Otra", label: "Otra"}]) : [], "1fr", true, !formData.departamento)}
                                             {renderInput("País", "pais")}
                                         </div>
                                         <h4 style={{ margin: '1rem 0 0', color: 'var(--text-main)', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Ocupación y Laboral</h4>
@@ -833,8 +833,8 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                         <div className="form-grid form-grid-3">
                                             {renderInput("Dirección Corporativa", "direccion_corporativa")}
                                             {renderInput("Teléfono Corp.", "telefono_corporativo")}
-                                            {renderSelect("Ciudad Empresa", "ciudad_empresa_labora", formData.departamento_empresa_labora ? (colombiaData.find(d => d.departamento === formData.departamento_empresa_labora)?.ciudades.map(c => ({value: c, label: c})) || [{value: "Otra", label: "Otra"}]) : [], "1fr", false)}
                                             {renderSelect("Departamento", "departamento_empresa_labora", [...colombiaData.map(d => ({value: d.departamento, label: d.departamento})), {value: "Otro / Extranjero", label: "Otro / Extranjero"}], "1fr", false)}
+                                            {renderSelect("Ciudad Empresa", "ciudad_empresa_labora", formData.departamento_empresa_labora ? (colombiaData.find(d => d.departamento === formData.departamento_empresa_labora)?.ciudades.map(c => ({value: c, label: c})) || [{value: "Otra", label: "Otra"}]) : [], "1fr", false, !formData.departamento_empresa_labora)}
                                             {renderInput("País", "pais_empresa_labora")}
                                         </div>
                                     </div>
@@ -857,8 +857,8 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                             {renderInput("Dirección Oficina Principal", "direccion_oficina_principal", "text", "2fr")}
                                         </div>
                                         <div className="form-grid form-grid-3">
-                                            {renderSelect("Ciudad", "ciudad_juridica", formData.departamento_juridica ? (colombiaData.find(d => d.departamento === formData.departamento_juridica)?.ciudades.map(c => ({value: c, label: c})) || [{value: "Otra", label: "Otra"}]) : [], "1fr", true)}
                                             {renderSelect("Departamento", "departamento_juridica", [...colombiaData.map(d => ({value: d.departamento, label: d.departamento})), {value: "Otro / Extranjero", label: "Otro / Extranjero"}], "1fr", true)}
+                                            {renderSelect("Ciudad", "ciudad_juridica", formData.departamento_juridica ? (colombiaData.find(d => d.departamento === formData.departamento_juridica)?.ciudades.map(c => ({value: c, label: c})) || [{value: "Otra", label: "Otra"}]) : [], "1fr", true, !formData.departamento_juridica)}
                                             {renderInput("Teléfono", "telefono_juridica", "text", "1fr", false, true)}
                                         </div>
                                         <div className="form-grid form-grid-3">

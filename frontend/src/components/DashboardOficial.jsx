@@ -376,7 +376,7 @@ export default function DashboardOficial() {
                 score_riesgo: resultadoRiesgo.puntaje_total,
                 estado_actual: saved.estado_actual || prev.estado_actual
             }));
-            showToast(`✅ Actualización guardada. Score: ${resultadoRiesgo.puntaje_total}/100 (${resultadoRiesgo.nivel_riesgo_final})`, "success");
+            showToast(`✅ Actualización guardada. Score: ${resultadoRiesgo.puntaje_total}/10 (${resultadoRiesgo.nivel_riesgo_final})`, "success");
         } catch (err) {
             console.error("Error guardando:", err);
             showToast("Error al guardar actualización: " + err.message, "error");
@@ -1570,7 +1570,7 @@ export default function DashboardOficial() {
                                                 ))}
                                             </ul>
                                             <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '0.5rem', textAlign: 'right', fontWeight: 'bold' }}>
-                                                PUNTAJE FINAL: {resultadoRiesgo.puntaje_total}/100
+                                                PUNTAJE FINAL: {resultadoRiesgo.puntaje_total}/10
                                             </div>
                                         </div>
                                     )}
@@ -1634,7 +1634,7 @@ export default function DashboardOficial() {
                                                 ))}
                                             </ul>
                                             <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '0.5rem', marginTop: '0.75rem', textAlign: 'right', fontWeight: '700', fontSize: '0.9rem' }}>
-                                                PUNTAJE FINAL: {solicitudSeleccionada.desglose_riesgo.puntaje_total}/100
+                                                PUNTAJE FINAL: {solicitudSeleccionada.desglose_riesgo.puntaje_total}/10
                                             </div>
                                         </div>
                                     )}

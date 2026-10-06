@@ -1146,7 +1146,8 @@ app.post('/api/v1/admin/recalcular-scores', async (req, res) => {
                 const puntajeViejo = sol.score_riesgo;
 
                 let nuevoEstado = sol.estado_actual;
-                if (['APROBADO_LIMPIO', 'RECHAZADO', 'REVISION_MANUAL', 'ALERTA_CRITICA'].includes(sol.estado_actual)) {
+                // Preserve explicit decisions
+                if (['REVISION_MANUAL', 'ALERTA_CRITICA'].includes(sol.estado_actual)) {
                     if (puntajeNuevo <= 3) nuevoEstado = 'APROBADO_LIMPIO';
                     else if (puntajeNuevo <= 6) nuevoEstado = 'REVISION_MANUAL';
                     else nuevoEstado = 'ALERTA_CRITICA';
@@ -1283,11 +1284,14 @@ async function reubicarCarpetaR2(sol, puntajeNuevo, estadoNuevo) {
     }
     const folderRoot = isEmpleado ? `sagrilaft/empleados/${year}` : `sagrilaft/terceros/${year}`;
 
-    let oldScore = sol.score_riesgo || 0;
-    let oldColor = 'verde';
-    if (oldScore >= 4 && oldScore <= 6) oldColor = 'amarillo';
-    if (oldScore >= 7) oldColor = 'rojo';
     const oldStatusFolder = sol.estado_actual === 'APROBADO_LIMPIO' ? 'aceptados' : 'no_aceptados';
+    let oldColor = 'verde';
+    const firstUrl = Object.values(sol.datos_formulario?.archivos_cargados || {}).find(u => typeof u === 'string');
+    if (firstUrl) {
+        if (firstUrl.includes('/amarillo/')) oldColor = 'amarillo';
+        else if (firstUrl.includes('/rojo/')) oldColor = 'rojo';
+        else if (firstUrl.includes('/verde/')) oldColor = 'verde';
+    }
 
     let newScore = puntajeNuevo || 0;
     let newColor = 'verde';
