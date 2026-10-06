@@ -1526,6 +1526,7 @@ export default function DashboardOficial() {
                                 </div>
 
                                 {userRole !== 'auxiliar_sagrilaft' && (
+<>
 {/* NUEVO PANEL DE RIESGO CUALITATIVO */}
                                 <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid #e2e8f0', marginBottom: '1.5rem' }}>
                                     <h4 style={{ margin: '0 0 1rem 0', color: '#0f172a' }}>1. Evaluación Cualitativa (Oficial)</h4>
@@ -1589,7 +1590,9 @@ export default function DashboardOficial() {
                                     )}
                                 </div>
 
-                                {solicitudSeleccionada.estado_actual === 'APROBADO_LIMPIO' && (!solicitudSeleccionada.datos_formulario?.area_asignada || !solicitudSeleccionada.datos_formulario?.cargo_asignado) && (
+                                </>
+)}
+{solicitudSeleccionada.estado_actual === 'APROBADO_LIMPIO' && (!solicitudSeleccionada.datos_formulario?.area_asignada || !solicitudSeleccionada.datos_formulario?.cargo_asignado) && (
                                     <div style={{ background: '#fefce8', padding: '1.5rem', borderRadius: '8px', border: '1px solid #fef08a', marginBottom: '1.5rem' }}>
                                         <h4 style={{ margin: '0 0 1rem 0', color: '#854d0e' }}>Migración a Cloudflare R2</h4>
                                         <p style={{ fontSize: '0.85rem', color: '#a16207', marginBottom: '1rem' }}>Asigna el Área y Cargo correspondientes para reubicar este expediente en la nueva estructura corporativa en la nube.</p>
@@ -1623,8 +1626,7 @@ export default function DashboardOficial() {
                                 <div style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', textAlign: 'center' }}>
                                     <h4 style={{ margin: '0 0 1rem 0' }}>Dictamen Final</h4>
                                     
-                                    )}
-{/* Desglose del puntaje para registros con scoring calculado */}
+                                    {/* Desglose del puntaje para registros con scoring calculado */}
                                     {solicitudSeleccionada.desglose_riesgo && (
                                         <div style={{ marginBottom: '1.5rem', padding: '1rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', textAlign: 'left' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
