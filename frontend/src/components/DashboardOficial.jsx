@@ -15,6 +15,7 @@ import {
 export default function DashboardOficial() {
     const [solicitudes, setSolicitudes] = useState([]);
     const [cargando, setCargando] = useState(true);
+    const [userRole, setUserRole] = useState('oficial_cumplimiento');
     const [busqueda, setBusqueda] = useState('');
     const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
     const [cargandoTusDatos, setCargandoTusDatos] = useState(null); 
@@ -75,6 +76,13 @@ export default function DashboardOficial() {
     useEffect(() => {
         const fetchData = async () => {
             try {
+                // Get user role
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session?.user?.email) {
+                    const { data: userRoleData } = await supabase.from('usuarios_sagrilaft').select('rol').eq('email', session.user.email).maybeSingle();
+                    if (userRoleData?.rol) setUserRole(userRoleData.rol);
+                }
+
                 const reqSolicitudes = sagrilaftService.obtenerSolicitudes();
                 const reqRiesgos = sagrilaftService.obtenerMatrizRiesgos();
                 const [dataSol, dataRiesgos] = await Promise.all([reqSolicitudes, reqRiesgos]);
@@ -756,12 +764,14 @@ export default function DashboardOficial() {
                 >
                     Jurisdicciones (Regiones)
                 </button>
+                {userRole !== 'auxiliar_sagrilaft' && (
                 <button 
                     onClick={() => setActiveTab('repositorio')}
                     style={{ padding: '0.75rem 1.5rem', background: 'transparent', border: 'none', borderBottom: activeTab === 'repositorio' ? '2px solid var(--primary)' : '2px solid transparent', color: activeTab === 'repositorio' ? 'var(--primary)' : 'var(--text-muted)', cursor: 'pointer', fontWeight: 'bold' }}
                 >
                     Repositorio Documental
                 </button>
+                )}
             </div>
 
             
@@ -782,7 +792,8 @@ export default function DashboardOficial() {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                    <button 
+                    {userRole !== 'auxiliar_sagrilaft' && (
+<button 
                         onClick={async () => {
                             try {
                                 const token = localStorage.getItem('token');
@@ -802,6 +813,7 @@ export default function DashboardOficial() {
                     >
                         🔄 Recalcular todos los scores
                     </button>
+)}
                 </div>
 
                 
@@ -815,7 +827,7 @@ export default function DashboardOficial() {
                         { id: 'ALERTA_CRITICA', label: 'Alertas Críticas', icon: <AlertTriangle size={16}/>, color: 'var(--danger)', activeBg: 'var(--danger)', activeColor: 'white' },
                         { id: 'ESPERA_EXTENDIDO', label: 'Análisis Extendido', icon: <Clock size={16}/>, color: '#8b5cf6', activeBg: '#8b5cf6', activeColor: 'white' },
                         { id: 'APROBADO_LIMPIO', label: 'Aprobados', icon: <CheckCircle size={16}/>, color: 'var(--success-text)', activeBg: 'var(--success-text)', activeColor: 'white' }
-                    ].map(est => {
+                    ].filter(est => userRole !== 'auxiliar_sagrilaft' || ['ASIGNACION_CARGO', 'REVISION_PREVIA', 'DEVUELTO_CORRECCION'].includes(est.id)).map(est => {
                         const count = filtrarPorEstado(est.id).length;
                         const isActive = estadoActivo === est.id;
                         return (
@@ -1513,7 +1525,8 @@ export default function DashboardOficial() {
                                     )}
                                 </div>
 
-                                {/* NUEVO PANEL DE RIESGO CUALITATIVO */}
+                                {userRole !== 'auxiliar_sagrilaft' && (
+{/* NUEVO PANEL DE RIESGO CUALITATIVO */}
                                 <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid #e2e8f0', marginBottom: '1.5rem' }}>
                                     <h4 style={{ margin: '0 0 1rem 0', color: '#0f172a' }}>1. Evaluación Cualitativa (Oficial)</h4>
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
@@ -1610,7 +1623,8 @@ export default function DashboardOficial() {
                                 <div style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', textAlign: 'center' }}>
                                     <h4 style={{ margin: '0 0 1rem 0' }}>Dictamen Final</h4>
                                     
-                                    {/* Desglose del puntaje para registros con scoring calculado */}
+                                    )}
+{/* Desglose del puntaje para registros con scoring calculado */}
                                     {solicitudSeleccionada.desglose_riesgo && (
                                         <div style={{ marginBottom: '1.5rem', padding: '1rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', textAlign: 'left' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
