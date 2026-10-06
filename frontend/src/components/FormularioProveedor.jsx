@@ -55,32 +55,32 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
     const [formData, setFormData] = useState({
         // 0. Metadata
         fecha_diligenciamiento: new Date().toISOString().split('T')[0],
-        ambito_operacion: 'nacional',
-        empresa_destino: 'selecta',
-        tipo_solicitud: 'vinculacion',
+        ambito_operacion: '',
+        empresa_destino: '',
+        tipo_solicitud: '',
         clase_vinculacion: isGenericEmpleado ? 'empleado' : 'proveedor',
         tipo_proveeduria: '',
-        tipo_persona: isGenericEmpleado ? 'natural' : 'juridica',
+        tipo_persona: isGenericEmpleado ? 'natural' : '',
 
         // 1. Identificación Natural
         nombres: '', primer_apellido: '', segundo_apellido: '',
-        tipo_identificacion: 'cc', numero_identificacion: '',
+        tipo_identificacion: '', numero_identificacion: '',
         lugar_expedicion: '', fecha_expedicion: '', 
         fecha_nacimiento: '', lugar_nacimiento: '', nacionalidad: '',
         correo_electronico: '', estado_civil: '',
         direccion_residencial: '', telefono_celular: '',
         ciudad: '', departamento: '', pais: 'Colombia',
-        ocupacion_profesion: 'independiente', declara_renta: '',
-        actividad_economica_principal: '', codigo_ciiu: '', sector: 'Comercial', sector_otro: '',
+        ocupacion_profesion: '', declara_renta: '',
+        actividad_economica_principal: '', codigo_ciiu: '', sector: '', sector_otro: '',
         empresa_labora: '', cargo: '', area: '',
         direccion_corporativa: '', telefono_corporativo: '',
         ciudad_empresa_labora: '', departamento_empresa_labora: '', pais_empresa_labora: '',
 
         // 2. Identificación Jurídica
-        razon_social: '', tipo_empresa: 'privada',
+        razon_social: '', tipo_empresa: '',
         direccion_oficina_principal: '', ciudad_juridica: '',
         departamento_juridica: '', telefono_juridica: '',
-        tiene_sucursales: 'no', sucursales_info: '', // ciudad/departamento/pais de sucursales
+        tiene_sucursales: '', sucursales_info: '', // ciudad/departamento/pais de sucursales
         telefono_corporativo_juridica: '', correo_corporativo_juridica: '', celular_corporativo_juridica: '',
         actividad_economica_principal_juridica: '', codigo_ciiu_juridica: '', sector_juridica: 'Comercial', sector_otro_juridica: '',
         
@@ -635,7 +635,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
     )};
 
     const renderCiiuInput = (label, name, width = "1fr") => {
-        const disabled = isDisabled(name) || forceDisabled;
+        const disabled = isDisabled(name);
         return (
         <div style={{ position: 'relative' }}>
             <label className={!disabled ? "label required" : "label"}>{label}</label>

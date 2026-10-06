@@ -978,8 +978,11 @@ const otpCache = new Map();
 
 // POST /api/v1/otp/send - Send OTP via Email
 app.post('/api/v1/otp/send', async (req, res) => {
-    const { email, empresa_destino } = req.body;
-    if (!email || typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    let { email, empresa_destino } = req.body;
+    if (email && typeof email === "string") {
+        email = email.trim().split(',')[0].split(';')[0]; // Toma solo el primer correo
+    }
+    if (!email || typeof email !== "string" || !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
         console.error("OTP fail, invalid email:", email);
         return res.status(400).json({ error: "El correo electrónico proporcionado es inválido o está vacío. Por favor vuelva al Paso 2 y asegúrese de escribir un correo válido." });
     }
