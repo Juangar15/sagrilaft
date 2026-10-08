@@ -826,8 +826,9 @@ export default function DashboardOficial() {
                         { id: 'REVISION_MANUAL', label: 'Revisión Manual', icon: <Filter size={16}/>, color: '#eab308', activeBg: '#eab308', activeColor: 'white' },
                         { id: 'ALERTA_CRITICA', label: 'Alertas Críticas', icon: <AlertTriangle size={16}/>, color: 'var(--danger)', activeBg: 'var(--danger)', activeColor: 'white' },
                         { id: 'ESPERA_EXTENDIDO', label: 'Análisis Extendido', icon: <Clock size={16}/>, color: '#8b5cf6', activeBg: '#8b5cf6', activeColor: 'white' },
-                        { id: 'APROBADO_LIMPIO', label: 'Aprobados', icon: <CheckCircle size={16}/>, color: 'var(--success-text)', activeBg: 'var(--success-text)', activeColor: 'white' }
-                    ].filter(est => userRole !== 'auxiliar_sagrilaft' || ['ASIGNACION_CARGO', 'REVISION_PREVIA', 'DEVUELTO_CORRECCION'].includes(est.id)).map(est => {
+                        { id: 'APROBADO_LIMPIO', label: 'Aprobados', icon: <CheckCircle size={16}/>, color: 'var(--success-text)', activeBg: 'var(--success-text)', activeColor: 'white' },
+                        { id: 'RECHAZADO', label: 'Rechazados', icon: <AlertTriangle size={16}/>, color: '#dc2626', activeBg: '#dc2626', activeColor: 'white' }
+                    ].filter(est => userRole !== 'auxiliar_sagrilaft' || ['ASIGNACION_CARGO', 'REVISION_PREVIA', 'DEVUELTO_CORRECCION', 'APROBADO_LIMPIO', 'RECHAZADO'].includes(est.id)).map(est => {
                         const count = filtrarPorEstado(est.id).length;
                         const isActive = estadoActivo === est.id;
                         return (
@@ -1680,7 +1681,7 @@ export default function DashboardOficial() {
                                         </div>
                                     ) : (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                            <button 
+                                            {userRole !== 'auxiliar_sagrilaft' && (<button 
                                                 className="btn-primary" 
                                                 style={{ width: '100%', padding: '1rem', background: (solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || (solicitudSeleccionada.estado_actual === 'REVISION_PREVIA' || solicitudSeleccionada.estado_actual === 'ASIGNACION_CARGO')) ? 'var(--text-muted)' : 'var(--success)', borderColor: (solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || (solicitudSeleccionada.estado_actual === 'REVISION_PREVIA' || solicitudSeleccionada.estado_actual === 'ASIGNACION_CARGO')) ? 'var(--border)' : 'var(--success)', opacity: (solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || (solicitudSeleccionada.estado_actual === 'REVISION_PREVIA' || solicitudSeleccionada.estado_actual === 'ASIGNACION_CARGO')) ? 0.5 : 1, cursor: (solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || (solicitudSeleccionada.estado_actual === 'REVISION_PREVIA' || solicitudSeleccionada.estado_actual === 'ASIGNACION_CARGO')) ? 'not-allowed' : 'pointer' }} 
                                                 onClick={handleAprobarManualmente}
@@ -1689,7 +1690,7 @@ export default function DashboardOficial() {
                                             >
                                                 <CheckCircle size={20} style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} /> 
                                                 {(solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || (solicitudSeleccionada.estado_actual === 'REVISION_PREVIA' || solicitudSeleccionada.estado_actual === 'ASIGNACION_CARGO')) ? 'Bloqueado (Requiere TusDatos)' : 'Otorgar Visto Bueno Definitivo'}
-                                            </button>
+                                            </button>)}
                                             
                                             {!mostrarPingPong ? (
                                                 <div style={{ display: 'grid', gridTemplateColumns: (solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || (solicitudSeleccionada.estado_actual === 'REVISION_PREVIA' || solicitudSeleccionada.estado_actual === 'ASIGNACION_CARGO')) ? '1fr 1fr 1fr' : '1fr 1fr 1fr 1fr', gap: '0.75rem' }}>
@@ -1708,12 +1709,12 @@ export default function DashboardOficial() {
                                                         ↩️ Devolver (Ping-Pong)
                                                     </button>
                                                     )}
-                                                    <button className="btn-outline" style={{ padding: '0.75rem', fontSize: '0.85rem', color: '#8b5cf6', borderColor: '#8b5cf6' }} onClick={() => handleCambiarEstado('ESPERA_EXTENDIDO')}>
+                                                    {userRole !== 'auxiliar_sagrilaft' && (<button className="btn-outline" style={{ padding: '0.75rem', fontSize: '0.85rem', color: '#8b5cf6', borderColor: '#8b5cf6' }} onClick={() => handleCambiarEstado('ESPERA_EXTENDIDO')}>
                                                         🌍 Análisis Extendido
-                                                    </button>
-                                                    <button className="btn-outline" style={{ padding: '0.75rem', fontSize: '0.85rem', color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => handleCambiarEstado('RECHAZADO')}>
+                                                    </button>)}
+                                                    {userRole !== 'auxiliar_sagrilaft' && (<button className="btn-outline" style={{ padding: '0.75rem', fontSize: '0.85rem', color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => handleCambiarEstado('RECHAZADO')}>
                                                         ❌ Rechazo Directo
-                                                    </button>
+                                                    </button>)}
                                                 </div>
                                             ) : (
                                                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} style={{ background: '#fffbeb', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid #fde68a', textAlign: 'left', marginTop: '1rem' }}>
