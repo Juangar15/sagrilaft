@@ -277,7 +277,14 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
             'ingresos_mensuales', 'egresos_mensuales', 'patrimonio', 'otros_ingresos_mensuales'
         ];
         if (camposNumericos.includes(name)) {
-            value = value.replace(/\D/g, ''); // Elimina todo lo que no sea dígito
+            if (name === 'rep_legal_numero_id') {
+                const isForeign = ['ce', 'pasaporte'].includes(formData.rep_legal_tipo_id || '');
+                if (!isForeign) {
+                    value = value.replace(/\D/g, '');
+                }
+            } else {
+                value = value.replace(/\D/g, ''); // Elimina todo lo que no sea d?gito
+            }
         }
         // NIT: solo numérico si NO es operación internacional
         if (name === 'numero_identificacion' && formData.ambito_operacion !== 'internacional') {
@@ -1232,7 +1239,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 <div style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', marginBottom: '2rem' }}>
                                     <h4 style={{ margin: '0 0 1rem 0' }}>Identificación de accionistas (&gt; 5% capital social)</h4>
                                     <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-                                        <i>Indique en este apartado los accionistas con participación superior al 5% del capital social y adjunte, al final del formulario, el Certificado de Composición Accionaria. Si, por políticas de confidencialidad de la compañía, no es posible brindar esta información, deberá adjuntar al final la Certificación LA/FT.</i>
+                                        <i>Indique en este apartado los accionistas con participación superior al 5% del capital social y (Adjunte), al final del formulario, el Certificado de Composición Accionaria. Si, por políticas de confidencialidad de la compañía, no es posible brindar esta información, deberá adjuntar al final la Certificación LA/FT.</i>
                                     </p>
                                     <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '1rem', padding: '0.75rem', background: '#fff7ed', borderRadius: 'var(--radius-sm)', border: '1px solid #fed7aa', cursor: 'pointer' }}>
                                         <input type="checkbox" checked={formData.accionistas_confidencial === true} onChange={e => setFormData(p => ({...p, accionistas_confidencial: e.target.checked}))} style={{ width: '18px', height: '18px', flexShrink: 0, marginTop: '2px' }} />
@@ -1271,7 +1278,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                     </>)}
                                 </div>
 
-                                <h4 style={{ margin: '2rem 0 1rem 0', color: 'var(--text-main)', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Persona Expuesta Públicamente (persona expuesta públicamente)</h4>
+                                <h4 style={{ margin: '2rem 0 1rem 0', color: 'var(--text-main)', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Persona Expuesta Públicamente (PEP)</h4>
                                 <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid #cbd5e1', marginBottom: '1.5rem', fontSize: '0.85rem', color: '#475569' }}>
                                     <strong>Definición PEP:</strong> Es aquella persona que desempeñó o ejerce actualmente un cargo o función pública relevante para un país (ej: Jefes de Estado, altos funcionarios gubernamentales, militares, judiciales, directivos de empresas estatales). <br/><br/>
                                     <strong>Reconocimiento Público:</strong> Son aquellas que debido a su destreza especial o habilidad (artes, farándula, deporte, ciencias, youtubers, líderes religiosos) obtienen notoriedad entre el público.
@@ -1578,15 +1585,18 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                         <h4 style={{ margin: '0 0 1rem 0' }}>Declaración de Origen de Fondos</h4>
                                         <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem', lineHeight: '1.5' }}>
                                             <p>Declaro expresamente a <strong>{nombreEmpresaFull}</strong> que:</p>
+                                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0.5rem 0' }}>
+                                                Quien suscribe el presente documento{formData.tipo_persona === 'juridica' ? ', obrando en nombre y representación de la persona jurídica que representa,' : ''} declara ante <strong>{nombreEmpresaFull}</strong> que:
+                                            </p>
                                             <ol style={{ margin: '0.5rem 0 0.5rem 1.5rem', padding: 0 }}>
-                                                <li>La información que he suministrado en este documento es veraz y verificable y me comprometo a actualizarla anualmente.</li>
-                                                <li>Tanto mis actividades, profesión u oficio son lícitas, las ejerzo dentro del marco legal y los recursos que poseo no provienen de actividades ilícitas de las contempladas en el Código Penal Colombiano o en cualquier norma que lo sustituya, adicione o modifique.</li>
-                                                <li>Los recursos que se deriven del desarrollo de este contrato no serán destinados a la financiación del terrorismo, actividades terroristas o grupos terroristas.</li>
-                                                <li>Acepto que <strong>{nombreEmpresaFull}</strong> está en la obligación legal de solicitar las aclaraciones que estime pertinentes, en el evento en que se presenten circunstancias con base en las cuales se puedan tener dudas razonables sobre mis transacciones, así como sobre el origen de mis fondos, evento en el cual suministraré las aclaraciones que sean necesarias.</li>
-                                                <li>Los recursos que poseo provienen de la(s) siguiente(s) actividad(es):</li>
+                                                <li>La información suministrada en este documento es veraz, completa y verificable, y se compromete a actualizarla anualmente o cuando se presenten modificaciones relevantes.</li>
+                                                <li>{formData.tipo_persona === 'juridica' ? 'La persona jurídica que representa desarrolla actividades comerciales lícitas' : 'Desarrolla actividades lícitas'}, las cuales ejerce dentro del marco legal vigente, y los recursos que posee no provienen de actividades ilícitas contempladas en el Código Penal Colombiano o en cualquier otra norma que lo sustituya, adicione o modifique.</li>
+                                                <li>Los recursos que se deriven del desarrollo del presente contrato no serán destinados a la financiación del terrorismo, actividades terroristas o grupos terroristas.</li>
+                                                <li>Autoriza a <strong>{nombreEmpresaFull}</strong>, en su calidad de contratante, para solicitar las aclaraciones que estime pertinentes, en caso de que se presenten circunstancias con base en las cuales existan dudas razonables sobre sus transacciones o sobre el origen de los fondos, evento en el cual suministrará las explicaciones y soportes que resulten necesarios.</li>
+                                                <li>Los recursos {formData.tipo_persona === 'juridica' ? 'de la persona jurídica que representa' : 'que posee'} provienen de la(s) siguiente(s) actividad(es):</li>
                                             </ol>
                                         </div>
-                                        {renderInput("ORIGEN DE FONDOS: Especifique de dónde provienen sus recursos:", "origen_fondos", "text", "1fr", false, true)}
+                                        {renderInput("ORIGEN DE FONDOS (Especifique de donde provienen el origen de sus fondos):", "origen_fondos", "text", "1fr", false, true)}
                                     </div>
                                 </div>
 
@@ -1602,7 +1612,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                             <motion.div key="p9" variants={formVariants} initial="hidden" animate="visible" exit="exit">
                                 <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><UploadCloud size={20}/> 9. Soportes Documentales</h3>
                                 {!isInternalRole && (
-                                    <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Adjunte los documentos exigidos. Tenga en cuenta las vigencias requeridas para Cámara de Comercio (30 días), Composición Accionaria (3 meses) y Balance (corte año anterior).</p>
+                                    <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Adjunte los documentos exigidos. Tenga en cuenta las vigencias requeridas para Cámara de Comercio (30 días), Composición Accionaria (3 meses) y Estados Financieros (corte año anterior).</p>
                                 )}
                                 {isInternalRole && (
                                     <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Adjunte su documento de identidad vigente para continuar con el proceso.</p>
@@ -1625,7 +1635,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                         { id: 'cedula_rep_legal_frontal', label: 'Cédula Rep. Legal (Frente o PDF)' },
                                         { id: 'cedula_rep_legal_reversa', label: 'Cédula Rep. Legal (Reverso - Si es foto)' },
                                         { id: 'certificacion_bancaria', label: 'Certificado Bancario (Opcional)' },
-                                        { id: 'balance_empresa', label: 'Balance de la Empresa', requiereFecha: true, tipoValidacion: 'corte_anterior', errorMsg: 'debe ser de Dic del año anterior' },
+                                        { id: 'balance_empresa', label: 'Estados Financieros', requiereFecha: true, tipoValidacion: 'corte_anterior', errorMsg: 'debe ser de Dic del año anterior' },
                                         ...(!formData.accionistas_confidencial ? [{ id: 'composicion_accionaria', label: 'Composición Accionaria', requiereFecha: true, maxDays: 90, errorMsg: 'vencida (>3 meses)' }] : [])
                                     ]).map(doc => {
                                         const isExteriorCC = doc.id === 'cc_comercio' && formData.exterior_tributario === 'si';
