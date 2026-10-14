@@ -47,20 +47,17 @@ function App() {
         {/* Ruta de Login (si ya tiene sesión, mandarlo al dashboard) */}
         <Route path="/login" element={session ? <Navigate to="/dashboard" replace /> : <Login setSession={setSession} />} />
 
-        {/* Rutas públicas del Formulario MVP */}
+        {/* Rutas públicas del Formulario MVP y Generación de Links */}
         <Route path="/onboarding" element={<GatewayOnboarding />} />
         <Route path="/onboarding/proveedor" element={<FormularioProveedor />} />
         <Route path="/onboarding/empleado" element={<FormularioProveedor isGenericEmpleado={true} />} />
+        <Route path="/portal-interno" element={<PortalInterno />} />
+        <Route path="/generar-link" element={<PortalInterno />} />
         
         {/* Rutas Protegidas */}
         <Route path="/dashboard" element={
           <ProtectedRoute session={session}>
             <DashboardOficial />
-          </ProtectedRoute>
-        } />
-        <Route path="/portal-interno" element={
-          <ProtectedRoute session={session}>
-            <PortalInterno />
           </ProtectedRoute>
         } />
       </Routes>

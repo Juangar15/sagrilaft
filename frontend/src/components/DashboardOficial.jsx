@@ -729,11 +729,12 @@ export default function DashboardOficial() {
                         />
                     </div>
                     <button 
-                        onClick={() => window.location.href = '/portal-interno'}
+                        onClick={() => window.open('/portal-interno', '_blank')}
                         className="btn-primary"
                         style={{ padding: '0.75rem 1.5rem', whiteSpace: 'nowrap' }}
+                        title="Abrir generador de links en pestaña nueva"
                     >
-                        ➕ Generar Nueva Invitación
+                        ➕ Generar Invitación
                     </button>
                     <button 
                         onClick={() => supabase.auth.signOut()}
