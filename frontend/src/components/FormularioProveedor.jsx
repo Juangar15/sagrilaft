@@ -1772,19 +1772,44 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 </p>
 
                                 {!otpEnviado ? (
-                                    <button className="btn-primary" style={{ margin: '0 auto' }} disabled={!terminosAceptados || cargando} onClick={enviarOTP}>
-                                        {cargando ? 'Generando código seguro...' : <><Smartphone size={18}/> Solicitar Código de Firma OTP (Correo)</>}
+                                    <button 
+                                        key="btn-solicitar-otp"
+                                        translate="no"
+                                        className="btn-primary notranslate" 
+                                        style={{ margin: '0 auto', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }} 
+                                        disabled={!terminosAceptados || cargando} 
+                                        onClick={enviarOTP}
+                                    >
+                                        {cargando ? (
+                                            <span>Generando código seguro...</span>
+                                        ) : (
+                                            <>
+                                                <Smartphone size={18}/>
+                                                <span>Solicitar Código de Firma OTP (Correo)</span>
+                                            </>
+                                        )}
                                     </button>
                                 ) : (
-                                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
+                                    <motion.div key="seccion-otp-enviado" initial={{ opacity: 0, scale: 0.9 }} animate={{ scale: 1, scale: 1 }}>
                                         <div style={{ background: 'var(--success-bg)', color: 'var(--success-text)', padding: '1rem', borderRadius: 'var(--radius-sm)', marginBottom: '1.5rem', fontWeight: '500' }}>
                                             ✅  Código de 6 dígitos enviado por correo electrónico.
                                         </div>
                                         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '2rem' }}>
                                             <input type="text" maxLength={6} placeholder="Ej: 123456" value={codigoOTP} onChange={(e) => setCodigoOTP(e.target.value)} className="input-field" style={{ width: '150px', textAlign: 'center', fontSize: '1.25rem', letterSpacing: '0.2em' }} />
                                         </div>
-                                        <button className="btn-primary" style={{ margin: '0 auto', background: 'var(--text-main)' }} onClick={handleSubmit} disabled={cargando}>
-                                            {cargando ? 'Firmando y evaluando antecedentes...' : 'Firmar Electrónicamente y Enviar'}
+                                        <button 
+                                            key="btn-firmar-submit"
+                                            translate="no"
+                                            className="btn-primary notranslate" 
+                                            style={{ margin: '0 auto', background: 'var(--text-main)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }} 
+                                            onClick={handleSubmit} 
+                                            disabled={cargando}
+                                        >
+                                            {cargando ? (
+                                                <span>Firmando y evaluando antecedentes...</span>
+                                            ) : (
+                                                <span>Firmar Electrónicamente y Enviar</span>
+                                            )}
                                         </button>
                                     </motion.div>
                                 )}
