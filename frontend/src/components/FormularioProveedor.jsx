@@ -27,6 +27,75 @@ const CurrencyInput = ({ label, name, value, onChange, width="1fr", required = t
     )
 };
 
+// --- COMPONENTE AUXILIAR PARA SUB-ACCIONISTAS DE PERSONA JURÍDICA ---
+const SubAccionistaInput = ({ onAdd }) => {
+    const [sub, setSub] = useState({
+        tipo_persona: 'natural',
+        nombre: '',
+        identificacion: '',
+        porcentaje: '',
+        administra_recursos: 'no',
+        goza_reconocimiento: 'no'
+    });
+
+    const handleAdd = () => {
+        if (!sub.nombre.trim() || !sub.identificacion.trim() || !sub.porcentaje) {
+            alert("Por favor complete nombre, identificación y porcentaje del accionista.");
+            return;
+        }
+        onAdd({ ...sub });
+        setSub({
+            tipo_persona: 'natural',
+            nombre: '',
+            identificacion: '',
+            porcentaje: '',
+            administra_recursos: 'no',
+            goza_reconocimiento: 'no'
+        });
+    };
+
+    return (
+        <div style={{ display: 'grid', gridTemplateColumns: '110px 1.5fr 1fr 65px 1fr 1fr auto', gap: '0.5rem', alignItems: 'flex-end', marginTop: '0.75rem', background: '#f8fafc', padding: '0.75rem', borderRadius: '6px', border: '1px dashed #cbd5e1' }}>
+            <div>
+                <label className="label" style={{ fontSize: '0.75rem' }}>Tipo Persona</label>
+                <select className="input-field" style={{ fontSize: '0.8rem', padding: '0.4rem' }} value={sub.tipo_persona} onChange={e => setSub({...sub, tipo_persona: e.target.value})}>
+                    <option value="natural">Natural</option>
+                    <option value="juridica">Jurídica</option>
+                </select>
+            </div>
+            <div>
+                <label className="label" style={{ fontSize: '0.75rem' }}>{sub.tipo_persona === 'juridica' ? 'Razón Social' : 'Nombre Completo'}</label>
+                <input type="text" className="input-field" style={{ fontSize: '0.8rem', padding: '0.4rem' }} placeholder={sub.tipo_persona === 'juridica' ? 'Empresa socia' : 'Nombre socio'} value={sub.nombre} onChange={e => setSub({...sub, nombre: e.target.value})} />
+            </div>
+            <div>
+                <label className="label" style={{ fontSize: '0.75rem' }}>{sub.tipo_persona === 'juridica' ? 'NIT' : 'Cédula / ID'}</label>
+                <input type="text" className="input-field" style={{ fontSize: '0.8rem', padding: '0.4rem' }} placeholder="Identificación" value={sub.identificacion} onChange={e => setSub({...sub, identificacion: e.target.value})} />
+            </div>
+            <div>
+                <label className="label" style={{ fontSize: '0.75rem' }}>% Part.</label>
+                <input type="number" min="0" max="100" className="input-field" style={{ fontSize: '0.8rem', padding: '0.4rem' }} placeholder="%" value={sub.porcentaje} onChange={e => setSub({...sub, porcentaje: e.target.value})} />
+            </div>
+            <div>
+                <label className="label" style={{ fontSize: '0.75rem' }}>¿Adm. rec. púb.?</label>
+                <select className="input-field" style={{ fontSize: '0.8rem', padding: '0.4rem' }} value={sub.administra_recursos} onChange={e => setSub({...sub, administra_recursos: e.target.value})}>
+                    <option value="no">No</option>
+                    <option value="si">Sí</option>
+                </select>
+            </div>
+            <div>
+                <label className="label" style={{ fontSize: '0.75rem' }}>¿Recon. púb.?</label>
+                <select className="input-field" style={{ fontSize: '0.8rem', padding: '0.4rem' }} value={sub.goza_reconocimiento} onChange={e => setSub({...sub, goza_reconocimiento: e.target.value})}>
+                    <option value="no">No</option>
+                    <option value="si">Sí</option>
+                </select>
+            </div>
+            <button type="button" className="btn-outline" style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem', whiteSpace: 'nowrap' }} onClick={handleAdd}>
+                + Añadir
+            </button>
+        </div>
+    );
+};
+
 export default function FormularioProveedor({ isGenericEmpleado = false }) {
     const [searchParams] = useSearchParams();
     const token = searchParams.get('token');
@@ -201,7 +270,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
 
     // Estados temporales para listas dinámicas y fechas de documentos
     const [fechasDocumentos, setFechasDocumentos] = useState({});
-    const [nuevoAccionista, setNuevoAccionista] = useState({ tipo_id: 'cc', identificacion: '', nombre: '', porcentaje: '', administra_recursos: 'no', goza_reconocimiento: 'no' });
+    const [nuevoAccionista, setNuevoAccionista] = useState({ tipo_persona: 'natural', tipo_id: 'cc', identificacion: '', nombre: '', porcentaje: '', administra_recursos: 'no', goza_reconocimiento: 'no', confidencial: false, sub_accionistas: [] });
     const [nuevaRefComercial, setNuevaRefComercial] = useState({ referencia: '', direccion: '', ciudad: '', contacto: '', telefono: '' });
     const [nuevaRefBancaria, setNuevaRefBancaria] = useState({ banco: '', cuenta: '', tipo: 'Ahorros', ciudad: '', telefono: '' });
     const [nuevoFamiliarPep, setNuevoFamiliarPep] = useState({ nombre: '', identificacion: '', parentesco: '' });
@@ -482,9 +551,19 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
             }
         }
         if (pasoActual === 4 && !isInternalRole && d.tipo_persona === 'juridica') {
-            if (!d.accionistas_confidencial && d.accionistas.length === 0) {
-                showToast("Debe añadir al menos un accionista, o marcar la casilla de confidencialidad.");
-                return false;
+            if (!d.accionistas_confidencial) {
+                if (d.accionistas.length === 0) {
+                    showToast("Debe añadir al menos un accionista, o marcar la casilla de confidencialidad.");
+                    return false;
+                }
+                for (const acc of d.accionistas) {
+                    if (acc.tipo_persona === 'juridica') {
+                        if (!acc.confidencial && (!acc.sub_accionistas || acc.sub_accionistas.length === 0)) {
+                            showToast(`Para la empresa accionista "${acc.nombre}", debe ingresar sus accionistas (>5%) o marcar su casilla de confidencialidad.`);
+                            return false;
+                        }
+                    }
+                }
             }
         }
         if (pasoActual === 5) {
@@ -498,9 +577,8 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
             }
         }
         if (pasoActual === 6 && !isInternalRole) {
-            const eticaSi = ['politica_corrupcion', 'codigo_etica_conducta', 'tiene_comite_etica', 'canales_denuncia', 'acusada_corrupcion', 'tiene_oficial_cumplimiento'].some(k => d[k] === 'si');
-            if (eticaSi && !d.detalles_etica) {
-                showToast("Debe detallar la información de las respuestas afirmativas en Ética y Cumplimiento.");
+            if (d.acusada_corrupcion === 'si' && (!d.detalles_etica || !d.detalles_etica.trim())) {
+                showToast("Debe detallar la información de la acusación de corrupción en Ética y Cumplimiento.");
                 return false;
             }
             if (d.tiene_oficial_cumplimiento === 'si' && !d.nombre_oficial_cumplimiento) {
@@ -1246,10 +1324,59 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                         <span style={{ fontSize: '0.9rem', color: '#92400e', fontWeight: '500' }}>Por políticas de confidencialidad de la compañía, no es posible brindar esta información. Adjuntaré la Certificación LA/FT (se habilitará un formato en el siguiente paso).</span>
                                     </label>
                                     {!formData.accionistas_confidencial && (<>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 70px 1fr 1fr auto', gap: '0.75rem', alignItems: 'flex-end', marginBottom: '1rem' }}>
-                                        <div><label className="label" style={{ fontSize: '0.8rem' }}>Nombre Socio</label><input type="text" value={nuevoAccionista.nombre} onChange={e=>setNuevoAccionista({...nuevoAccionista, nombre: e.target.value})} className="input-field"/></div>
-                                        <div><label className="label" style={{ fontSize: '0.8rem' }}>Cédula</label><input type="text" value={nuevoAccionista.identificacion} onChange={e=>setNuevoAccionista({...nuevoAccionista, identificacion: e.target.value})} className="input-field"/></div>
-                                        <div><label className="label" style={{ fontSize: '0.8rem' }}>% Part.</label><input type="number" min="0" max="100" value={nuevoAccionista.porcentaje} onChange={e=>setNuevoAccionista({...nuevoAccionista, porcentaje: e.target.value})} className="input-field" style={{ padding: '0.5rem' }}/></div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '120px 1.5fr 1fr 70px 1fr 1fr auto', gap: '0.75rem', alignItems: 'flex-end', marginBottom: '1rem' }}>
+                                        <div>
+                                            <label className="label" style={{ fontSize: '0.8rem' }}>Tipo Persona</label>
+                                            <select 
+                                                className="input-field" 
+                                                value={nuevoAccionista.tipo_persona || 'natural'} 
+                                                onChange={e => setNuevoAccionista({
+                                                    ...nuevoAccionista, 
+                                                    tipo_persona: e.target.value,
+                                                    tipo_id: e.target.value === 'juridica' ? 'nit' : 'cc'
+                                                })}
+                                            >
+                                                <option value="natural">Natural</option>
+                                                <option value="juridica">Jurídica</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="label" style={{ fontSize: '0.8rem' }}>
+                                                {nuevoAccionista.tipo_persona === 'juridica' ? 'Razón Social' : 'Nombre Socio'}
+                                            </label>
+                                            <input 
+                                                type="text" 
+                                                placeholder={nuevoAccionista.tipo_persona === 'juridica' ? 'Ej. Inversiones SAS' : 'Ej. Juan Pérez'}
+                                                value={nuevoAccionista.nombre} 
+                                                onChange={e=>setNuevoAccionista({...nuevoAccionista, nombre: e.target.value})} 
+                                                className="input-field"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="label" style={{ fontSize: '0.8rem' }}>
+                                                {nuevoAccionista.tipo_persona === 'juridica' ? 'NIT' : 'Cédula / ID'}
+                                            </label>
+                                            <input 
+                                                type="text" 
+                                                placeholder={nuevoAccionista.tipo_persona === 'juridica' ? '900123456' : '10203040'}
+                                                value={nuevoAccionista.identificacion} 
+                                                onChange={e=>setNuevoAccionista({...nuevoAccionista, identificacion: e.target.value})} 
+                                                className="input-field"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="label" style={{ fontSize: '0.8rem' }}>% Part.</label>
+                                            <input 
+                                                type="number" 
+                                                min="0" 
+                                                max="100" 
+                                                placeholder="%" 
+                                                value={nuevoAccionista.porcentaje} 
+                                                onChange={e=>setNuevoAccionista({...nuevoAccionista, porcentaje: e.target.value})} 
+                                                className="input-field" 
+                                                style={{ padding: '0.5rem' }}
+                                            />
+                                        </div>
                                         <div>
                                             <label className="label" style={{ fontSize: '0.8rem' }}>¿Adm. rec. públicos?</label>
                                             <select className="input-field" value={nuevoAccionista.administra_recursos} onChange={e => setNuevoAccionista({...nuevoAccionista, administra_recursos: e.target.value})}>
@@ -1264,16 +1391,131 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                                 <option value="si">Sí</option>
                                             </select>
                                         </div>
-                                        <button type="button" className="btn-outline" style={{ padding: '0.55rem 1rem' }} onClick={() => handleAddList('accionistas', nuevoAccionista, setNuevoAccionista, {tipo_id:'cc', identificacion:'', nombre:'', porcentaje:'', administra_recursos:'no', goza_reconocimiento:'no'})}>+ Agregar</button>
+                                        <button 
+                                            type="button" 
+                                            className="btn-outline" 
+                                            style={{ padding: '0.55rem 1rem' }} 
+                                            onClick={() => {
+                                                if (!nuevoAccionista.nombre || !nuevoAccionista.identificacion || !nuevoAccionista.porcentaje) {
+                                                    return showToast("Debe completar nombre, identificación y porcentaje del accionista.");
+                                                }
+                                                handleAddList('accionistas', nuevoAccionista, setNuevoAccionista, {
+                                                    tipo_persona: 'natural',
+                                                    tipo_id: 'cc',
+                                                    identificacion: '',
+                                                    nombre: '',
+                                                    porcentaje: '',
+                                                    administra_recursos: 'no',
+                                                    goza_reconocimiento: 'no',
+                                                    confidencial: false,
+                                                    sub_accionistas: []
+                                                });
+                                            }}
+                                        >
+                                            + Agregar
+                                        </button>
                                     </div>
+
                                     {formData.accionistas.map((acc, idx) => (
-                                        <div key={idx} style={{ padding: '0.5rem', borderBottom: '1px solid var(--border)', fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
-                                            <div style={{flex: 1}}>• {acc.nombre} (CC: {acc.identificacion}) - <b>{acc.porcentaje}%</b></div>
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                                Admin. Recursos: <b>{acc.administra_recursos === 'si' ? 'Sí' : 'No'}</b> | Reconoc. Público: <b>{acc.goza_reconocimiento === 'si' ? 'Sí' : 'No'}</b>
+                                        acc.tipo_persona === 'juridica' ? (
+                                            <div key={idx} style={{ padding: '1rem', border: '1px solid #cbd5e1', borderRadius: '8px', background: '#f8fafc', marginBottom: '1rem' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem', marginBottom: '0.75rem' }}>
+                                                    <div>
+                                                        <span style={{ background: '#fef3c7', color: '#92400e', fontSize: '0.75rem', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', marginRight: '6px' }}>JURÍDICA</span>
+                                                        <strong style={{ fontSize: '1rem' }}>{acc.nombre}</strong> (NIT: {acc.identificacion}) — <b>{acc.porcentaje}%</b>
+                                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                                                            Adm. Recursos: <b>{acc.administra_recursos === 'si' ? 'Sí' : 'No'}</b> | Reconoc. Público: <b>{acc.goza_reconocimiento === 'si' ? 'Sí' : 'No'}</b>
+                                                        </div>
+                                                    </div>
+                                                    <button type="button" className="btn-outline" style={{ padding: '0.25rem 0.6rem', fontSize: '0.8rem', color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => handleRemoveList('accionistas', idx)}>
+                                                        Eliminar Empresa
+                                                    </button>
+                                                </div>
+
+                                                <div style={{ background: '#ffffff', padding: '1rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                                                    <h5 style={{ margin: '0 0 0.5rem 0', color: '#1e293b', fontSize: '0.88rem' }}>
+                                                        Accionistas / Beneficiarios Finales de <strong>{acc.nombre}</strong> (&gt; 5% capital social):
+                                                    </h5>
+
+                                                    <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', padding: '0.6rem', background: '#fffbeb', borderRadius: '4px', border: '1px solid #fef3c7', cursor: 'pointer', marginBottom: '0.75rem' }}>
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={acc.confidencial === true} 
+                                                            onChange={e => {
+                                                                const updated = [...formData.accionistas];
+                                                                updated[idx].confidencial = e.target.checked;
+                                                                setFormData({ ...formData, accionistas: updated });
+                                                            }} 
+                                                            style={{ width: '16px', height: '16px', flexShrink: 0, marginTop: '2px' }} 
+                                                        />
+                                                        <span style={{ fontSize: '0.82rem', color: '#92400e', fontWeight: '500' }}>
+                                                            Por políticas de confidencialidad de esta empresa, no es posible brindar su información accionaria. Adjuntará Certificación LA/FT.
+                                                        </span>
+                                                    </label>
+
+                                                    {acc.confidencial ? (
+                                                        <div style={{ padding: '0.6rem', background: '#f1f5f9', borderRadius: '4px', fontSize: '0.8rem', color: '#475569' }}>
+                                                            ℹ️ Esta empresa accionista certificará su composición mediante Certificación LA/FT que deberá adjuntarse en el paso de documentos.
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <SubAccionistaInput 
+                                                                onAdd={(subAcc) => {
+                                                                    const updated = [...formData.accionistas];
+                                                                    if (!updated[idx].sub_accionistas) updated[idx].sub_accionistas = [];
+                                                                    updated[idx].sub_accionistas.push(subAcc);
+                                                                    setFormData({ ...formData, accionistas: updated });
+                                                                }}
+                                                            />
+
+                                                            {(acc.sub_accionistas || []).length > 0 ? (
+                                                                <div style={{ marginTop: '0.75rem' }}>
+                                                                    {acc.sub_accionistas.map((sub, subIdx) => (
+                                                                        <div key={subIdx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.4rem 0.6rem', borderBottom: '1px dashed #e2e8f0', fontSize: '0.83rem' }}>
+                                                                            <div>
+                                                                                <span style={{ background: sub.tipo_persona === 'juridica' ? '#fef3c7' : '#e0f2fe', color: sub.tipo_persona === 'juridica' ? '#92400e' : '#0369a1', fontSize: '0.7rem', padding: '1px 4px', borderRadius: '3px', fontWeight: 'bold', marginRight: '5px' }}>
+                                                                                    {sub.tipo_persona === 'juridica' ? 'JURÍDICA' : 'NATURAL'}
+                                                                                </span>
+                                                                                <strong>{sub.nombre}</strong> ({sub.identificacion}) — <b>{sub.porcentaje}%</b>
+                                                                                <span style={{ color: 'var(--text-muted)', marginLeft: '8px' }}>
+                                                                                    (Adm. Púb: {sub.administra_recursos === 'si' ? 'Sí' : 'No'} | Recon. Púb: {sub.goza_reconocimiento === 'si' ? 'Sí' : 'No'})
+                                                                                </span>
+                                                                            </div>
+                                                                            <button 
+                                                                                type="button" 
+                                                                                style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '0.75rem' }}
+                                                                                onClick={() => {
+                                                                                    const updated = [...formData.accionistas];
+                                                                                    updated[idx].sub_accionistas.splice(subIdx, 1);
+                                                                                    setFormData({ ...formData, accionistas: updated });
+                                                                                }}
+                                                                            >
+                                                                                Eliminar
+                                                                            </button>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            ) : (
+                                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '0.5rem' }}>
+                                                                    Aún no se han añadido accionistas para esta persona jurídica.
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <button type="button" className="btn-outline" style={{ padding: '0.2rem 0.5rem', fontSize: '0.8rem', color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => handleRemoveList('accionistas', idx)}>Eliminar</button>
-                                        </div>
+                                        ) : (
+                                            <div key={idx} style={{ padding: '0.75rem', borderBottom: '1px solid var(--border)', fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', background: '#fafafa', borderRadius: '4px', marginBottom: '0.5rem' }}>
+                                                <div style={{flex: 1}}>
+                                                    <span style={{ background: '#e0f2fe', color: '#0369a1', fontSize: '0.75rem', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', marginRight: '6px' }}>NATURAL</span>
+                                                    <strong>{acc.nombre}</strong> (CC: {acc.identificacion}) — <b>{acc.porcentaje}%</b>
+                                                </div>
+                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                                    Admin. Recursos: <b>{acc.administra_recursos === 'si' ? 'Sí' : 'No'}</b> | Reconoc. Público: <b>{acc.goza_reconocimiento === 'si' ? 'Sí' : 'No'}</b>
+                                                </div>
+                                                <button type="button" className="btn-outline" style={{ padding: '0.2rem 0.5rem', fontSize: '0.8rem', color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => handleRemoveList('accionistas', idx)}>Eliminar</button>
+                                            </div>
+                                        )
                                     ))}
                                     </>)}
                                 </div>
@@ -1377,9 +1619,9 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                             {renderSelect("¿Tiene oficial de cumplimiento?", "tiene_oficial_cumplimiento", [{value:'no', label:'No'}, {value:'si', label:'Sí'}])}
                                             {formData.tiene_oficial_cumplimiento === 'si' && renderInput("Nombre del Oficial de Cumplimiento", "nombre_oficial_cumplimiento", "text", "1fr", false, true)}
                                         </div>
-                                        {['politica_corrupcion', 'codigo_etica_conducta', 'tiene_comite_etica', 'canales_denuncia', 'acusada_corrupcion', 'tiene_oficial_cumplimiento'].some(k => formData[k] === 'si') && (
+                                        {formData.acusada_corrupcion === 'si' && (
                                             <div style={{ marginTop: '1rem' }}>
-                                                {renderInput("Si respondió afirmativamente alguna de las preguntas anteriores, por favor detalle la información", "detalles_etica", "text", "1fr", false, true)}
+                                                {renderInput("Si respondió afirmativamente a la acusación de corrupción, por favor detalle la información", "detalles_etica", "text", "1fr", false, true)}
                                             </div>
                                         )}
                                     </div>
@@ -1636,7 +1878,16 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                         { id: 'cedula_rep_legal_reversa', label: 'Cédula Rep. Legal (Reverso - Si es foto)' },
                                         { id: 'certificacion_bancaria', label: 'Certificado Bancario (Opcional)' },
                                         { id: 'balance_empresa', label: 'Estados Financieros', requiereFecha: true, tipoValidacion: 'corte_anterior', errorMsg: 'debe ser de Dic del año anterior' },
-                                        ...(!formData.accionistas_confidencial ? [{ id: 'composicion_accionaria', label: 'Composición Accionaria', requiereFecha: true, maxDays: 90, errorMsg: 'vencida (>3 meses)' }] : [])
+                                        ...(!formData.accionistas_confidencial ? [
+                                            { id: 'composicion_accionaria', label: 'Composición Accionaria', requiereFecha: true, maxDays: 90, errorMsg: 'vencida (>3 meses)' },
+                                            ...(formData.accionistas || [])
+                                                .map((acc, i) => ({ acc, i }))
+                                                .filter(({ acc }) => acc.tipo_persona === 'juridica' && acc.confidencial)
+                                                .map(({ acc, i }) => ({
+                                                    id: `cert_laft_accionista_${i}`,
+                                                    label: `Certificación LA/FT (${acc.nombre || 'Accionista Jurídico ' + (i+1)})`
+                                                }))
+                                        ] : [])
                                     ]).map(doc => {
                                         const isExteriorCC = doc.id === 'cc_comercio' && formData.exterior_tributario === 'si';
                                         
@@ -1748,6 +1999,13 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                             reqs = ['rut', 'identificacion_frontal', 'certificado_naturales', 'formato_pep'];
                                         } else {
                                             reqs = formData.accionistas_confidencial ? ['rut', 'cc_comercio', 'cedula_rep_legal_frontal', 'balance_empresa'] : ['rut', 'cc_comercio', 'cedula_rep_legal_frontal', 'balance_empresa', 'composicion_accionaria'];
+                                        if (!formData.accionistas_confidencial) {
+                                            (formData.accionistas || []).forEach((acc, i) => {
+                                                if (acc.tipo_persona === 'juridica' && acc.confidencial) {
+                                                    reqs.push(`cert_laft_accionista_${i}`);
+                                                }
+                                            });
+                                        }
                                         }
                                         
                                         const faltantes = reqs.filter(r => {
