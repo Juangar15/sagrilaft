@@ -401,7 +401,18 @@ export default function FormularioEmpleado() {
                                 ) : (
                                     <div style={{ maxWidth: '300px', margin: '0 auto' }}>
                                         <label className="label">Ingresa el código de 6 dígitos enviado a tu WhatsApp</label>
-                                        <input type="text" value={codigoOTP} onChange={(e) => setCodigoOTP(e.target.value)} className="input-field" style={{ textAlign: 'center', fontSize: '1.5rem', letterSpacing: '0.25rem', marginBottom: '1rem' }} maxLength="6" placeholder="000000" />
+                                        <input 
+                                            type="text" 
+                                            inputMode="numeric"
+                                            pattern="[0-9]*"
+                                            autoComplete="one-time-code"
+                                            value={codigoOTP} 
+                                            onChange={(e) => setCodigoOTP(e.target.value.replace(/\D/g, ''))} 
+                                            className="otp-input" 
+                                            style={{ margin: '0 auto 1.5rem', display: 'block' }} 
+                                            maxLength="6" 
+                                            placeholder="123456" 
+                                        />
                                         <button className="btn-primary" style={{ width: '100%', justifyContent: 'center' }} disabled={codigoOTP.length < 6 || cargando} onClick={handleSubmit}>
                                             <ShieldCheck size={18} /> Firmar y Enviar
                                         </button>

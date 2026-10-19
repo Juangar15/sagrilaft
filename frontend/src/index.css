@@ -237,3 +237,35 @@ p {
 .animate-fade-in {
   animation: fadeIn 0.4s ease-out forwards;
 }
+
+/* Input para Código OTP de Firma */
+.otp-input {
+  width: 220px !important;
+  max-width: 90vw !important;
+  padding: 0.85rem 1rem !important;
+  text-align: center !important;
+  font-size: 1.6rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.3em !important;
+  color: #0f172a !important;
+  background-color: #ffffff !important;
+  border: 2.5px solid var(--primary, #0ea5e9) !important;
+  border-radius: var(--radius-md, 12px) !important;
+  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.18) !important;
+  outline: none !important;
+  font-family: monospace, sans-serif !important;
+}
+
+.otp-input::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+  letter-spacing: 0.15em !important;
+  font-weight: 500 !important;
+}
+
+.otp-input:focus {
+  border-color: #0284c7 !important;
+  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.25) !important;
+  background-color: #ffffff !important;
+}
+

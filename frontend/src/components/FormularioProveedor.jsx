@@ -255,6 +255,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                             token,
                             clase_vinculacion: validacion.datos.tipo_vinculacion?.toLowerCase() || '',
                             correo_electronico: validacion.datos.correo || '',
+                            correo_corporativo_juridica: validacion.datos.correo || '',
                             // Si es empleado, forzar a natural
                             tipo_persona: ['empleado', 'contratista', 'accionista'].includes(validacion.datos.tipo_vinculacion?.toLowerCase()) ? 'natural' : prev.tipo_persona
                         }));
@@ -383,7 +384,9 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
     const enviarOTP = async () => {
         setCargando(true);
         try {
-            const email = formData.tipo_persona === 'juridica' ? formData.correo_corporativo_juridica : formData.correo_electronico;
+            const email = (formData.tipo_persona === 'juridica' 
+                ? (formData.correo_corporativo_juridica || formData.correo_electronico) 
+                : (formData.correo_electronico || formData.correo_corporativo_juridica))?.trim();
             if (!email) {
                 showToast("No hay un correo electrónico asociado para enviar el código.");
                 setCargando(false);
@@ -2048,12 +2051,33 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                         )}
                                     </button>
                                 ) : (
-                                    <motion.div key="seccion-otp-enviado" initial={{ opacity: 0, scale: 0.9 }} animate={{ scale: 1, scale: 1 }}>
+                                    <motion.div key="seccion-otp-enviado" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
                                         <div style={{ background: 'var(--success-bg)', color: 'var(--success-text)', padding: '1rem', borderRadius: 'var(--radius-sm)', marginBottom: '1.5rem', fontWeight: '500' }}>
                                             ✅  Código de 6 dígitos enviado por correo electrónico.
                                         </div>
-                                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '2rem' }}>
-                                            <input type="text" maxLength={6} placeholder="Ej: 123456" value={codigoOTP} onChange={(e) => setCodigoOTP(e.target.value)} className="input-field" style={{ width: '150px', textAlign: 'center', fontSize: '1.25rem', letterSpacing: '0.2em' }} />
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.6rem', marginBottom: '2rem' }}>
+                                            <label style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-main, #1e293b)' }}>
+                                                Ingrese el código de 6 dígitos aquí:
+                                            </label>
+                                            <input 
+                                                type="text" 
+                                                inputMode="numeric"
+                                                pattern="[0-9]*"
+                                                autoComplete="one-time-code"
+                                                maxLength={6} 
+                                                placeholder="123456" 
+                                                value={codigoOTP} 
+                                                onChange={(e) => setCodigoOTP(e.target.value.replace(/\D/g, ''))} 
+                                                className="otp-input"
+                                            />
+                                            <button 
+                                                type="button" 
+                                                onClick={enviarOTP} 
+                                                disabled={cargando}
+                                                style={{ background: 'none', border: 'none', color: '#0284c7', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.85rem', marginTop: '0.5rem' }}
+                                            >
+                                                ¿No recibió el código? Reenviar código
+                                            </button>
                                         </div>
                                         <button 
                                             key="btn-firmar-submit"
