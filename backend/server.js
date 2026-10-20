@@ -720,6 +720,22 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
         if (!newFormulario.estudios_tusdatos) newFormulario.estudios_tusdatos = {};
         newFormulario.estudios_tusdatos[targetKey] = resumenEstudio;
 
+        todosVinculados.forEach(v => {
+            if (v.key !== targetKey && v.doc === targetVinculado.doc && v.typedoc === targetVinculado.typedoc) {
+                newFormulario.estudios_tusdatos[v.key] = { ...resumenEstudio, key: v.key, rol: v.rol };
+            }
+        });
+
+        // Propagar a otros vinculados que compartan exactamente el mismo documento
+        todosVinculados.forEach(v => {
+            if (v.key !== targetKey && v.doc === docAConsultar && v.typedoc === tipoIdentificacion) {
+                newFormulario.estudios_tusdatos[v.key] = { ...resumenEstudio, key: v.key, rol: v.rol };
+                if (pdfUrl && newFormulario.archivos_cargados) {
+                    newFormulario.archivos_cargados[`reporte_tusdatos_${v.key}`] = pdfUrl;
+                }
+            }
+        });
+
         if (targetKey === 'principal') {
             newFormulario.jobid_tusdatos = jobid;
             newFormulario.reporte_id_tusdatos = finalData.id;
@@ -937,6 +953,12 @@ app.post('/api/v1/solicitudes/:id/tusdatos/retry', async (req, res) => {
         };
 
         newFormulario.estudios_tusdatos[targetKey] = resumenEstudio;
+
+        todosVinculados.forEach(v => {
+            if (v.key !== targetKey && v.doc === targetVinculado.doc && v.typedoc === targetVinculado.typedoc) {
+                newFormulario.estudios_tusdatos[v.key] = { ...resumenEstudio, key: v.key, rol: v.rol };
+            }
+        });
 
         if (targetKey === 'principal') {
             newFormulario.jobid_tusdatos = newJobid;

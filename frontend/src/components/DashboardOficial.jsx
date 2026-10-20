@@ -20,7 +20,9 @@ export default function DashboardOficial() {
     const [busqueda, setBusqueda] = useState('');
     const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
     const [cargandoTusDatos, setCargandoTusDatos] = useState(null); 
-    const [sujetoDetalleActivo, setSujetoDetalleActivo] = useState('principal'); 
+    const [sujetoExpandido, setSujetoExpandido] = useState(null); 
+    const [filtroSujetos, setFiltroSujetos] = useState('todos');
+    const [busquedaVinculados, setBusquedaVinculados] = useState(''); 
     const [matrizRiesgos, setMatrizRiesgos] = useState([]);
     
     // Estado para Ping-Pong
@@ -444,6 +446,7 @@ export default function DashboardOficial() {
         vinculados.push({
             key: 'principal',
             rol: isJuridica ? 'Empresa Contraparte (Principal)' : 'Persona Natural Contraparte (Principal)',
+            roles: [isJuridica ? 'Empresa Contraparte (Principal)' : 'Persona Natural Contraparte (Principal)'],
             nombre: nombrePrincipal,
             doc: docPrincipal,
             typedoc: isJuridica ? 'NIT' : (d.tipo_identificacion?.toUpperCase() || 'CC'),
@@ -459,6 +462,7 @@ export default function DashboardOficial() {
             vinculados.push({
                 key: 'rep_legal',
                 rol: 'Representante Legal',
+                roles: ['Representante Legal'],
                 nombre: nomRep || 'Representante Legal',
                 doc: d.rep_legal_numero_id.toString().trim(),
                 typedoc: tipoRep,
@@ -473,13 +477,17 @@ export default function DashboardOficial() {
                 let tipoAcc = esJur ? 'NIT' : (acc.tipo_id || 'cc').toUpperCase();
                 if (tipoAcc === 'PASAPORTE') tipoAcc = 'PP';
 
+                const rolTexto = esJur ? 'Accionista Jurídico (>5%)' : 'Accionista Natural (>5%)';
+                const porcTexto = acc.porcentaje ? `${acc.porcentaje}%` : null;
+
                 vinculados.push({
                     key: `accionista_${i}`,
-                    rol: esJur ? 'Accionista Jurídico (>5%)' : 'Accionista Natural (>5%)',
+                    rol: rolTexto,
+                    roles: [porcTexto ? `${rolTexto} (${porcTexto})` : rolTexto],
                     nombre: acc.nombre || `Accionista ${i + 1}`,
                     doc: acc.identificacion.toString().trim(),
                     typedoc: tipoAcc,
-                    porcentaje: acc.porcentaje ? `${acc.porcentaje}%` : null,
+                    porcentaje: porcTexto,
                     esJuridica: esJur
                 });
 
@@ -490,13 +498,17 @@ export default function DashboardOficial() {
                         let tipoSub = subEsJur ? 'NIT' : (sub.tipo_id || 'cc').toUpperCase();
                         if (tipoSub === 'PASAPORTE') tipoSub = 'PP';
 
+                        const subRol = `Beneficiario Final (Socio de ${acc.nombre || 'Accionista ' + (i+1)})`;
+                        const subPorc = sub.porcentaje ? `${sub.porcentaje}%` : null;
+
                         vinculados.push({
                             key: `sub_accionista_${i}_${sIdx}`,
-                            rol: `Beneficiario Final (Socio de ${acc.nombre || 'Accionista ' + (i+1)})`,
+                            rol: subRol,
+                            roles: [subPorc ? `${subRol} (${subPorc})` : subRol],
                             nombre: sub.nombre || `Beneficiario ${sIdx + 1}`,
                             doc: sub.identificacion.toString().trim(),
                             typedoc: tipoSub,
-                            porcentaje: sub.porcentaje ? `${sub.porcentaje}%` : null,
+                            porcentaje: subPorc,
                             esJuridica: subEsJur
                         });
                     });
@@ -504,7 +516,22 @@ export default function DashboardOficial() {
             });
         }
 
-        return vinculados;
+        // Deduplicar inteligentemente por número de documento para no repetir tarjetas ni cobros dobles
+        const mapaUnicos = new Map();
+        vinculados.forEach(v => {
+            const cleanDoc = (v.doc || '').replace(/\D/g, '');
+            const idDoc = `${v.typedoc}_${cleanDoc || v.doc}`;
+            if (!mapaUnicos.has(idDoc)) {
+                mapaUnicos.set(idDoc, { ...v, keysVinculadas: [v.key] });
+            } else {
+                const existente = mapaUnicos.get(idDoc);
+                existente.roles = [...new Set([...existente.roles, ...v.roles])];
+                existente.keysVinculadas.push(v.key);
+                if (v.esPrincipal) existente.esPrincipal = true;
+            }
+        });
+
+        return Array.from(mapaUnicos.values());
     };
 
     const obtenerEstudioVinculado = (solicitud, v) => {
@@ -512,20 +539,36 @@ export default function DashboardOficial() {
         const d = solicitud.datos_formulario || {};
         const estudios = d.estudios_tusdatos || {};
         
+        // 1. Revisar si alguna de las keys asociadas ya fue estudiada
+        if (v.keysVinculadas && Array.isArray(v.keysVinculadas)) {
+            for (const k of v.keysVinculadas) {
+                if (estudios[k]) return estudios[k];
+            }
+        }
         if (estudios[v.key]) {
             return estudios[v.key];
         }
+
+        // 2. Buscar si ya se consultó este documento exacto en cualquier estudio
+        const cleanDoc = (v.doc || '').replace(/\D/g, '');
+        if (cleanDoc) {
+            const porDoc = Object.values(estudios).find(e => {
+                const eDocClean = (e.doc || '').toString().replace(/\D/g, '');
+                return eDocClean === cleanDoc;
+            });
+            if (porDoc) return porDoc;
+        }
         
-        // Retrocompatibilidad con la empresa principal
-        if (v.key === 'principal' && (d.monitor_fuentes || solicitud.monitor_fuentes)) {
+        // 3. Retrocompatibilidad con la empresa principal
+        if ((v.esPrincipal || v.key === 'principal') && (d.monitor_fuentes || solicitud.monitor_fuentes)) {
             const mon = d.monitor_fuentes || solicitud.monitor_fuentes;
             return {
                 sujeto: v.nombre,
                 doc: v.doc,
                 typedoc: v.typedoc,
                 rol: v.rol,
-                fuentes_caidas: solicitud.estado_actual === 'FUENTES_INCOMPLETAS' || mon.fuentes_caidas,
-                estado_fuentes: mon.estado_fuentes || (solicitud.estado_actual === 'FUENTES_INCOMPLETAS' ? 'Con fuentes caídas' : 'Completado'),
+                fuentes_caidas: solicitud.estado_actual === 'FUENTES_INCOMPLETAS' || mon.fuentes_caidas || mon.estado_fuentes === 'FUENTES_CAIDAS',
+                estado_fuentes: mon.estado_fuentes || (solicitud.estado_actual === 'FUENTES_INCOMPLETAS' ? 'FUENTES_CAIDAS' : 'OK'),
                 hallazgo: mon.listas_restrictivas === 'ALERTA' || mon.antecedentes_judiciales === 'ALERTA',
                 listas_restrictivas: mon.listas_restrictivas || 'OK',
                 antecedentes_judiciales: mon.antecedentes_judiciales || 'OK',
@@ -1286,7 +1329,7 @@ export default function DashboardOficial() {
 
                         <motion.div 
                             initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} transition={{ duration: 0.2 }}
-                            style={{ width: '100%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--surface)', borderRadius: 'var(--radius-lg)', position: 'relative', boxShadow: 'var(--shadow-xl)' }}
+                            style={{ width: '100%', maxWidth: '960px', maxHeight: '92vh', overflowY: 'auto', background: 'var(--surface)', borderRadius: 'var(--radius-lg)', position: 'relative', boxShadow: 'var(--shadow-xl)' }}
                         >
                             {/* Header Modal */}
                             <div style={{ background: 'var(--bg-color)', padding: '1.5rem 2rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 10 }}>
@@ -1520,19 +1563,40 @@ export default function DashboardOficial() {
                                         const totalVinculados = vinculados.length;
                                         const consultados = vinculados.filter(v => !!obtenerEstudioVinculado(solicitudSeleccionada, v)).length;
                                         const pendientes = totalVinculados - consultados;
+                                        const conAlertas = vinculados.filter(v => {
+                                            const est = obtenerEstudioVinculado(solicitudSeleccionada, v);
+                                            return est && (est.listas_restrictivas === 'ALERTA' || est.antecedentes_judiciales === 'ALERTA');
+                                        }).length;
 
-                                        const vActivo = vinculados.find(v => v.key === sujetoDetalleActivo) || vinculados[0];
-                                        const estudioActivo = vActivo ? obtenerEstudioVinculado(solicitudSeleccionada, vActivo) : null;
+                                        // Filtrado por tab y búsqueda
+                                        const vinculadosFiltrados = vinculados.filter(v => {
+                                            const est = obtenerEstudioVinculado(solicitudSeleccionada, v);
+                                            // Filtro de tab
+                                            if (filtroSujetos === 'pendientes' && est && !est.fuentes_caidas) return false;
+                                            if (filtroSujetos === 'completados' && (!est || est.fuentes_caidas)) return false;
+                                            if (filtroSujetos === 'alertas' && (!est || (est.listas_restrictivas !== 'ALERTA' && est.antecedentes_judiciales !== 'ALERTA'))) return false;
+
+                                            // Filtro de búsqueda
+                                            if (busquedaVinculados.trim()) {
+                                                const q = busquedaVinculados.toLowerCase().trim();
+                                                const matchNom = (v.nombre || '').toLowerCase().includes(q);
+                                                const matchDoc = (v.doc || '').toLowerCase().includes(q);
+                                                const matchRol = (v.roles || []).some(r => r.toLowerCase().includes(q));
+                                                return matchNom || matchDoc || matchRol;
+                                            }
+                                            return true;
+                                        });
 
                                         return (
                                             <>
+                                                {/* Encabezado Superior */}
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
                                                     <div>
-                                                        <h4 style={{ margin: 0, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem' }}>
+                                                        <h4 style={{ margin: 0, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.15rem' }}>
                                                             <Globe size={20} color="var(--primary)" /> Debida Diligencia y Monitor de Fuentes (TusDatos.co)
                                                         </h4>
-                                                        <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                                                            Verificación SAGRILAFT de la entidad principal, representante legal y beneficiarios finales ({consultados}/{totalVinculados} consultados).
+                                                        <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.83rem', color: 'var(--text-muted)' }}>
+                                                            Contraparte principal, representante legal y beneficiarios finales ({consultados}/{totalVinculados} consultados)
                                                         </p>
                                                     </div>
 
@@ -1543,10 +1607,10 @@ export default function DashboardOficial() {
                                                                     className="btn-primary"
                                                                     onClick={(e) => handleConsultarTodosTusDatos(e, solicitudSeleccionada)}
                                                                     disabled={cargandoTusDatos !== null}
-                                                                    style={{ fontSize: '0.85rem', padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#2563eb' }}
+                                                                    style={{ fontSize: '0.85rem', padding: '0.5rem 1.1rem', display: 'flex', alignItems: 'center', gap: '0.45rem', background: '#2563eb' }}
                                                                 >
                                                                     <RefreshCw size={14} className={cargandoTusDatos === solicitudSeleccionada.id ? 'spin' : ''} />
-                                                                    {cargandoTusDatos === solicitudSeleccionada.id ? 'Consultando Todos...' : `Consultar Pendientes (${pendientes})`}
+                                                                    {cargandoTusDatos === solicitudSeleccionada.id ? 'Consultando...' : `Consultar Pendientes (${pendientes})`}
                                                                 </button>
                                                             )}
                                                         </div>
@@ -1560,279 +1624,484 @@ export default function DashboardOficial() {
                                                     </div>
                                                 ) : (
                                                     <>
-                                                        {/* TABLA DE VINCULADOS / SUJETOS */}
-                                                        <div style={{ overflowX: 'auto', marginBottom: '1.5rem', borderRadius: '6px', border: '1px solid var(--border)' }}>
-                                                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', textAlign: 'left', background: '#fff' }}>
-                                                                <thead>
-                                                                    <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--border)', color: '#475569' }}>
-                                                                        <th style={{ padding: '0.75rem 1rem' }}>Sujeto / Contraparte</th>
-                                                                        <th style={{ padding: '0.75rem 1rem' }}>Rol / Participación</th>
-                                                                        <th style={{ padding: '0.75rem 1rem' }}>Documento</th>
-                                                                        <th style={{ padding: '0.75rem 1rem' }}>Estado Verificación</th>
-                                                                        <th style={{ padding: '0.75rem 1rem' }}>Listas / Antecedentes</th>
-                                                                        <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Acciones</th>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody>
-                                                                    {vinculados.map((v) => {
-                                                                        const est = obtenerEstudioVinculado(solicitudSeleccionada, v);
-                                                                        const isRowLoading = cargandoTusDatos === `${solicitudSeleccionada.id}_${v.key}` || (cargandoTusDatos === solicitudSeleccionada.id && !est);
-                                                                        const isSelected = (vActivo && vActivo.key === v.key);
-
-                                                                        return (
-                                                                            <tr 
-                                                                                key={v.key} 
-                                                                                style={{ 
-                                                                                    borderBottom: '1px solid #f1f5f9',
-                                                                                    background: isSelected ? 'rgba(37, 99, 235, 0.05)' : 'transparent',
-                                                                                    cursor: est ? 'pointer' : 'default',
-                                                                                    transition: 'background 0.2s'
-                                                                                }}
-                                                                                onClick={() => { if (est) setSujetoDetalleActivo(v.key); }}
-                                                                            >
-                                                                                <td style={{ padding: '0.75rem 1rem' }}>
-                                                                                    <div style={{ fontWeight: '600', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                                                                        {v.esPrincipal ? <Building2 size={16} color="#2563eb" /> : <User size={16} color="#64748b" />}
-                                                                                        <span>{v.nombre}</span>
-                                                                                    </div>
-                                                                                </td>
-                                                                                <td style={{ padding: '0.75rem 1rem' }}>
-                                                                                    <span style={{ 
-                                                                                        background: v.esPrincipal ? '#dbeafe' : '#f1f5f9', 
-                                                                                        color: v.esPrincipal ? '#1e40af' : '#475569', 
-                                                                                        padding: '0.2rem 0.5rem', 
-                                                                                        borderRadius: '4px', 
-                                                                                        fontSize: '0.75rem',
-                                                                                        fontWeight: '600'
-                                                                                    }}>
-                                                                                        {v.rol} {v.porcentaje ? `(${v.porcentaje})` : ''}
-                                                                                    </span>
-                                                                                </td>
-                                                                                <td style={{ padding: '0.75rem 1rem' }}>
-                                                                                    <code style={{ background: '#f8fafc', padding: '0.2rem 0.4rem', borderRadius: '4px', border: '1px solid #e2e8f0', color: '#0f172a' }}>
-                                                                                        {v.typedoc} {v.doc || 'N/A'}
-                                                                                    </code>
-                                                                                </td>
-                                                                                <td style={{ padding: '0.75rem 1rem' }}>
-                                                                                    {isRowLoading ? (
-                                                                                        <span style={{ color: '#d97706', display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: '500' }}>
-                                                                                            <RefreshCw size={14} className="spin" /> Consultando...
-                                                                                        </span>
-                                                                                    ) : !est ? (
-                                                                                        <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>
-                                                                                            ⚪ No consultado
-                                                                                        </span>
-                                                                                    ) : est.fuentes_caidas ? (
-                                                                                        <span style={{ color: '#d97706', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                                                                                            ⚠️ Fuentes caídas
-                                                                                        </span>
-                                                                                    ) : est.listas_restrictivas === 'ALERTA' || est.antecedentes_judiciales === 'ALERTA' ? (
-                                                                                        <span style={{ color: '#dc2626', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                                                                                            🚨 Hallazgo detectado
-                                                                                        </span>
-                                                                                    ) : (
-                                                                                        <span style={{ color: '#16a34a', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                                                                                            <CheckCircle size={14} /> Limpio / Completado
-                                                                                        </span>
-                                                                                    )}
-                                                                                </td>
-                                                                                <td style={{ padding: '0.75rem 1rem' }}>
-                                                                                    {!est ? (
-                                                                                        <span style={{ color: '#cbd5e1' }}>-</span>
-                                                                                    ) : (
-                                                                                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                                                                                            <span style={{ 
-                                                                                                fontSize: '0.7rem', 
-                                                                                                padding: '0.15rem 0.4rem', 
-                                                                                                borderRadius: '3px',
-                                                                                                background: est.listas_restrictivas === 'ALERTA' ? '#fee2e2' : '#dcfce7',
-                                                                                                color: est.listas_restrictivas === 'ALERTA' ? '#991b1b' : '#166534',
-                                                                                                fontWeight: '600'
-                                                                                            }}>
-                                                                                                Listas: {est.listas_restrictivas}
-                                                                                            </span>
-                                                                                            <span style={{ 
-                                                                                                fontSize: '0.7rem', 
-                                                                                                padding: '0.15rem 0.4rem', 
-                                                                                                borderRadius: '3px',
-                                                                                                background: est.antecedentes_judiciales === 'ALERTA' ? '#fee2e2' : '#f1f5f9',
-                                                                                                color: est.antecedentes_judiciales === 'ALERTA' ? '#991b1b' : '#475569',
-                                                                                                fontWeight: '600'
-                                                                                            }}>
-                                                                                                Judicial: {est.antecedentes_judiciales}
-                                                                                            </span>
-                                                                                        </div>
-                                                                                    )}
-                                                                                </td>
-                                                                                <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
-                                                                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.4rem', alignItems: 'center' }}>
-                                                                                        {!est ? (
-                                                                                            <button 
-                                                                                                className="btn-primary"
-                                                                                                onClick={(e) => handleTusDatos(e, solicitudSeleccionada, v.key)}
-                                                                                                disabled={cargandoTusDatos !== null}
-                                                                                                style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', background: '#2563eb' }}
-                                                                                            >
-                                                                                                🚀 Consultar
-                                                                                            </button>
-                                                                                        ) : (
-                                                                                            <>
-                                                                                                <button 
-                                                                                                    className="btn-outline"
-                                                                                                    onClick={(e) => handleTusDatos(e, solicitudSeleccionada, v.key)}
-                                                                                                    disabled={cargandoTusDatos !== null}
-                                                                                                    title="Re-ejecutar consulta completa de este sujeto"
-                                                                                                    style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem' }}
-                                                                                                >
-                                                                                                    🔄 Reconsultar
-                                                                                                </button>
-
-                                                                                                {est.fuentes_caidas && (
-                                                                                                    <button 
-                                                                                                        className="btn-outline"
-                                                                                                        onClick={(e) => handleRetryTusDatos(e, solicitudSeleccionada, v.key)}
-                                                                                                        disabled={cargandoTusDatos !== null}
-                                                                                                        title="Recargar fuentes caídas de este sujeto"
-                                                                                                        style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem', color: '#d97706', borderColor: '#d97706' }}
-                                                                                                    >
-                                                                                                        ♻️ Recargar
-                                                                                                    </button>
-                                                                                                )}
-
-                                                                                                {est.pdf_url && (
-                                                                                                    <button 
-                                                                                                        className="btn-outline"
-                                                                                                        onClick={(e) => {
-                                                                                                            e.stopPropagation();
-                                                                                                            window.open(est.pdf_url, '_blank');
-                                                                                                        }}
-                                                                                                        title="Descargar o ver reporte PDF de TusDatos"
-                                                                                                        style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem', color: '#16a34a', borderColor: '#16a34a' }}
-                                                                                                    >
-                                                                                                        📄 PDF
-                                                                                                    </button>
-                                                                                                )}
-
-                                                                                                <button 
-                                                                                                    className="btn-outline"
-                                                                                                    onClick={(e) => {
-                                                                                                        e.stopPropagation();
-                                                                                                        setSujetoDetalleActivo(v.key);
-                                                                                                    }}
-                                                                                                    style={{ 
-                                                                                                        padding: '0.35rem 0.6rem', 
-                                                                                                        fontSize: '0.75rem',
-                                                                                                        background: isSelected ? '#eff6ff' : 'transparent',
-                                                                                                        borderColor: isSelected ? '#3b82f6' : '#cbd5e1',
-                                                                                                        color: isSelected ? '#1d4ed8' : '#64748b'
-                                                                                                    }}
-                                                                                                >
-                                                                                                    🔍 Fuentes
-                                                                                                </button>
-                                                                                            </>
-                                                                                        )}
-                                                                                    </div>
-                                                                                </td>
-                                                                            </tr>
-                                                                        );
-                                                                    })}
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
-
-                                                        {/* DESGLOSE DETALLADO DE FUENTES PARA EL SUJETO SELECCIONADO */}
-                                                        {estudioActivo ? (
-                                                            <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '6px', border: '1px solid var(--border)' }}>
-                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                                        <span style={{ fontWeight: 'bold', color: 'var(--text-main)', fontSize: '0.95rem' }}>
-                                                                            📋 Fuentes Consultadas: {vActivo?.nombre} ({vActivo?.typedoc} {vActivo?.doc})
-                                                                        </span>
-                                                                        <span style={{ fontSize: '0.75rem', background: '#e2e8f0', padding: '0.15rem 0.5rem', borderRadius: '4px', color: '#475569' }}>
-                                                                            {vActivo?.rol}
-                                                                        </span>
-                                                                    </div>
-
-                                                                    {estudioActivo.fuentes_caidas && (
+                                                        {/* Barra de Filtros y Búsqueda */}
+                                                        {totalVinculados > 1 && (
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.6rem' }}>
+                                                                <div style={{ display: 'flex', gap: '0.35rem', background: '#f1f5f9', padding: '0.2rem', borderRadius: '6px' }}>
+                                                                    <button 
+                                                                        onClick={() => setFiltroSujetos('todos')}
+                                                                        style={{
+                                                                            padding: '0.3rem 0.7rem',
+                                                                            fontSize: '0.76rem',
+                                                                            borderRadius: '4px',
+                                                                            border: 'none',
+                                                                            cursor: 'pointer',
+                                                                            background: filtroSujetos === 'todos' ? '#ffffff' : 'transparent',
+                                                                            color: filtroSujetos === 'todos' ? '#0f172a' : '#64748b',
+                                                                            fontWeight: filtroSujetos === 'todos' ? '700' : '500',
+                                                                            boxShadow: filtroSujetos === 'todos' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'
+                                                                        }}
+                                                                    >
+                                                                        Todos ({totalVinculados})
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={() => setFiltroSujetos('pendientes')}
+                                                                        style={{
+                                                                            padding: '0.3rem 0.7rem',
+                                                                            fontSize: '0.76rem',
+                                                                            borderRadius: '4px',
+                                                                            border: 'none',
+                                                                            cursor: 'pointer',
+                                                                            background: filtroSujetos === 'pendientes' ? '#ffffff' : 'transparent',
+                                                                            color: filtroSujetos === 'pendientes' ? '#0f172a' : '#64748b',
+                                                                            fontWeight: filtroSujetos === 'pendientes' ? '700' : '500',
+                                                                            boxShadow: filtroSujetos === 'pendientes' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'
+                                                                        }}
+                                                                    >
+                                                                        Pendientes ({pendientes})
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={() => setFiltroSujetos('completados')}
+                                                                        style={{
+                                                                            padding: '0.3rem 0.7rem',
+                                                                            fontSize: '0.76rem',
+                                                                            borderRadius: '4px',
+                                                                            border: 'none',
+                                                                            cursor: 'pointer',
+                                                                            background: filtroSujetos === 'completados' ? '#ffffff' : 'transparent',
+                                                                            color: filtroSujetos === 'completados' ? '#0f172a' : '#64748b',
+                                                                            fontWeight: filtroSujetos === 'completados' ? '700' : '500',
+                                                                            boxShadow: filtroSujetos === 'completados' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'
+                                                                        }}
+                                                                    >
+                                                                        Completados ({consultados})
+                                                                    </button>
+                                                                    {conAlertas > 0 && (
                                                                         <button 
-                                                                            className="btn-outline"
-                                                                            onClick={(e) => handleRetryTusDatos(e, solicitudSeleccionada, vActivo.key)}
-                                                                            disabled={cargandoTusDatos !== null}
-                                                                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', color: '#d97706', borderColor: '#d97706' }}
+                                                                            onClick={() => setFiltroSujetos('alertas')}
+                                                                            style={{
+                                                                                padding: '0.3rem 0.7rem',
+                                                                                fontSize: '0.76rem',
+                                                                                borderRadius: '4px',
+                                                                                border: 'none',
+                                                                                cursor: 'pointer',
+                                                                                background: filtroSujetos === 'alertas' ? '#fee2e2' : 'transparent',
+                                                                                color: filtroSujetos === 'alertas' ? '#b91c1c' : '#dc2626',
+                                                                                fontWeight: '700'
+                                                                            }}
                                                                         >
-                                                                            ♻️ Recargar Fuentes Caídas de {vActivo?.nombre}
+                                                                            🚨 Hallazgos ({conAlertas})
                                                                         </button>
                                                                     )}
                                                                 </div>
 
-                                                                {estudioActivo.fuentes_caidas && (
-                                                                    <div style={{ padding: '0.75rem 1rem', background: '#fffbeb', border: '1px solid #fef3c7', borderRadius: '4px', marginBottom: '1rem', fontSize: '0.82rem', color: '#92400e' }}>
-                                                                        <strong>⚠️ Fuentes Caídas en esta consulta:</strong> Algunas fuentes gubernamentales no respondieron al momento de consultar este sujeto. Puedes recargarlas sin consumir créditos adicionales.
-                                                                    </div>
-                                                                )}
+                                                                <div style={{ position: 'relative', width: '230px' }}>
+                                                                    <input 
+                                                                        type="text" 
+                                                                        placeholder="Buscar sujeto o doc..." 
+                                                                        value={busquedaVinculados} 
+                                                                        onChange={(e) => setBusquedaVinculados(e.target.value)}
+                                                                        style={{
+                                                                            width: '100%',
+                                                                            padding: '0.35rem 0.65rem 0.35rem 1.85rem',
+                                                                            fontSize: '0.78rem',
+                                                                            borderRadius: '6px',
+                                                                            border: '1px solid #cbd5e1',
+                                                                            outline: 'none',
+                                                                            background: '#ffffff'
+                                                                        }}
+                                                                    />
+                                                                    <Search size={14} style={{ position: 'absolute', left: '0.55rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                                                                    {busquedaVinculados && (
+                                                                        <button 
+                                                                            onClick={() => setBusquedaVinculados('')}
+                                                                            style={{ position: 'absolute', right: '0.4rem', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'none', cursor: 'pointer', color: '#94a3b8' }}
+                                                                        >
+                                                                            <X size={12} />
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
 
-                                                                {estudioActivo.fuentes_detalladas ? (
-                                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.6rem', maxHeight: '320px', overflowY: 'auto' }}>
-                                                                        {Object.entries(estudioActivo.fuentes_detalladas).map(([fuente, valor], idx) => {
-                                                                            let detalles = [];
-                                                                            const dict = estudioActivo.dict_hallazgos;
-                                                                            if (dict && valor === true) {
-                                                                                for (const cat of ['altos', 'medios', 'bajos', 'infos']) {
-                                                                                    const items = dict[cat] || [];
-                                                                                    const matches = items.filter(i => 
-                                                                                        i.codigo === fuente || 
-                                                                                        i.fuente === fuente || 
-                                                                                        fuente.includes(i.codigo) || 
-                                                                                        i.codigo?.includes(fuente.split('_')[0])
-                                                                                    );
-                                                                                    matches.forEach(m => {
-                                                                                        let txt = m.hallazgo || '';
-                                                                                        if (m.descripcion && m.descripcion !== txt) txt += txt ? ' - ' + m.descripcion : m.descripcion;
-                                                                                        if (txt && txt.trim()) detalles.push(txt.trim());
-                                                                                    });
-                                                                                }
-                                                                            }
-                                                                            const detalleHallazgo = [...new Set(detalles)].join(' | ');
+                                                        {/* LISTA DE TARJETAS DE VINCULADOS CON ACCORDION INLINE */}
+                                                        <div style={{ 
+                                                            display: 'flex', 
+                                                            flexDirection: 'column', 
+                                                            gap: '0.65rem', 
+                                                            maxHeight: totalVinculados > 3 ? '520px' : 'none', 
+                                                            overflowY: totalVinculados > 3 ? 'auto' : 'visible',
+                                                            paddingRight: totalVinculados > 3 ? '0.35rem' : '0' 
+                                                        }}>
+                                                            {vinculadosFiltrados.length === 0 ? (
+                                                                <div style={{ textAlign: 'center', padding: '2rem', background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', color: '#64748b', fontSize: '0.85rem' }}>
+                                                                    No se encontraron sujetos con el filtro seleccionado.
+                                                                </div>
+                                                            ) : (
+                                                                vinculadosFiltrados.map((v) => {
+                                                                    const est = obtenerEstudioVinculado(solicitudSeleccionada, v);
+                                                                    const isRowLoading = cargandoTusDatos === `${solicitudSeleccionada.id}_${v.key}` || 
+                                                                                         (cargandoTusDatos === solicitudSeleccionada.id && !est);
+                                                                    const isExpanded = sujetoExpandido === v.key;
 
-                                                                            return (
-                                                                                <div key={idx} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '0.5rem 0.75rem', fontSize: '0.8rem' }}>
-                                                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                                                        <span style={{ color: '#475569', textTransform: 'capitalize', fontWeight: '500' }}>
-                                                                                            {fuente.replace(/_/g, ' ')}
-                                                                                        </span>
-                                                                                        <strong style={{ 
-                                                                                            color: valor === 'Error' || valor === 'Página no disponible' ? '#d97706' : 
-                                                                                                   valor === true ? '#dc2626' : 
-                                                                                                   !valor && valor !== false ? '#94a3b8' : '#16a34a' 
-                                                                                        }}>
-                                                                                            {valor === true ? '🚨 HALLAZGO' : 
-                                                                                             valor === false ? '✅ LIMPIO' : 
-                                                                                             (valor === 'Error' || valor === 'Página no disponible') ? '⚠️ CAÍDA' : 
-                                                                                             (valor === '' || valor === null ? 'No registra' : valor)}
-                                                                                        </strong>
+                                                                    return (
+                                                                        <div 
+                                                                            key={v.key}
+                                                                            style={{
+                                                                                background: '#ffffff',
+                                                                                border: isExpanded ? '1.5px solid #3b82f6' : '1px solid #e2e8f0',
+                                                                                borderRadius: '10px',
+                                                                                overflow: 'hidden',
+                                                                                boxShadow: isExpanded ? '0 4px 14px rgba(59, 130, 246, 0.08)' : '0 1px 2px rgba(0,0,0,0.03)',
+                                                                                transition: 'all 0.2s ease'
+                                                                            }}
+                                                                        >
+                                                                            {/* Cabecera / Barra Principal de la Tarjeta */}
+                                                                            <div 
+                                                                                style={{
+                                                                                    padding: '0.9rem 1.15rem',
+                                                                                    display: 'flex',
+                                                                                    alignItems: 'center',
+                                                                                    justifyContent: 'space-between',
+                                                                                    gap: '0.85rem',
+                                                                                    cursor: 'pointer',
+                                                                                    background: v.esPrincipal ? 'linear-gradient(to right, #eff6ff, #ffffff)' : '#ffffff',
+                                                                                    borderLeft: v.esPrincipal ? '4px solid #2563eb' : (est?.listas_restrictivas === 'ALERTA' ? '4px solid #ef4444' : est?.fuentes_caidas ? '4px solid #f59e0b' : est ? '4px solid #10b981' : '4px solid #cbd5e1'),
+                                                                                    userSelect: 'none'
+                                                                                }}
+                                                                                onClick={() => setSujetoExpandido(prev => prev === v.key ? null : v.key)}
+                                                                            >
+                                                                                {/* Identidad y Roles */}
+                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: '1 1 auto', minWidth: 0 }}>
+                                                                                    <div style={{
+                                                                                        width: '38px',
+                                                                                        height: '38px',
+                                                                                        borderRadius: '8px',
+                                                                                        background: v.esPrincipal ? '#dbeafe' : '#f1f5f9',
+                                                                                        color: v.esPrincipal ? '#1d4ed8' : '#475569',
+                                                                                        display: 'flex',
+                                                                                        alignItems: 'center',
+                                                                                        justifyContent: 'center',
+                                                                                        flexShrink: 0
+                                                                                    }}>
+                                                                                        {v.esPrincipal ? <Building2 size={20} /> : <User size={20} />}
                                                                                     </div>
-                                                                                    {detalleHallazgo && (
-                                                                                        <div style={{ marginTop: '0.35rem', padding: '0.3rem 0.5rem', background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '3px', color: '#991b1b', fontSize: '0.75rem' }}>
-                                                                                            <i>Detalle:</i> {detalleHallazgo}
+
+                                                                                    <div style={{ minWidth: 0 }}>
+                                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                                                                            <span style={{ fontWeight: '700', fontSize: '0.92rem', color: '#0f172a', whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                                                                                                {v.nombre}
+                                                                                            </span>
+                                                                                            <span style={{ 
+                                                                                                fontFamily: 'monospace', 
+                                                                                                fontSize: '0.78rem', 
+                                                                                                background: '#f8fafc', 
+                                                                                                padding: '0.15rem 0.45rem', 
+                                                                                                borderRadius: '4px', 
+                                                                                                border: '1px solid #e2e8f0',
+                                                                                                color: '#334155',
+                                                                                                fontWeight: '600',
+                                                                                                flexShrink: 0
+                                                                                            }}>
+                                                                                                {v.typedoc} {v.doc || 'N/A'}
+                                                                                            </span>
+                                                                                        </div>
+
+                                                                                        <div style={{ display: 'flex', gap: '0.35rem', marginTop: '0.3rem', flexWrap: 'wrap' }}>
+                                                                                            {v.roles.map((r, rIdx) => (
+                                                                                                <span key={rIdx} style={{
+                                                                                                    fontSize: '0.72rem',
+                                                                                                    fontWeight: '600',
+                                                                                                    padding: '0.1rem 0.45rem',
+                                                                                                    borderRadius: '4px',
+                                                                                                    background: v.esPrincipal ? '#dbeafe' : '#f1f5f9',
+                                                                                                    color: v.esPrincipal ? '#1e40af' : '#475569'
+                                                                                                }}>
+                                                                                                    {r}
+                                                                                                </span>
+                                                                                            ))}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+
+                                                                                {/* Estado de Verificación */}
+                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+                                                                                    {isRowLoading ? (
+                                                                                        <span style={{ 
+                                                                                            fontSize: '0.78rem', 
+                                                                                            fontWeight: '600', 
+                                                                                            color: '#d97706', 
+                                                                                            display: 'flex', 
+                                                                                            alignItems: 'center', 
+                                                                                            gap: '0.35rem',
+                                                                                            background: '#fef3c7',
+                                                                                            padding: '0.3rem 0.6rem',
+                                                                                            borderRadius: '6px'
+                                                                                        }}>
+                                                                                            <RefreshCw size={13} className="spin" /> Consultando...
+                                                                                        </span>
+                                                                                    ) : !est ? (
+                                                                                        <span style={{ 
+                                                                                            fontSize: '0.78rem', 
+                                                                                            color: '#64748b', 
+                                                                                            background: '#f1f5f9', 
+                                                                                            padding: '0.3rem 0.6rem', 
+                                                                                            borderRadius: '6px',
+                                                                                            fontWeight: '500'
+                                                                                        }}>
+                                                                                            ⚪ Pendiente
+                                                                                        </span>
+                                                                                    ) : est.fuentes_caidas ? (
+                                                                                        <span style={{ 
+                                                                                            fontSize: '0.78rem', 
+                                                                                            color: '#b45309', 
+                                                                                            background: '#fef3c7', 
+                                                                                            padding: '0.3rem 0.6rem', 
+                                                                                            borderRadius: '6px',
+                                                                                            fontWeight: '600',
+                                                                                            display: 'flex',
+                                                                                            alignItems: 'center',
+                                                                                            gap: '0.3rem'
+                                                                                        }}>
+                                                                                            ⚠️ Fuentes Caídas
+                                                                                        </span>
+                                                                                    ) : (est.listas_restrictivas === 'ALERTA' || est.antecedentes_judiciales === 'ALERTA') ? (
+                                                                                        <div style={{ display: 'flex', gap: '0.3rem' }}>
+                                                                                            {est.listas_restrictivas === 'ALERTA' && (
+                                                                                                <span style={{ fontSize: '0.72rem', fontWeight: 'bold', background: '#fee2e2', color: '#b91c1c', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
+                                                                                                    🚨 LISTAS
+                                                                                                </span>
+                                                                                            )}
+                                                                                            {est.antecedentes_judiciales === 'ALERTA' && (
+                                                                                                <span style={{ fontSize: '0.72rem', fontWeight: 'bold', background: '#fee2e2', color: '#b91c1c', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
+                                                                                                    ❌ JUDICIAL
+                                                                                                </span>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    ) : (
+                                                                                        <span style={{ 
+                                                                                            fontSize: '0.78rem', 
+                                                                                            color: '#15803d', 
+                                                                                            background: '#dcfce7', 
+                                                                                            padding: '0.3rem 0.6rem', 
+                                                                                            borderRadius: '6px',
+                                                                                            fontWeight: '600',
+                                                                                            display: 'flex',
+                                                                                            alignItems: 'center',
+                                                                                            gap: '0.3rem'
+                                                                                        }}>
+                                                                                            <CheckCircle size={14} /> Sin Hallazgos
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
+
+                                                                                {/* Botones de Acción y Toggle Chevron */}
+                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                                                                                    {!est ? (
+                                                                                        <button 
+                                                                                            className="btn-primary"
+                                                                                            onClick={(e) => handleTusDatos(e, solicitudSeleccionada, v.key)}
+                                                                                            disabled={cargandoTusDatos !== null}
+                                                                                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.35rem', background: '#2563eb' }}
+                                                                                        >
+                                                                                            🚀 Consultar
+                                                                                        </button>
+                                                                                    ) : (
+                                                                                        <>
+                                                                                            <button 
+                                                                                                className="btn-outline"
+                                                                                                onClick={(e) => handleTusDatos(e, solicitudSeleccionada, v.key)}
+                                                                                                disabled={cargandoTusDatos !== null}
+                                                                                                title="Re-ejecutar consulta completa de este sujeto"
+                                                                                                style={{ padding: '0.35rem 0.65rem', fontSize: '0.76rem' }}
+                                                                                            >
+                                                                                                🔄 Reconsultar
+                                                                                            </button>
+
+                                                                                            {est.pdf_url && (
+                                                                                                <button 
+                                                                                                    className="btn-outline"
+                                                                                                    onClick={(e) => {
+                                                                                                        e.stopPropagation();
+                                                                                                        window.open(est.pdf_url, '_blank');
+                                                                                                    }}
+                                                                                                    title="Descargar o ver reporte PDF oficial de evidencias"
+                                                                                                    style={{ padding: '0.35rem 0.65rem', fontSize: '0.76rem', color: '#16a34a', borderColor: '#86efac' }}
+                                                                                                >
+                                                                                                    📄 PDF
+                                                                                                </button>
+                                                                                            )}
+                                                                                        </>
+                                                                                    )}
+
+                                                                                    <button 
+                                                                                        onClick={(e) => {
+                                                                                            e.stopPropagation();
+                                                                                            setSujetoExpandido(prev => prev === v.key ? null : v.key);
+                                                                                        }}
+                                                                                        style={{
+                                                                                            background: isExpanded ? '#eff6ff' : '#f8fafc',
+                                                                                            border: isExpanded ? '1px solid #93c5fd' : '1px solid #e2e8f0',
+                                                                                            borderRadius: '6px',
+                                                                                            padding: '0.35rem 0.55rem',
+                                                                                            cursor: 'pointer',
+                                                                                            display: 'flex',
+                                                                                            alignItems: 'center',
+                                                                                            gap: '0.3rem',
+                                                                                            color: isExpanded ? '#1d4ed8' : '#64748b',
+                                                                                            fontSize: '0.76rem',
+                                                                                            fontWeight: '600'
+                                                                                        }}
+                                                                                        title={isExpanded ? 'Ocultar desglose de fuentes' : 'Ver desglose de fuentes'}
+                                                                                    >
+                                                                                        <span>Fuentes</span>
+                                                                                        {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                                                                                    </button>
+                                                                                </div>
+                                                                            </div>
+
+                                                                            {/* SECCIÓN EXPANDIBLE INLINE: DESGLOSE DE FUENTES DEL SUJETO */}
+                                                                            {isExpanded && (
+                                                                                <div style={{
+                                                                                    background: '#f8fafc',
+                                                                                    borderTop: '1px solid #e2e8f0',
+                                                                                    padding: '1.25rem',
+                                                                                    borderBottomLeftRadius: '10px',
+                                                                                    borderBottomRightRadius: '10px'
+                                                                                }}>
+                                                                                    {est ? (
+                                                                                        <>
+                                                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                                                    <span style={{ fontWeight: '700', fontSize: '0.88rem', color: '#1e293b' }}>
+                                                                                                        📋 Detalle de Fuentes Consultadas ({Object.keys(est.fuentes_detalladas || {}).length} fuentes)
+                                                                                                    </span>
+                                                                                                    {est.fecha_consulta && (
+                                                                                                        <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                                                                                            • Consultado el: {new Date(est.fecha_consulta).toLocaleString('es-CO')}
+                                                                                                        </span>
+                                                                                                    )}
+                                                                                                </div>
+
+                                                                                                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                                                                                                    {est.fuentes_caidas && (
+                                                                                                        <button 
+                                                                                                            className="btn-outline"
+                                                                                                            onClick={(e) => handleRetryTusDatos(e, solicitudSeleccionada, v.key)}
+                                                                                                            disabled={cargandoTusDatos !== null}
+                                                                                                            style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', color: '#b45309', borderColor: '#fcd34d', background: '#fffbeb' }}
+                                                                                                        >
+                                                                                                            ♻️ Recargar Fuentes Caídas (Gratis)
+                                                                                                        </button>
+                                                                                                    )}
+                                                                                                    {est.pdf_url && (
+                                                                                                        <button 
+                                                                                                            className="btn-outline"
+                                                                                                            onClick={(e) => {
+                                                                                                                e.stopPropagation();
+                                                                                                                window.open(est.pdf_url, '_blank');
+                                                                                                            }}
+                                                                                                            style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', color: '#16a34a', borderColor: '#86efac', background: '#f0fdf4' }}
+                                                                                                        >
+                                                                                                            📄 Descargar PDF Oficial
+                                                                                                        </button>
+                                                                                                    )}
+                                                                                                </div>
+                                                                                            </div>
+
+                                                                                            {est.fuentes_caidas && (
+                                                                                                <div style={{ padding: '0.65rem 0.9rem', background: '#fffbeb', border: '1px solid #fef3c7', borderRadius: '6px', marginBottom: '0.85rem', fontSize: '0.8rem', color: '#92400e', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                                                    <AlertTriangle size={16} color="#d97706" style={{ flexShrink: 0 }} />
+                                                                                                    <div>
+                                                                                                        <strong>Fuentes no disponibles:</strong> Algunas bases externas estaban en mantenimiento o caídas al momento de la consulta. Puedes usar <i>Recargar</i> para reintentarlas sin costo.
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            )}
+
+                                                                                            {est.fuentes_detalladas && Object.keys(est.fuentes_detalladas).length > 0 ? (
+                                                                                                <div style={{ 
+                                                                                                    display: 'grid', 
+                                                                                                    gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', 
+                                                                                                    gap: '0.5rem', 
+                                                                                                    maxHeight: '260px', 
+                                                                                                    overflowY: 'auto',
+                                                                                                    paddingRight: '0.35rem'
+                                                                                                }}>
+                                                                                                    {Object.entries(est.fuentes_detalladas).map(([fuente, valor], idx) => {
+                                                                                                        let detalles = [];
+                                                                                                        const dict = est.dict_hallazgos;
+                                                                                                        if (dict && valor === true) {
+                                                                                                            for (const cat of ['altos', 'medios', 'bajos', 'infos']) {
+                                                                                                                const items = dict[cat] || [];
+                                                                                                                const matches = items.filter(i => 
+                                                                                                                    i.codigo === fuente || 
+                                                                                                                    i.fuente === fuente || 
+                                                                                                                    fuente.includes(i.codigo) || 
+                                                                                                                    i.codigo?.includes(fuente.split('_')[0])
+                                                                                                                );
+                                                                                                                matches.forEach(m => {
+                                                                                                                    let txt = m.hallazgo || '';
+                                                                                                                    if (m.descripcion && m.descripcion !== txt) txt += txt ? ' - ' + m.descripcion : m.descripcion;
+                                                                                                                    if (txt && txt.trim()) detalles.push(txt.trim());
+                                                                                                                });
+                                                                                                            }
+                                                                                                        }
+                                                                                                        const detalleHallazgo = [...new Set(detalles)].join(' | ');
+
+                                                                                                        return (
+                                                                                                            <div key={idx} style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '0.5rem 0.7rem', fontSize: '0.78rem' }}>
+                                                                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                                                                    <span style={{ color: '#475569', textTransform: 'capitalize', fontWeight: '500' }}>
+                                                                                                                        {fuente.replace(/_/g, ' ')}
+                                                                                                                    </span>
+                                                                                                                    <strong style={{ 
+                                                                                                                        color: (valor === 'Error' || valor === 'Página no disponible' || valor === 'Inactivo') ? '#d97706' : 
+                                                                                                                                valor === true ? '#dc2626' : 
+                                                                                                                                !valor && valor !== false ? '#94a3b8' : '#16a34a' 
+                                                                                                                    }}>
+                                                                                                                        {valor === true ? '🚨 HALLAZGO' : 
+                                                                                                                            valor === false ? '✅ LIMPIO' : 
+                                                                                                                            (valor === 'Error' || valor === 'Página no disponible' || valor === 'Inactivo') ? '⚠️ CAÍDA' : 
+                                                                                                                            (valor === '' || valor === null ? 'No registra' : valor)}
+                                                                                                                    </strong>
+                                                                                                                </div>
+                                                                                                                {detalleHallazgo && (
+                                                                                                                    <div style={{ marginTop: '0.3rem', padding: '0.25rem 0.45rem', background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '4px', color: '#991b1b', fontSize: '0.72rem' }}>
+                                                                                                                        <i>Detalle:</i> {detalleHallazgo}
+                                                                                                                    </div>
+                                                                                                                )}
+                                                                                                            </div>
+                                                                                                        );
+                                                                                                    })}
+                                                                                                </div>
+                                                                                            ) : (
+                                                                                                <div style={{ textAlign: 'center', padding: '1rem', color: '#64748b', fontSize: '0.82rem' }}>
+                                                                                                    No hay detalle de fuentes individuales almacenado para esta consulta.
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </>
+                                                                                    ) : (
+                                                                                        <div style={{ textAlign: 'center', padding: '1.25rem', background: '#ffffff', borderRadius: '6px', border: '1px dashed #cbd5e1' }}>
+                                                                                            <p style={{ margin: '0 0 0.75rem 0', color: '#64748b', fontSize: '0.85rem' }}>
+                                                                                                Este sujeto aún no ha sido consultado en bases de datos externas de SAGRILAFT.
+                                                                                            </p>
+                                                                                            <button 
+                                                                                                className="btn-primary"
+                                                                                                onClick={(e) => handleTusDatos(e, solicitudSeleccionada, v.key)}
+                                                                                                disabled={cargandoTusDatos !== null}
+                                                                                                style={{ padding: '0.45rem 1.25rem', fontSize: '0.82rem', background: '#2563eb' }}
+                                                                                            >
+                                                                                                🚀 Consultar ahora en TusDatos.co
+                                                                                            </button>
                                                                                         </div>
                                                                                     )}
                                                                                 </div>
-                                                                            );
-                                                                        })}
-                                                                    </div>
-                                                                ) : (
-                                                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', padding: '1rem' }}>
-                                                                        No hay desglose de fuentes individuales disponible para este sujeto.
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        ) : (
-                                                            <div style={{ textAlign: 'center', padding: '1.5rem', background: '#f8fafc', borderRadius: '6px', border: '1px dashed #cbd5e1' }}>
-                                                                <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.85rem' }}>
-                                                                    Haz clic en <strong>🚀 Consultar</strong> en la tabla superior para evaluar a cualquiera de los sujetos pendientes.
-                                                                </p>
-                                                            </div>
-                                                        )}
+                                                                            )}
+                                                                        </div>
+                                                                    );
+                                                                })
+                                                            )}
+                                                        </div>
                                                     </>
                                                 )}
                                             </>
