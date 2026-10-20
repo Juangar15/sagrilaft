@@ -69,8 +69,8 @@ export const sagrilaftService = {
         return response.data;
     },
 
-    ejecutarTusDatos: async (id) => {
-        const response = await api.post(`/solicitudes/${id}/tusdatos`);
+    ejecutarTusDatos: async (id, payload = {}) => {
+        const response = await api.post(`/solicitudes/${id}/tusdatos`, payload);
         return response.data;
     },
 
@@ -84,13 +84,13 @@ export const sagrilaftService = {
         return response.data;
     },
 
-    retryTusDatos: async (id) => {
-        const response = await api.post(`/solicitudes/${id}/tusdatos/retry`);
+    retryTusDatos: async (id, payload = {}) => {
+        const response = await api.post(`/solicitudes/${id}/tusdatos/retry`, payload);
         return response.data;
     },
 
-    recargarTusDatos: async (solicitudId) => {
-        const response = await api.post(`/solicitudes/${solicitudId}/tusdatos/retry`);
+    recargarTusDatos: async (solicitudId, payload = {}) => {
+        const response = await api.post(`/solicitudes/${solicitudId}/tusdatos/retry`, payload);
         return response.data;
     },
 

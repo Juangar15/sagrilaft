@@ -9,7 +9,8 @@ import ExploradorDocumental from './ExploradorDocumental';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Search, Download, Filter, FileText, AlertTriangle, 
-    CheckCircle, Clock, X, Building2, User, Globe, ShieldCheck, Edit3, LogOut, ChevronDown, ChevronUp, Briefcase
+    CheckCircle, Clock, X, Building2, User, Globe, ShieldCheck, Edit3, LogOut, ChevronDown, ChevronUp, Briefcase,
+    Users, RefreshCw, ExternalLink
 } from 'lucide-react';
 
 export default function DashboardOficial() {
@@ -19,6 +20,7 @@ export default function DashboardOficial() {
     const [busqueda, setBusqueda] = useState('');
     const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
     const [cargandoTusDatos, setCargandoTusDatos] = useState(null); 
+    const [sujetoDetalleActivo, setSujetoDetalleActivo] = useState('principal'); 
     const [matrizRiesgos, setMatrizRiesgos] = useState([]);
     
     // Estado para Ping-Pong
@@ -430,35 +432,183 @@ export default function DashboardOficial() {
         }
     };
 
-    const handleTusDatos = async (e, solicitud) => {
-        e.stopPropagation(); // Evitar que abra la tarjeta
-        setCargandoTusDatos(solicitud.id);
+    const obtenerListaVinculados = (solicitud) => {
+        if (!solicitud) return [];
+        const d = solicitud.datos_formulario || {};
+        const vinculados = [];
+
+        const isJuridica = d.tipo_persona === 'juridica' || solicitud.tipo_vinculacion?.includes('juridico');
+        const docPrincipal = (solicitud.nit_cedula || d.numero_identificacion || '').toString().trim();
+        const nombrePrincipal = d.razon_social || `${d.nombres || ''} ${d.primer_apellido || ''}`.trim() || solicitud.razon_social || 'Contraparte';
+        
+        vinculados.push({
+            key: 'principal',
+            rol: isJuridica ? 'Empresa Contraparte (Principal)' : 'Persona Natural Contraparte (Principal)',
+            nombre: nombrePrincipal,
+            doc: docPrincipal,
+            typedoc: isJuridica ? 'NIT' : (d.tipo_identificacion?.toUpperCase() || 'CC'),
+            porcentaje: '100%',
+            esPrincipal: true
+        });
+
+        if (isJuridica && d.rep_legal_numero_id) {
+            const nomRep = `${d.rep_legal_nombres || ''} ${d.rep_legal_primer_apellido || ''} ${d.rep_legal_segundo_apellido || ''}`.trim();
+            let tipoRep = (d.rep_legal_tipo_id || 'cc').toUpperCase();
+            if (tipoRep === 'PASAPORTE') tipoRep = 'PP';
+            
+            vinculados.push({
+                key: 'rep_legal',
+                rol: 'Representante Legal',
+                nombre: nomRep || 'Representante Legal',
+                doc: d.rep_legal_numero_id.toString().trim(),
+                typedoc: tipoRep,
+                porcentaje: null
+            });
+        }
+
+        if (isJuridica && Array.isArray(d.accionistas)) {
+            d.accionistas.forEach((acc, i) => {
+                if (!acc.identificacion) return;
+                const esJur = acc.tipo_persona === 'juridica';
+                let tipoAcc = esJur ? 'NIT' : (acc.tipo_id || 'cc').toUpperCase();
+                if (tipoAcc === 'PASAPORTE') tipoAcc = 'PP';
+
+                vinculados.push({
+                    key: `accionista_${i}`,
+                    rol: esJur ? 'Accionista Jurídico (>5%)' : 'Accionista Natural (>5%)',
+                    nombre: acc.nombre || `Accionista ${i + 1}`,
+                    doc: acc.identificacion.toString().trim(),
+                    typedoc: tipoAcc,
+                    porcentaje: acc.porcentaje ? `${acc.porcentaje}%` : null,
+                    esJuridica: esJur
+                });
+
+                if (esJur && Array.isArray(acc.sub_accionistas)) {
+                    acc.sub_accionistas.forEach((sub, sIdx) => {
+                        if (!sub.identificacion) return;
+                        const subEsJur = sub.tipo_persona === 'juridica';
+                        let tipoSub = subEsJur ? 'NIT' : (sub.tipo_id || 'cc').toUpperCase();
+                        if (tipoSub === 'PASAPORTE') tipoSub = 'PP';
+
+                        vinculados.push({
+                            key: `sub_accionista_${i}_${sIdx}`,
+                            rol: `Beneficiario Final (Socio de ${acc.nombre || 'Accionista ' + (i+1)})`,
+                            nombre: sub.nombre || `Beneficiario ${sIdx + 1}`,
+                            doc: sub.identificacion.toString().trim(),
+                            typedoc: tipoSub,
+                            porcentaje: sub.porcentaje ? `${sub.porcentaje}%` : null,
+                            esJuridica: subEsJur
+                        });
+                    });
+                }
+            });
+        }
+
+        return vinculados;
+    };
+
+    const obtenerEstudioVinculado = (solicitud, v) => {
+        if (!solicitud || !v) return null;
+        const d = solicitud.datos_formulario || {};
+        const estudios = d.estudios_tusdatos || {};
+        
+        if (estudios[v.key]) {
+            return estudios[v.key];
+        }
+        
+        // Retrocompatibilidad con la empresa principal
+        if (v.key === 'principal' && (d.monitor_fuentes || solicitud.monitor_fuentes)) {
+            const mon = d.monitor_fuentes || solicitud.monitor_fuentes;
+            return {
+                sujeto: v.nombre,
+                doc: v.doc,
+                typedoc: v.typedoc,
+                rol: v.rol,
+                fuentes_caidas: solicitud.estado_actual === 'FUENTES_INCOMPLETAS' || mon.fuentes_caidas,
+                estado_fuentes: mon.estado_fuentes || (solicitud.estado_actual === 'FUENTES_INCOMPLETAS' ? 'Con fuentes caídas' : 'Completado'),
+                hallazgo: mon.listas_restrictivas === 'ALERTA' || mon.antecedentes_judiciales === 'ALERTA',
+                listas_restrictivas: mon.listas_restrictivas || 'OK',
+                antecedentes_judiciales: mon.antecedentes_judiciales || 'OK',
+                policia: mon.policia || 'OK',
+                procuraduria: mon.procuraduria || 'OK',
+                contraloria: mon.contraloria || 'OK',
+                dian: mon.dian || 'OK',
+                fuentes_detalladas: mon.fuentes_detalladas,
+                dict_hallazgos: mon.dict_hallazgos,
+                pdf_url: d.archivos_cargados?.reporte_tusdatos || null
+            };
+        }
+
+        return null;
+    };
+
+    const handleTusDatos = async (e, solicitud, sujetoKey = 'principal') => {
+        if (e && e.stopPropagation) e.stopPropagation();
+        const loadingKey = `${solicitud.id}_${sujetoKey}`;
+        setCargandoTusDatos(loadingKey);
         try {
-            const res = await sagrilaftService.ejecutarTusDatos(solicitud.id);
-            showToast(res.mensaje);
-            // Refrescar el board
+            const res = await sagrilaftService.ejecutarTusDatos(solicitud.id, { sujetoKey });
+            showToast(res.mensaje || "Consulta ejecutada con éxito");
+            const { data: solActualizada } = await supabase.from('solicitudes_sagrilaft').select('*').eq('id', solicitud.id).single();
+            if (solActualizada) setSolicitudSeleccionada(solActualizada);
             const data = await sagrilaftService.obtenerSolicitudes();
             setSolicitudes(data || []);
         } catch (error) {
-            showToast("Error ejecutando TusDatos: " + error.message, "error");
+            showToast("Error ejecutando TusDatos: " + (error.response?.data?.error || error.message), "error");
         } finally {
             setCargandoTusDatos(null);
         }
     };
 
-    const handleRetryTusDatos = async (e, solicitud) => {
-        e.stopPropagation();
-        setCargandoTusDatos(solicitud.id);
+    const handleRetryTusDatos = async (e, solicitud, sujetoKey = 'principal') => {
+        if (e && e.stopPropagation) e.stopPropagation();
+        const loadingKey = `${solicitud.id}_${sujetoKey}`;
+        setCargandoTusDatos(loadingKey);
         try {
-            const res = await sagrilaftService.retryTusDatos(solicitud.id);
-            showToast(res.mensaje);
-            // Refrescar la solicitud y el board
+            const res = await sagrilaftService.retryTusDatos(solicitud.id, { sujetoKey });
+            showToast(res.mensaje || "Recarga de fuentes completada");
             const { data: solActualizada } = await supabase.from('solicitudes_sagrilaft').select('*').eq('id', solicitud.id).single();
-            setSolicitudSeleccionada(solActualizada);
+            if (solActualizada) setSolicitudSeleccionada(solActualizada);
             const data = await sagrilaftService.obtenerSolicitudes();
             setSolicitudes(data || []);
         } catch (error) {
-            showToast("Error recargando TusDatos: " + error.message, "error");
+            showToast("Error recargando TusDatos: " + (error.response?.data?.error || error.message), "error");
+        } finally {
+            setCargandoTusDatos(null);
+        }
+    };
+
+    const handleConsultarTodosTusDatos = async (e, solicitud) => {
+        if (e && e.stopPropagation) e.stopPropagation();
+        const vinculados = obtenerListaVinculados(solicitud);
+        const estudios = solicitud.datos_formulario?.estudios_tusdatos || {};
+        
+        const pendientes = vinculados.filter(v => {
+            const est = estudios[v.key] || (v.key === 'principal' ? solicitud.datos_formulario?.monitor_fuentes : null);
+            return !est || est.fuentes_caidas;
+        });
+
+        if (pendientes.length === 0) {
+            showToast("Todos los vinculados ya han sido consultados.", "info");
+            return;
+        }
+
+        setCargandoTusDatos(solicitud.id);
+        try {
+            for (let i = 0; i < pendientes.length; i++) {
+                const v = pendientes[i];
+                showToast(`Consultando (${i + 1}/${pendientes.length}): ${v.nombre} (${v.rol})...`);
+                await sagrilaftService.ejecutarTusDatos(solicitud.id, { sujetoKey: v.key });
+            }
+            showToast("¡Todas las consultas de vinculados fueron procesadas!", "success");
+            const { data: solActualizada } = await supabase.from('solicitudes_sagrilaft').select('*').eq('id', solicitud.id).single();
+            if (solActualizada) setSolicitudSeleccionada(solActualizada);
+            const data = await sagrilaftService.obtenerSolicitudes();
+            setSolicitudes(data || []);
+        } catch (error) {
+            showToast("Error en consulta de vinculados: " + (error.response?.data?.error || error.message), "error");
+            const { data: solActualizada } = await supabase.from('solicitudes_sagrilaft').select('*').eq('id', solicitud.id).single();
+            if (solActualizada) setSolicitudSeleccionada(solActualizada);
         } finally {
             setCargandoTusDatos(null);
         }
@@ -654,9 +804,9 @@ export default function DashboardOficial() {
                             className="btn-primary" 
                             style={{ width: '100%', padding: '0.5rem', fontSize: '0.8rem' }}
                             onClick={(e) => handleTusDatos(e, sol)}
-                            disabled={cargandoTusDatos === sol.id}
+                            disabled={cargandoTusDatos === sol.id || cargandoTusDatos?.startsWith?.(sol.id)}
                         >
-                            {cargandoTusDatos === sol.id ? '⏳ Consultando...' : '🔎 Ejecutar TusDatos'}
+                            {(cargandoTusDatos === sol.id || cargandoTusDatos?.startsWith?.(sol.id)) ? '⏳ Consultando...' : '🔎 Ejecutar TusDatos'}
                         </button>
                     </div>
                 )}
@@ -1365,197 +1515,329 @@ export default function DashboardOficial() {
                                 {solicitudSeleccionada.estado_actual !== 'DEVUELTO_CORRECCION' && (
                                 <>
                                 <div style={{ background: 'var(--bg-color)', padding: '1.5rem', borderRadius: 'var(--radius-md)', marginBottom: '2rem', border: '1px solid var(--border)' }}>
-                                    <h4 style={{ margin: '0 0 1rem 0', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <Globe size={18} /> Monitor de Fuentes (TusDatos)
-                                    </h4>
-                                    
-                                    {solicitudSeleccionada.estado_actual === 'ASIGNACION_CARGO' ? (
-                                        <div style={{ textAlign: 'center', padding: '2rem', background: '#fefce8', borderRadius: '8px', border: '1px solid #fef08a' }}>
-                                            <p style={{ color: '#854d0e', fontWeight: '600', marginBottom: '0.5rem' }}>🔒 Pendiente de asignación de Área y Cargo</p>
-                                            <p style={{ color: '#a16207', fontSize: '0.85rem' }}>Primero debes asignar el Área y Cargo en el recuadro superior. Una vez asignados, el expediente pasará a Revisión Previa donde se ejecutará la consulta en TusDatos.</p>
-                                        </div>
-                                    ) : (solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || solicitudSeleccionada.estado_actual === 'REVISION_PREVIA') ? (
-                                        <div style={{ textAlign: 'center', padding: '2rem' }}>
-                                            <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>No se ha ejecutado la consulta en bases de datos externas.</p>
-                                            <button 
-                                                className="btn-primary" 
-                                                onClick={(e) => handleTusDatos(e, solicitudSeleccionada)}
-                                                disabled={cargandoTusDatos === solicitudSeleccionada.id}
-                                                style={{ padding: '0.75rem 2rem', fontSize: '1rem', opacity: cargandoTusDatos === solicitudSeleccionada.id ? 0.7 : 1 }}
-                                            >
-                                                {cargandoTusDatos === solicitudSeleccionada.id ? 'Consultando (aprox 1 min)...' : '🚀 Ejecutar Consulta (TusDatos)'}
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <>
-                                        {solicitudSeleccionada.estado_actual === 'FUENTES_INCOMPLETAS' && (
-                                            <div style={{ textAlign: 'center', padding: '2rem', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid var(--danger)', borderRadius: 'var(--radius-sm)', marginBottom: '1.5rem' }}>
-                                                <h4 style={{ color: 'var(--danger)', marginBottom: '0.5rem' }}>⚠️ Consulta Incompleta</h4>
-                                                <p style={{ color: 'var(--text-main)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                                                    TusDatos reportó que algunas fuentes externas estaban caídas al momento de la consulta:
-                                                </p>
-                                                <div style={{ textAlign: 'left', marginBottom: '1.5rem', maxHeight: '150px', overflowY: 'auto', background: '#fff', padding: '1rem', border: '1px solid var(--border)', borderRadius: '4px', fontSize: '0.85rem' }}>
-                                                    <ul style={{ margin: 0, paddingLeft: '1.2rem', color: 'var(--text-muted)' }}>
-                                                        {(() => {
-                                                            const detalladas = solicitudSeleccionada.datos_formulario?.monitor_fuentes?.fuentes_detalladas;
-                                                            if (!detalladas) return <li>Fuentes caídas no detalladas en el reporte.</li>;
-                                                            const caidas = Object.entries(detalladas)
-                                                                .filter(([k, v]) => v === 'Error' || v === 'Página no disponible' || v === 'Inactivo')
-                                                                .map(([k, v]) => k);
-                                                            
-                                                            if (caidas.length === 0) return <li>No se detectaron fuentes caídas específicas.</li>;
-                                                            return caidas.map((fuente, idx) => (
-                                                                <li key={idx} style={{ paddingBottom: '0.3rem' }}>{fuente}</li>
-                                                            ));
-                                                        })()}
-                                                    </ul>
-                                                </div>
-                                                <button 
-                                                    className="btn-outline" 
-                                                    onClick={(e) => handleRetryTusDatos(e, solicitudSeleccionada)}
-                                                    disabled={cargandoTusDatos === solicitudSeleccionada.id}
-                                                    style={{ padding: '0.75rem 2rem', fontSize: '1rem', opacity: cargandoTusDatos === solicitudSeleccionada.id ? 0.7 : 1, borderColor: 'var(--danger)', color: 'var(--danger)' }}
-                                                >
-                                                    {cargandoTusDatos === solicitudSeleccionada.id ? 'Recargando fuentes caídas...' : '♻️ Recargar Fuentes Caídas (Gratis)'}
-                                                </button>
-                                            </div>
-                                        )}
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '0.9rem' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem', borderBottom: '1px dashed var(--border)' }}>
-                                                <span>Estado General TusDatos:</span>
-                                                <span style={{ fontWeight: 'bold', color: 'var(--success-text)' }}>
-                                                    {solicitudSeleccionada.datos_formulario?.monitor_fuentes?.estado_fuentes || '✅ COMPLETADO'}
-                                                </span>
-                                            </div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem', borderBottom: '1px dashed var(--border)' }}>
-                                                <span>Listas Restrictivas (ONU, OFAC, etc):</span>
-                                                <span style={{ fontWeight: 'bold', color: solicitudSeleccionada.datos_formulario?.monitor_fuentes?.listas_restrictivas === 'ALERTA' ? 'var(--danger)' : 'var(--success-text)' }}>
-                                                    {solicitudSeleccionada.datos_formulario?.monitor_fuentes?.listas_restrictivas === 'ALERTA' ? '⚠️ ALERTA ENCONTRADA' : '✅ SIN HALLAZGOS'}
-                                                </span>
-                                            </div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem', borderBottom: '1px dashed var(--border)' }}>
-                                                <span>Procuraduría / Policía / Antecedentes:</span>
-                                                <span style={{ fontWeight: 'bold', color: solicitudSeleccionada.datos_formulario?.monitor_fuentes?.antecedentes_judiciales === 'ALERTA' ? 'var(--danger)' : 'var(--success-text)' }}>
-                                                    {solicitudSeleccionada.datos_formulario?.monitor_fuentes?.antecedentes_judiciales === 'ALERTA' ? '❌ CON HALLAZGOS' : '✅ SIN ANTECEDENTES'}
-                                                </span>
-                                            </div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem', borderBottom: '1px dashed var(--border)' }}>
-                                                <span>Verificación RUT / Documentos:</span>
-                                                <span style={{ fontWeight: 'bold', color: 'var(--success-text)' }}>✅ VERIFICADO</span>
-                                            </div>
-                                            
-                                            {/* Panel expandible de detalles (si hay fuentes_detalladas) */}
-                                            {solicitudSeleccionada.datos_formulario?.monitor_fuentes?.fuentes_detalladas && (
-                                                <div style={{ gridColumn: '1 / -1', marginTop: '1rem' }}>
-                                                    <details style={{ background: '#f8fafc', padding: '1rem', borderRadius: '4px', border: '1px solid var(--border)' }}>
-                                                        <summary style={{ fontWeight: 'bold', cursor: 'pointer', color: 'var(--primary)' }}>Ver Desglose de Bases de Datos Consultadas</summary>
-                                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '1rem', maxHeight: '200px', overflowY: 'auto' }}>
-                                                            {Object.entries(solicitudSeleccionada.datos_formulario.monitor_fuentes.fuentes_detalladas).map(([fuente, valor], idx) => {
-    let detalles = [];
-    const dict = solicitudSeleccionada.datos_formulario.monitor_fuentes.dict_hallazgos;
-    if (dict && valor === true) {
-        for (const cat of ['altos', 'medios', 'bajos', 'infos']) {
-            const items = dict[cat] || [];
-            // Find all matching items for this source
-            const matches = items.filter(i => 
-                i.codigo === fuente || 
-                i.fuente === fuente || 
-                fuente.includes(i.codigo) || 
-                i.codigo.includes(fuente.split('_')[0])
-            );
-            
-            matches.forEach(match => {
-                let texto = match.hallazgo || '';
-                if (match.descripcion && match.descripcion !== texto) {
-                    texto += texto ? ' - ' + match.descripcion : match.descripcion;
-                }
-                if (texto && texto.trim() !== '') {
-                    detalles.push(texto.trim());
-                }
-            });
-        }
-    }
-    
-    // De-duplicate and join
-    const detalleHallazgo = [...new Set(detalles)].join(' | ');
+                                    {(() => {
+                                        const vinculados = obtenerListaVinculados(solicitudSeleccionada);
+                                        const totalVinculados = vinculados.length;
+                                        const consultados = vinculados.filter(v => !!obtenerEstudioVinculado(solicitudSeleccionada, v)).length;
+                                        const pendientes = totalVinculados - consultados;
 
-    return (
-    <div key={idx} style={{ fontSize: '0.8rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem', paddingTop: '0.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <span style={{ color: 'var(--text-muted)', textTransform: 'capitalize' }}>{fuente.replace(/_/g, ' ')}: </span>
-            <strong style={{ color: valor === 'Error' || valor === 'Página no disponible' ? 'var(--danger)' : valor === true ? 'var(--danger)' : !valor && valor !== false ? 'var(--text-muted)' : 'var(--text-main)', textAlign: 'right', maxWidth: '50%' }}>
-                {valor === true ? '🚨 HALLAZGO' + (detalleHallazgo ? '' : ' (Ver PDF)') : valor === false ? 'No / Limpio' : (valor === '' || valor === null ? 'No registra en la fuente' : valor)}
-            </strong>
-        </div>
-        {detalleHallazgo && (
-            <div style={{ color: '#475569', fontSize: '0.75rem', marginTop: '0.4rem', background: '#f1f5f9', padding: '0.4rem', borderRadius: '4px' }}>
-                <i>Detalle técnico:</i> {detalleHallazgo}
-            </div>
-        )}
-    </div>
-    );
-})}
+                                        const vActivo = vinculados.find(v => v.key === sujetoDetalleActivo) || vinculados[0];
+                                        const estudioActivo = vActivo ? obtenerEstudioVinculado(solicitudSeleccionada, vActivo) : null;
+
+                                        return (
+                                            <>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                                                    <div>
+                                                        <h4 style={{ margin: 0, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem' }}>
+                                                            <Globe size={20} color="var(--primary)" /> Debida Diligencia y Monitor de Fuentes (TusDatos.co)
+                                                        </h4>
+                                                        <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                                                            Verificación SAGRILAFT de la entidad principal, representante legal y beneficiarios finales ({consultados}/{totalVinculados} consultados).
+                                                        </p>
+                                                    </div>
+
+                                                    {solicitudSeleccionada.estado_actual !== 'ASIGNACION_CARGO' && (
+                                                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                                            {pendientes > 0 && (
+                                                                <button 
+                                                                    className="btn-primary"
+                                                                    onClick={(e) => handleConsultarTodosTusDatos(e, solicitudSeleccionada)}
+                                                                    disabled={cargandoTusDatos !== null}
+                                                                    style={{ fontSize: '0.85rem', padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#2563eb' }}
+                                                                >
+                                                                    <RefreshCw size={14} className={cargandoTusDatos === solicitudSeleccionada.id ? 'spin' : ''} />
+                                                                    {cargandoTusDatos === solicitudSeleccionada.id ? 'Consultando Todos...' : `Consultar Pendientes (${pendientes})`}
+                                                                </button>
+                                                            )}
                                                         </div>
-                                                    </details>
+                                                    )}
                                                 </div>
-                                            )}
-                                        </div>
-                                        </>
-                                    )}
 
-                                    {solicitudSeleccionada.monitor_fuentes && solicitudSeleccionada.monitor_fuentes.fuentes_detalladas && (
-                                        <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>
-                                            <h5 style={{ margin: '0 0 1rem 0', color: 'var(--text-main)', fontSize: '1rem' }}>📋 Resultados Detallados por Fuente</h5>
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.8rem', maxHeight: '300px', overflowY: 'auto', paddingRight: '1rem' }}>
-                                                {Object.entries(solicitudSeleccionada.monitor_fuentes.fuentes_detalladas).map(([fuente, resultado]) => {
-    let detalles = [];
-    const dict = solicitudSeleccionada.monitor_fuentes.dict_hallazgos;
-    if (dict && resultado === true) {
-        for (const cat of ['altos', 'medios', 'bajos', 'infos']) {
-            const items = dict[cat] || [];
-            const matches = items.filter(i => 
-                i.codigo === fuente || 
-                i.fuente === fuente || 
-                fuente.includes(i.codigo) || 
-                i.codigo.includes(fuente.split('_')[0])
-            );
-            
-            matches.forEach(match => {
-                let texto = match.hallazgo || '';
-                if (match.descripcion && match.descripcion !== texto) {
-                    texto += texto ? ' - ' + match.descripcion : match.descripcion;
-                }
-                if (texto && texto.trim() !== '') {
-                    detalles.push(texto.trim());
-                }
-            });
-        }
-    }
-    
-    const detalleHallazgo = [...new Set(detalles)].join(' | ');
-    
-    return (
-    <div key={fuente} style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg-body)', padding: '0.5rem', borderRadius: '4px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ textTransform: 'capitalize' }}>{fuente.replace(/_/g, ' ')}</span>
-            <span style={{ 
-                fontWeight: 'bold', 
-                color: resultado === 'Error' ? 'var(--danger)' : resultado === true ? '#f59e0b' : 'var(--success-text)' 
-            }}>
-                {resultado === 'Error' ? '⛔ ERROR / CAÍDA' : resultado === true ? '🚨 HALLAZGO' : '✅ LIMPIO'}
-            </span>
-        </div>
-        {detalleHallazgo && (
-            <div style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '0.4rem', fontStyle: 'italic' }}>
-                {detalleHallazgo}
-            </div>
-        )}
-    </div>
-    );
-})}
-                                            </div>
-                                        </div>
-                                    )}
+                                                {solicitudSeleccionada.estado_actual === 'ASIGNACION_CARGO' ? (
+                                                    <div style={{ textAlign: 'center', padding: '2rem', background: '#fefce8', borderRadius: '8px', border: '1px solid #fef08a' }}>
+                                                        <p style={{ color: '#854d0e', fontWeight: '600', marginBottom: '0.5rem' }}>🔒 Pendiente de asignación de Área y Cargo</p>
+                                                        <p style={{ color: '#a16207', fontSize: '0.85rem' }}>Primero debes asignar el Área y Cargo en el recuadro superior. Una vez asignados, el expediente pasará a Revisión Previa donde se ejecutará la consulta en TusDatos.</p>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        {/* TABLA DE VINCULADOS / SUJETOS */}
+                                                        <div style={{ overflowX: 'auto', marginBottom: '1.5rem', borderRadius: '6px', border: '1px solid var(--border)' }}>
+                                                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', textAlign: 'left', background: '#fff' }}>
+                                                                <thead>
+                                                                    <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--border)', color: '#475569' }}>
+                                                                        <th style={{ padding: '0.75rem 1rem' }}>Sujeto / Contraparte</th>
+                                                                        <th style={{ padding: '0.75rem 1rem' }}>Rol / Participación</th>
+                                                                        <th style={{ padding: '0.75rem 1rem' }}>Documento</th>
+                                                                        <th style={{ padding: '0.75rem 1rem' }}>Estado Verificación</th>
+                                                                        <th style={{ padding: '0.75rem 1rem' }}>Listas / Antecedentes</th>
+                                                                        <th style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>Acciones</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {vinculados.map((v) => {
+                                                                        const est = obtenerEstudioVinculado(solicitudSeleccionada, v);
+                                                                        const isRowLoading = cargandoTusDatos === `${solicitudSeleccionada.id}_${v.key}` || (cargandoTusDatos === solicitudSeleccionada.id && !est);
+                                                                        const isSelected = (vActivo && vActivo.key === v.key);
+
+                                                                        return (
+                                                                            <tr 
+                                                                                key={v.key} 
+                                                                                style={{ 
+                                                                                    borderBottom: '1px solid #f1f5f9',
+                                                                                    background: isSelected ? 'rgba(37, 99, 235, 0.05)' : 'transparent',
+                                                                                    cursor: est ? 'pointer' : 'default',
+                                                                                    transition: 'background 0.2s'
+                                                                                }}
+                                                                                onClick={() => { if (est) setSujetoDetalleActivo(v.key); }}
+                                                                            >
+                                                                                <td style={{ padding: '0.75rem 1rem' }}>
+                                                                                    <div style={{ fontWeight: '600', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                                                        {v.esPrincipal ? <Building2 size={16} color="#2563eb" /> : <User size={16} color="#64748b" />}
+                                                                                        <span>{v.nombre}</span>
+                                                                                    </div>
+                                                                                </td>
+                                                                                <td style={{ padding: '0.75rem 1rem' }}>
+                                                                                    <span style={{ 
+                                                                                        background: v.esPrincipal ? '#dbeafe' : '#f1f5f9', 
+                                                                                        color: v.esPrincipal ? '#1e40af' : '#475569', 
+                                                                                        padding: '0.2rem 0.5rem', 
+                                                                                        borderRadius: '4px', 
+                                                                                        fontSize: '0.75rem',
+                                                                                        fontWeight: '600'
+                                                                                    }}>
+                                                                                        {v.rol} {v.porcentaje ? `(${v.porcentaje})` : ''}
+                                                                                    </span>
+                                                                                </td>
+                                                                                <td style={{ padding: '0.75rem 1rem' }}>
+                                                                                    <code style={{ background: '#f8fafc', padding: '0.2rem 0.4rem', borderRadius: '4px', border: '1px solid #e2e8f0', color: '#0f172a' }}>
+                                                                                        {v.typedoc} {v.doc || 'N/A'}
+                                                                                    </code>
+                                                                                </td>
+                                                                                <td style={{ padding: '0.75rem 1rem' }}>
+                                                                                    {isRowLoading ? (
+                                                                                        <span style={{ color: '#d97706', display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: '500' }}>
+                                                                                            <RefreshCw size={14} className="spin" /> Consultando...
+                                                                                        </span>
+                                                                                    ) : !est ? (
+                                                                                        <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>
+                                                                                            ⚪ No consultado
+                                                                                        </span>
+                                                                                    ) : est.fuentes_caidas ? (
+                                                                                        <span style={{ color: '#d97706', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                                                                            ⚠️ Fuentes caídas
+                                                                                        </span>
+                                                                                    ) : est.listas_restrictivas === 'ALERTA' || est.antecedentes_judiciales === 'ALERTA' ? (
+                                                                                        <span style={{ color: '#dc2626', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                                                                            🚨 Hallazgo detectado
+                                                                                        </span>
+                                                                                    ) : (
+                                                                                        <span style={{ color: '#16a34a', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                                                                            <CheckCircle size={14} /> Limpio / Completado
+                                                                                        </span>
+                                                                                    )}
+                                                                                </td>
+                                                                                <td style={{ padding: '0.75rem 1rem' }}>
+                                                                                    {!est ? (
+                                                                                        <span style={{ color: '#cbd5e1' }}>-</span>
+                                                                                    ) : (
+                                                                                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                                                                            <span style={{ 
+                                                                                                fontSize: '0.7rem', 
+                                                                                                padding: '0.15rem 0.4rem', 
+                                                                                                borderRadius: '3px',
+                                                                                                background: est.listas_restrictivas === 'ALERTA' ? '#fee2e2' : '#dcfce7',
+                                                                                                color: est.listas_restrictivas === 'ALERTA' ? '#991b1b' : '#166534',
+                                                                                                fontWeight: '600'
+                                                                                            }}>
+                                                                                                Listas: {est.listas_restrictivas}
+                                                                                            </span>
+                                                                                            <span style={{ 
+                                                                                                fontSize: '0.7rem', 
+                                                                                                padding: '0.15rem 0.4rem', 
+                                                                                                borderRadius: '3px',
+                                                                                                background: est.antecedentes_judiciales === 'ALERTA' ? '#fee2e2' : '#f1f5f9',
+                                                                                                color: est.antecedentes_judiciales === 'ALERTA' ? '#991b1b' : '#475569',
+                                                                                                fontWeight: '600'
+                                                                                            }}>
+                                                                                                Judicial: {est.antecedentes_judiciales}
+                                                                                            </span>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </td>
+                                                                                <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
+                                                                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.4rem', alignItems: 'center' }}>
+                                                                                        {!est ? (
+                                                                                            <button 
+                                                                                                className="btn-primary"
+                                                                                                onClick={(e) => handleTusDatos(e, solicitudSeleccionada, v.key)}
+                                                                                                disabled={cargandoTusDatos !== null}
+                                                                                                style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', background: '#2563eb' }}
+                                                                                            >
+                                                                                                🚀 Consultar
+                                                                                            </button>
+                                                                                        ) : (
+                                                                                            <>
+                                                                                                <button 
+                                                                                                    className="btn-outline"
+                                                                                                    onClick={(e) => handleTusDatos(e, solicitudSeleccionada, v.key)}
+                                                                                                    disabled={cargandoTusDatos !== null}
+                                                                                                    title="Re-ejecutar consulta completa de este sujeto"
+                                                                                                    style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem' }}
+                                                                                                >
+                                                                                                    🔄 Reconsultar
+                                                                                                </button>
+
+                                                                                                {est.fuentes_caidas && (
+                                                                                                    <button 
+                                                                                                        className="btn-outline"
+                                                                                                        onClick={(e) => handleRetryTusDatos(e, solicitudSeleccionada, v.key)}
+                                                                                                        disabled={cargandoTusDatos !== null}
+                                                                                                        title="Recargar fuentes caídas de este sujeto"
+                                                                                                        style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem', color: '#d97706', borderColor: '#d97706' }}
+                                                                                                    >
+                                                                                                        ♻️ Recargar
+                                                                                                    </button>
+                                                                                                )}
+
+                                                                                                {est.pdf_url && (
+                                                                                                    <button 
+                                                                                                        className="btn-outline"
+                                                                                                        onClick={(e) => {
+                                                                                                            e.stopPropagation();
+                                                                                                            window.open(est.pdf_url, '_blank');
+                                                                                                        }}
+                                                                                                        title="Descargar o ver reporte PDF de TusDatos"
+                                                                                                        style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem', color: '#16a34a', borderColor: '#16a34a' }}
+                                                                                                    >
+                                                                                                        📄 PDF
+                                                                                                    </button>
+                                                                                                )}
+
+                                                                                                <button 
+                                                                                                    className="btn-outline"
+                                                                                                    onClick={(e) => {
+                                                                                                        e.stopPropagation();
+                                                                                                        setSujetoDetalleActivo(v.key);
+                                                                                                    }}
+                                                                                                    style={{ 
+                                                                                                        padding: '0.35rem 0.6rem', 
+                                                                                                        fontSize: '0.75rem',
+                                                                                                        background: isSelected ? '#eff6ff' : 'transparent',
+                                                                                                        borderColor: isSelected ? '#3b82f6' : '#cbd5e1',
+                                                                                                        color: isSelected ? '#1d4ed8' : '#64748b'
+                                                                                                    }}
+                                                                                                >
+                                                                                                    🔍 Fuentes
+                                                                                                </button>
+                                                                                            </>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </td>
+                                                                            </tr>
+                                                                        );
+                                                                    })}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+
+                                                        {/* DESGLOSE DETALLADO DE FUENTES PARA EL SUJETO SELECCIONADO */}
+                                                        {estudioActivo ? (
+                                                            <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '6px', border: '1px solid var(--border)' }}>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                        <span style={{ fontWeight: 'bold', color: 'var(--text-main)', fontSize: '0.95rem' }}>
+                                                                            📋 Fuentes Consultadas: {vActivo?.nombre} ({vActivo?.typedoc} {vActivo?.doc})
+                                                                        </span>
+                                                                        <span style={{ fontSize: '0.75rem', background: '#e2e8f0', padding: '0.15rem 0.5rem', borderRadius: '4px', color: '#475569' }}>
+                                                                            {vActivo?.rol}
+                                                                        </span>
+                                                                    </div>
+
+                                                                    {estudioActivo.fuentes_caidas && (
+                                                                        <button 
+                                                                            className="btn-outline"
+                                                                            onClick={(e) => handleRetryTusDatos(e, solicitudSeleccionada, vActivo.key)}
+                                                                            disabled={cargandoTusDatos !== null}
+                                                                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', color: '#d97706', borderColor: '#d97706' }}
+                                                                        >
+                                                                            ♻️ Recargar Fuentes Caídas de {vActivo?.nombre}
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+
+                                                                {estudioActivo.fuentes_caidas && (
+                                                                    <div style={{ padding: '0.75rem 1rem', background: '#fffbeb', border: '1px solid #fef3c7', borderRadius: '4px', marginBottom: '1rem', fontSize: '0.82rem', color: '#92400e' }}>
+                                                                        <strong>⚠️ Fuentes Caídas en esta consulta:</strong> Algunas fuentes gubernamentales no respondieron al momento de consultar este sujeto. Puedes recargarlas sin consumir créditos adicionales.
+                                                                    </div>
+                                                                )}
+
+                                                                {estudioActivo.fuentes_detalladas ? (
+                                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.6rem', maxHeight: '320px', overflowY: 'auto' }}>
+                                                                        {Object.entries(estudioActivo.fuentes_detalladas).map(([fuente, valor], idx) => {
+                                                                            let detalles = [];
+                                                                            const dict = estudioActivo.dict_hallazgos;
+                                                                            if (dict && valor === true) {
+                                                                                for (const cat of ['altos', 'medios', 'bajos', 'infos']) {
+                                                                                    const items = dict[cat] || [];
+                                                                                    const matches = items.filter(i => 
+                                                                                        i.codigo === fuente || 
+                                                                                        i.fuente === fuente || 
+                                                                                        fuente.includes(i.codigo) || 
+                                                                                        i.codigo?.includes(fuente.split('_')[0])
+                                                                                    );
+                                                                                    matches.forEach(m => {
+                                                                                        let txt = m.hallazgo || '';
+                                                                                        if (m.descripcion && m.descripcion !== txt) txt += txt ? ' - ' + m.descripcion : m.descripcion;
+                                                                                        if (txt && txt.trim()) detalles.push(txt.trim());
+                                                                                    });
+                                                                                }
+                                                                            }
+                                                                            const detalleHallazgo = [...new Set(detalles)].join(' | ');
+
+                                                                            return (
+                                                                                <div key={idx} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '0.5rem 0.75rem', fontSize: '0.8rem' }}>
+                                                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                                        <span style={{ color: '#475569', textTransform: 'capitalize', fontWeight: '500' }}>
+                                                                                            {fuente.replace(/_/g, ' ')}
+                                                                                        </span>
+                                                                                        <strong style={{ 
+                                                                                            color: valor === 'Error' || valor === 'Página no disponible' ? '#d97706' : 
+                                                                                                   valor === true ? '#dc2626' : 
+                                                                                                   !valor && valor !== false ? '#94a3b8' : '#16a34a' 
+                                                                                        }}>
+                                                                                            {valor === true ? '🚨 HALLAZGO' : 
+                                                                                             valor === false ? '✅ LIMPIO' : 
+                                                                                             (valor === 'Error' || valor === 'Página no disponible') ? '⚠️ CAÍDA' : 
+                                                                                             (valor === '' || valor === null ? 'No registra' : valor)}
+                                                                                        </strong>
+                                                                                    </div>
+                                                                                    {detalleHallazgo && (
+                                                                                        <div style={{ marginTop: '0.35rem', padding: '0.3rem 0.5rem', background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '3px', color: '#991b1b', fontSize: '0.75rem' }}>
+                                                                                            <i>Detalle:</i> {detalleHallazgo}
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                ) : (
+                                                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', padding: '1rem' }}>
+                                                                        No hay desglose de fuentes individuales disponible para este sujeto.
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        ) : (
+                                                            <div style={{ textAlign: 'center', padding: '1.5rem', background: '#f8fafc', borderRadius: '6px', border: '1px dashed #cbd5e1' }}>
+                                                                <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.85rem' }}>
+                                                                    Haz clic en <strong>🚀 Consultar</strong> en la tabla superior para evaluar a cualquiera de los sujetos pendientes.
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                )}
+                                            </>
+                                        );
+                                    })()}
                                 </div>
 
                                 {userRole !== 'auxiliar_sagrilaft' && (
@@ -1727,13 +2009,13 @@ export default function DashboardOficial() {
                                             {!mostrarPingPong ? (
                                                 <div style={{ display: 'grid', gridTemplateColumns: (solicitudSeleccionada.score_riesgo === undefined || solicitudSeleccionada.score_riesgo === null || (solicitudSeleccionada.estado_actual === 'REVISION_PREVIA' || solicitudSeleccionada.estado_actual === 'ASIGNACION_CARGO')) ? '1fr 1fr 1fr' : '1fr 1fr 1fr 1fr', gap: '0.75rem' }}>
                                                     {solicitudSeleccionada.score_riesgo !== undefined && solicitudSeleccionada.score_riesgo !== null && solicitudSeleccionada.estado_actual !== 'FUENTES_INCOMPLETAS' && (
-                                                        <button className="btn-outline" style={{ padding: '0.75rem', fontSize: '0.85rem' }} onClick={(e) => handleTusDatos(e, solicitudSeleccionada)}>
-                                                            {cargandoTusDatos === solicitudSeleccionada.id ? 'Consultando...' : '🔄 Re-evaluar API'}
+                                                        <button className="btn-outline" style={{ padding: '0.75rem', fontSize: '0.85rem' }} onClick={(e) => handleTusDatos(e, solicitudSeleccionada, 'principal')} disabled={cargandoTusDatos !== null}>
+                                                            {cargandoTusDatos ? 'Consultando...' : '🔄 Re-evaluar Empresa'}
                                                         </button>
                                                     )}
                                                     {solicitudSeleccionada.estado_actual === 'FUENTES_INCOMPLETAS' && (
-                                                        <button className="btn-outline" style={{ padding: '0.75rem', fontSize: '0.85rem', color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={(e) => handleRetryTusDatos(e, solicitudSeleccionada)}>
-                                                            {cargandoTusDatos === solicitudSeleccionada.id ? 'Recargando...' : '♻️ Recargar API'}
+                                                        <button className="btn-outline" style={{ padding: '0.75rem', fontSize: '0.85rem', color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={(e) => handleRetryTusDatos(e, solicitudSeleccionada, 'principal')} disabled={cargandoTusDatos !== null}>
+                                                            {cargandoTusDatos ? 'Recargando...' : '♻️ Recargar API'}
                                                         </button>
                                                     )}
                                                     {Object.values(camposPingPong).some(v => v) && (

@@ -506,23 +506,103 @@ const getTipoDocTusDatos = (solicitud) => {
     return 'CC';
 };
 
-// Endpoint para disparar Manualmente el Estudio de TusDatos
+// Helper para listar todos los sujetos y vinculados a consultar en TusDatos
+const obtenerListaVinculados = (solicitud) => {
+    const d = solicitud.datos_formulario || {};
+    const vinculados = [];
+
+    const isJuridica = d.tipo_persona === 'juridica' || solicitud.tipo_vinculacion?.includes('juridico');
+    const docPrincipal = (solicitud.nit_cedula || d.numero_identificacion || '').toString().trim();
+    const nombrePrincipal = d.razon_social || `${d.nombres || ''} ${d.primer_apellido || ''}`.trim() || solicitud.razon_social || 'Contraparte';
+    
+    vinculados.push({
+        key: 'principal',
+        rol: isJuridica ? 'Empresa Contraparte (Principal)' : 'Persona Natural Contraparte (Principal)',
+        nombre: nombrePrincipal,
+        doc: docPrincipal,
+        typedoc: isJuridica ? 'NIT' : (d.tipo_identificacion?.toUpperCase() || 'CC'),
+        porcentaje: '100%',
+        esPrincipal: true
+    });
+
+    if (isJuridica && d.rep_legal_numero_id) {
+        const nomRep = `${d.rep_legal_nombres || ''} ${d.rep_legal_primer_apellido || ''} ${d.rep_legal_segundo_apellido || ''}`.trim();
+        let tipoRep = (d.rep_legal_tipo_id || 'cc').toUpperCase();
+        if (tipoRep === 'PASAPORTE') tipoRep = 'PP';
+        
+        vinculados.push({
+            key: 'rep_legal',
+            rol: 'Representante Legal',
+            nombre: nomRep || 'Representante Legal',
+            doc: d.rep_legal_numero_id.toString().trim(),
+            typedoc: tipoRep,
+            porcentaje: null
+        });
+    }
+
+    if (isJuridica && Array.isArray(d.accionistas)) {
+        d.accionistas.forEach((acc, i) => {
+            if (!acc.identificacion) return;
+            const esJur = acc.tipo_persona === 'juridica';
+            let tipoAcc = esJur ? 'NIT' : (acc.tipo_id || 'cc').toUpperCase();
+            if (tipoAcc === 'PASAPORTE') tipoAcc = 'PP';
+
+            vinculados.push({
+                key: `accionista_${i}`,
+                rol: esJur ? 'Accionista Jurídico (>5%)' : 'Accionista Natural (>5%)',
+                nombre: acc.nombre || `Accionista ${i + 1}`,
+                doc: acc.identificacion.toString().trim(),
+                typedoc: tipoAcc,
+                porcentaje: acc.porcentaje ? `${acc.porcentaje}%` : null,
+                esJuridica: esJur
+            });
+
+            if (esJur && Array.isArray(acc.sub_accionistas)) {
+                acc.sub_accionistas.forEach((sub, sIdx) => {
+                    if (!sub.identificacion) return;
+                    const subEsJur = sub.tipo_persona === 'juridica';
+                    let tipoSub = subEsJur ? 'NIT' : (sub.tipo_id || 'cc').toUpperCase();
+                    if (tipoSub === 'PASAPORTE') tipoSub = 'PP';
+
+                    vinculados.push({
+                        key: `sub_accionista_${i}_${sIdx}`,
+                        rol: `Beneficiario Final (Socio de ${acc.nombre || 'Accionista ' + (i+1)})`,
+                        nombre: sub.nombre || `Beneficiario ${sIdx + 1}`,
+                        doc: sub.identificacion.toString().trim(),
+                        typedoc: tipoSub,
+                        porcentaje: sub.porcentaje ? `${sub.porcentaje}%` : null,
+                        esJuridica: subEsJur
+                    });
+                });
+            }
+        });
+    }
+
+    return vinculados;
+};
+
+// Endpoint para disparar Manualmente el Estudio de TusDatos (Individual o Principal)
 app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
     const { id } = req.params;
+    const { sujetoKey } = req.body || {};
 
     try {
-        // 1. Obtener la solicitud
         const { data: solicitud, error: errSol } = await supabase.from('solicitudes_sagrilaft').select('*').eq('id', id).single();
         if (errSol || !solicitud) return res.status(404).json({ error: "Solicitud no encontrada" });
 
+        const todosVinculados = obtenerListaVinculados(solicitud);
+        const targetKey = sujetoKey || 'principal';
+        const targetVinculado = todosVinculados.find(v => v.key === targetKey);
+        if (!targetVinculado) {
+            return res.status(400).json({ error: `Vinculado '${targetKey}' no encontrado en la solicitud.` });
+        }
+
         const isTestEnv = process.env.TUSDATOS_TEST_ENV !== 'false';
         const nit = solicitud.nit_cedula;
-        const tipoIdentificacion = getTipoDocTusDatos(solicitud);
+        const tipoIdentificacion = targetVinculado.typedoc;
+        const docAConsultar = tipoIdentificacion === 'PP' ? targetVinculado.doc.trim() : targetVinculado.doc.replace(/\D/g, '');
+        const nombreAConsultar = targetVinculado.nombre;
 
-        let coincidencia_api = false;
-        let monitorFuentes = {};
-
-        // Configuración según ambiente (Test vs Producción)
         const baseUrl = isTestEnv ? 'http://docs.tusdatos.co/api' : 'https://dash-board.tusdatos.co/api';
         const user = isTestEnv ? 'pruebas' : process.env.TUSDATOS_USERNAME;
         const pass = isTestEnv ? 'password' : process.env.TUSDATOS_PASSWORD;
@@ -531,7 +611,7 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
             return res.status(500).json({ error: "Credenciales de TusDatos no configuradas en entorno de producción." });
         }
 
-        console.log(`🚀 Ejecutando TusDatos en modo ${isTestEnv ? 'PRUEBAS (Cero costo)' : 'PRODUCCIÓN'} para:`, nit);
+        console.log(`🚀 Ejecutando TusDatos para [${targetVinculado.rol}] ${nombreAConsultar} (${tipoIdentificacion}: ${docAConsultar})`);
 
         const authHeader = pass.startsWith('api_td_') 
             ? `Bearer ${pass}` 
@@ -541,8 +621,7 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
 
         // 1.1 Lanzar Consulta
         let jobid;
-        // Si no tenemos un jobid previo (no es un reintento) o queremos forzar uno nuevo
-        const payload = { doc: nit.toString().replace(/\D/g,''), typedoc: tipoIdentificacion };
+        const payload = { doc: docAConsultar, typedoc: tipoIdentificacion };
         const launchRes = await axios.post(`${baseUrl}/launch`, payload, { headers });
         console.log("TusDatos Launch Response:", launchRes.data);
         
@@ -551,28 +630,22 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
         }
         
         jobid = launchRes.data.jobid || launchRes.data.id;
-
         if (!jobid) {
             throw new Error(`TusDatos: No se obtuvo jobid. Respuesta completa: ${JSON.stringify(launchRes.data)}`);
         }
 
-        // Guardamos el jobid en la DB para futuras recargas
-        let newFormulario = { ...solicitud.datos_formulario, jobid_tusdatos: jobid, error_fuentes_tusdatos: false };
-        await supabase.from('solicitudes_sagrilaft').update({ datos_formulario: newFormulario }).eq('id', id);
-
-        // Si estamos en la arenera, forzamos el jobid según el requerimiento de prueba
         if (isTestEnv) {
-            const ultimoDigito = parseInt(nit.toString().slice(-1)) || 0;
+            const ultimoDigito = parseInt(docAConsultar.slice(-1)) || 0;
             if (ultimoDigito >= 8) jobid = '6460fc34-4154-43db-9438-8c5a059304c0';
             else if (ultimoDigito >= 6) jobid = '485e9823-df75-4b1e-9f64-58916a82dfd7';
             else jobid = '5c6c80c0-4dd3-41c9-9648-46871a7176ad';
         }
 
-        // 1.2 Polling (Esperando resultados, hasta 1 minuto)
+        // 1.2 Polling (hasta 1.5 minutos, intervalos de 5 seg)
         let intentos = 0;
         let finalData = null;
-        while (intentos < 12) {
-            await new Promise(r => setTimeout(r, 10000)); // esperar 10 seg
+        while (intentos < 20) {
+            await new Promise(r => setTimeout(r, 5000));
             const statusRes = await axios.get(`${baseUrl}/results/${jobid}`, { headers });
             if (statusRes.data.estado === 'finalizado') {
                 finalData = statusRes.data;
@@ -583,9 +656,9 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
             intentos++;
         }
 
-                if (!finalData) throw new Error("Timeout esperando respuesta de TusDatos");
+        if (!finalData) throw new Error("Timeout esperando respuesta de TusDatos");
 
-        // 1.3 Obtener el reporte detallado (dict_hallazgos)
+        // 1.3 Obtener dict_hallazgos
         let dict_hallazgos = null;
         try {
             if (finalData.id) {
@@ -597,52 +670,93 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
             console.error("Error obteniendo report_json detallado de TusDatos:", err.message);
         }
 
-        // 1.4 Imprimir el reporte completo en consola para depuración
-        console.log("\n================ REPORT TUSDATOS (RAW JSON) ================");
-        console.log(JSON.stringify(finalData, null, 2));
-        console.log("============================================================\n");
-
         let fuentes_caidas = false;
         if (finalData.error === true) {
             fuentes_caidas = true;
             console.log("TusDatos reportó fuentes caídas o errores parciales en la consulta.");
-            newFormulario.error_fuentes_tusdatos = true;
         }
 
-        newFormulario.reporte_id_tusdatos = finalData.id;
-        
+        // 1.4 Generar PDF Nativo de Evidencias
+        let pdfUrl = null;
         try {
-            console.log("Generando PDF Nativo de Evidencias (Debida Diligencia)...");
-            // Para la solicitud nueva, pasamos finalData original ya que contiene todo
-            const pdfBuffer = await generarEvidenciaPDF(solicitud.datos_formulario, finalData, solicitud.datos_formulario.empresa_destino);
-            const pdfUrl = await uploadFileToR2(pdfBuffer, `TusDatos_${nit}.pdf`, `recepcion/${nit}`);
-            if (!newFormulario.archivos_cargados) newFormulario.archivos_cargados = {};
-            newFormulario.archivos_cargados.reporte_tusdatos = pdfUrl;
-            console.log("PDF de Evidencias Nativo guardado en:", pdfUrl);
+            const pdfBuffer = await generarEvidenciaPDF(
+                { numero_identificacion: docAConsultar, nombre_razon_social: nombreAConsultar },
+                finalData,
+                solicitud.datos_formulario?.empresa_destino
+            );
+            const safeDoc = docAConsultar.replace(/[^a-zA-Z0-9]/g, '_');
+            pdfUrl = await uploadFileToR2(pdfBuffer, `TusDatos_${safeDoc}_${targetKey}.pdf`, `recepcion/${nit}`);
         } catch (pdfErr) {
             console.error("No se pudo generar el PDF de Evidencias:", pdfErr.message);
         }
 
-        coincidencia_api = finalData.hallazgo; // boolean que indica si encontró reportes negativos
-        monitorFuentes = {
-            listas_restrictivas: finalData.hallazgos ? 'ALERTA' : 'OK', 
-            dian: finalData.results?.rut === true ? 'ALERTA' : 'OK',
+        const tieneAlertaListas = finalData.hallazgos || (dict_hallazgos?.altos || []).length > 0;
+        const tieneAntecedentes = (dict_hallazgos?.medios || []).length > 0;
+
+        const resumenEstudio = {
+            key: targetKey,
+            doc: docAConsultar,
+            typedoc: tipoIdentificacion,
+            nombre: nombreAConsultar,
+            rol: targetVinculado.rol,
+            jobid: jobid,
+            reporte_id: finalData.id,
+            fecha_consulta: new Date().toISOString(),
+            estado: fuentes_caidas ? 'fuentes_caidas' : 'finalizado',
+            fuentes_caidas: fuentes_caidas,
+            hallazgo: finalData.hallazgo === true || tieneAlertaListas || tieneAntecedentes,
+            listas_restrictivas: tieneAlertaListas ? 'ALERTA' : 'OK',
+            antecedentes_judiciales: tieneAntecedentes ? 'ALERTA' : 'OK',
             policia: finalData.results?.policia === true ? 'ALERTA' : 'OK',
             procuraduria: finalData.results?.procuraduria === true ? 'ALERTA' : 'OK',
-            estado_fuentes: fuentes_caidas ? 'FUENTES_CAIDAS' : 'OK',
+            contraloria: finalData.results?.contraloria === true ? 'ALERTA' : 'OK',
+            dian: finalData.results?.rut === true ? 'ALERTA' : 'OK',
             fuentes_detalladas: finalData.results || {},
             dict_hallazgos: dict_hallazgos,
-            raw_tusdatos: 'Resultados procesados exitosamente vía ' + (isTestEnv ? 'Sandbox' : 'Producción')
+            pdf_url: pdfUrl
         };
-        newFormulario.monitor_fuentes = monitorFuentes;
 
-        // 2. Ejecutar la Lógica de Puntuación Precisa usando riskEngine
+        let newFormulario = { ...solicitud.datos_formulario };
+        if (!newFormulario.estudios_tusdatos) newFormulario.estudios_tusdatos = {};
+        newFormulario.estudios_tusdatos[targetKey] = resumenEstudio;
+
+        if (targetKey === 'principal') {
+            newFormulario.jobid_tusdatos = jobid;
+            newFormulario.reporte_id_tusdatos = finalData.id;
+            newFormulario.error_fuentes_tusdatos = fuentes_caidas;
+            newFormulario.monitor_fuentes = {
+                listas_restrictivas: resumenEstudio.listas_restrictivas,
+                dian: resumenEstudio.dian,
+                policia: resumenEstudio.policia,
+                procuraduria: resumenEstudio.procuraduria,
+                estado_fuentes: fuentes_caidas ? 'FUENTES_CAIDAS' : 'OK',
+                fuentes_detalladas: finalData.results || {},
+                dict_hallazgos: dict_hallazgos,
+                raw_tusdatos: 'Resultados procesados exitosamente vía ' + (isTestEnv ? 'Sandbox' : 'Producción')
+            };
+            if (!newFormulario.archivos_cargados) newFormulario.archivos_cargados = {};
+            if (pdfUrl) newFormulario.archivos_cargados.reporte_tusdatos = pdfUrl;
+        } else {
+            if (!newFormulario.archivos_cargados) newFormulario.archivos_cargados = {};
+            if (pdfUrl) newFormulario.archivos_cargados[`reporte_tusdatos_${targetKey}`] = pdfUrl;
+        }
+
+        // Evaluar riesgo consolidado considerando todos los vinculados estudiados
+        const todosEstudios = Object.values(newFormulario.estudios_tusdatos || {});
+        const hayAlertaListas = todosEstudios.some(e => e.listas_restrictivas === 'ALERTA');
+        const hayFuentesCaidas = todosEstudios.some(e => e.fuentes_caidas === true);
+
         const resultadoRiesgo = await calcularRiesgoConsolidado(newFormulario);
-        const scoreFinal = resultadoRiesgo.puntaje_total;
+        let scoreFinal = resultadoRiesgo.puntaje_total;
+        if (hayAlertaListas) {
+            scoreFinal = 100;
+        }
         newFormulario.desglose_riesgo = resultadoRiesgo;
 
         let estadoGeneral = 'APROBADO_LIMPIO';
-        if (fuentes_caidas) {
+        if (hayAlertaListas) {
+            estadoGeneral = "ALERTA_CRITICA";
+        } else if (hayFuentesCaidas) {
             estadoGeneral = "FUENTES_INCOMPLETAS";
         } else {
             if (scoreFinal <= 3) {
@@ -654,7 +768,6 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
             }
         }
 
-        // Variables needed by matrix update:
         const td = dict_hallazgos || {};
         const numAltos = (td.altos || []).length;
         const numMedios = (td.medios || []).length;
@@ -662,26 +775,20 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
         const esPep = String(solicitud.datos_formulario?.es_pep).toLowerCase() === 'si' || 
                       String(solicitud.datos_formulario?.tiene_vinculo_pep).toLowerCase() === 'si';
 
-        // 2.5 Reflejar en la Matriz de Riesgos
-        const { data: riesgos, error: errRiesgos } = await supabase.from('matriz_riesgos_master').select('*').eq('activo', true);
-        if (errRiesgos) throw errRiesgos;
-
-        const evaluaciones = [];
+        const { data: riesgos } = await supabase.from('matriz_riesgos_master').select('*').eq('activo', true);
         if (riesgos && riesgos.length > 0) {
+            const evaluaciones = [];
             for (const riesgo of riesgos) {
                 let frec = riesgo.escala_frecuencia_inherente || 1;
                 let imp = riesgo.escala_impacto_inherente || 1;
                 let detalles = "Evaluación base estable.";
 
                 if (riesgo.codigo === 'R-001') {
-                    // Listas Restrictivas (ONU, OFAC)
-                    if (numAltos > 0) { frec = 5; detalles = `Riesgo extremo: ${numAltos} coincidencias en Listas Restrictivas Internacionales.`; }
+                    if (numAltos > 0 || hayAlertaListas) { frec = 5; detalles = `Riesgo extremo: Coincidencias en Listas Restrictivas Internacionales (Vinculados).`; }
                 } else if (riesgo.codigo === 'R-002') {
-                    // Antecedentes (Policía, etc.)
                     if (numMedios > 0) { frec = 4; detalles = `Riesgo alto: ${numMedios} antecedentes o anotaciones fiscales/disciplinarias.`; }
                     else if (numBajos > 0) { frec = 3; detalles = `Riesgo medio: ${numBajos} hallazgos menores o informativos.`; }
                 } else if (riesgo.codigo === 'R-004') {
-                    // PEPs
                     if (esPep) { frec = 4; detalles = "Contraparte o vinculado está marcado como Persona Expuesta Políticamente (PEP)."; }
                 }
 
@@ -700,20 +807,18 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
             await supabase.from('evaluacion_riesgos_resultado').insert(evaluaciones);
         }
 
-        // 3. Actualizar la solicitud a estado ESTUDIO_API (O el estado final que determine la lógica)
-        const { error: errorUpdate } = await supabase.from('solicitudes_sagrilaft').update({
-            estado_actual: estadoGeneral, // Podría ser REVISION_MANUAL, ALERTA_CRITICA, etc.
+        await supabase.from('solicitudes_sagrilaft').update({
+            estado_actual: estadoGeneral,
             score_riesgo: scoreFinal,
             datos_formulario: newFormulario
         }).eq('id', id);
 
-        if (errorUpdate) {
-            console.error("Error actualizando estado en Supabase:", errorUpdate);
-        }
+        const { data: solActualizada } = await supabase.from('solicitudes_sagrilaft').select('*').eq('id', id).single();
 
         return res.status(200).json({ 
-            mensaje: fuentes_caidas ? "Consulta finalizada con FUENTES INCOMPLETAS. Puede recargar las fuentes caídas." : "Consulta y evaluación completada.", 
-            resultado: { score: scoreFinal, estado: estadoGeneral, monitor: monitorFuentes } 
+            mensaje: `Consulta de ${nombreAConsultar} (${targetVinculado.rol}) completada.`, 
+            resultado: resumenEstudio,
+            solicitud: solActualizada
         });
 
     } catch (error) {
@@ -726,28 +831,48 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
     }
 });
 
-// Endpoint para Recargar (Retry) fuentes caídas de una consulta previa
+// Endpoint para Recargar (Retry) fuentes caídas de una consulta previa (Principal o Vinculado)
 app.post('/api/v1/solicitudes/:id/tusdatos/retry', async (req, res) => {
     const { id } = req.params;
+    const { sujetoKey } = req.body || {};
 
     try {
         const { data: solicitud, error: errSol } = await supabase.from('solicitudes_sagrilaft').select('*').eq('id', id).single();
         if (errSol || !solicitud) return res.status(404).json({ error: "Solicitud no encontrada" });
 
+        const targetKey = sujetoKey || 'principal';
+        let reporteId = null;
+        let tipoIdentificacion = 'CC';
+        let targetNombre = 'Contraparte';
+        let targetDoc = solicitud.nit_cedula;
+
+        const todosVinculados = obtenerListaVinculados(solicitud);
+        const v = todosVinculados.find(item => item.key === targetKey);
+        if (v) {
+            targetNombre = v.nombre;
+            targetDoc = v.doc;
+            tipoIdentificacion = v.typedoc;
+        }
+
+        if (targetKey === 'principal') {
+            reporteId = solicitud.datos_formulario?.reporte_id_tusdatos || solicitud.datos_formulario?.jobid_tusdatos;
+            tipoIdentificacion = getTipoDocTusDatos(solicitud);
+        } else {
+            const est = solicitud.datos_formulario?.estudios_tusdatos?.[targetKey];
+            reporteId = est?.reporte_id || est?.jobid;
+            if (est?.typedoc) tipoIdentificacion = est.typedoc;
+        }
+
+        if (!reporteId) return res.status(400).json({ error: `No hay un reporte previo de TusDatos para recargar para ${targetNombre}.` });
+
         const isTestEnv = process.env.TUSDATOS_TEST_ENV !== 'false';
-        const tipoIdentificacion = getTipoDocTusDatos(solicitud);
-        let jobid = solicitud.datos_formulario?.jobid_tusdatos;
-        let reporteId = solicitud.datos_formulario?.reporte_id_tusdatos || jobid; // Fallback for backwards compatibility if possible, though TusDatos strictly needs report ID
-
-        if (!reporteId) return res.status(400).json({ error: "No hay un identificador de reporte previo para recargar." });
-
         const baseUrl = isTestEnv ? 'http://docs.tusdatos.co/api' : 'https://dash-board.tusdatos.co/api';
         const user = isTestEnv ? 'pruebas' : process.env.TUSDATOS_USERNAME;
         const pass = isTestEnv ? 'password' : process.env.TUSDATOS_PASSWORD;
 
         if (!user || !pass) return res.status(500).json({ error: "Credenciales no configuradas." });
 
-        console.log(`♻️ Recargando TusDatos para solicitud ${id}, reporte previo: ${reporteId}`);
+        console.log(`♻️ Recargando TusDatos para [${targetKey}] ${targetNombre}, reporte: ${reporteId}`);
 
         const authHeader = pass.startsWith('api_td_') 
             ? `Bearer ${pass}` 
@@ -755,21 +880,16 @@ app.post('/api/v1/solicitudes/:id/tusdatos/retry', async (req, res) => {
             
         const headers = { 'Authorization': authHeader, 'Content-Type': 'application/json' };
 
-        // 1. Lanzar Recarga
         const endpoint = tipoIdentificacion === 'NIT' ? 'retry_nit' : 'retry';
         const retryRes = await axios.get(`${baseUrl}/${endpoint}/${reporteId}?typedoc=${tipoIdentificacion}`, { headers });
         const newJobid = retryRes.data.jobid;
 
         if (!newJobid) throw new Error("TusDatos Retry: No se obtuvo nuevo jobid");
 
-        let newFormulario = { ...solicitud.datos_formulario, jobid_tusdatos: newJobid, error_fuentes_tusdatos: false };
-        await supabase.from('solicitudes_sagrilaft').update({ datos_formulario: newFormulario }).eq('id', id);
-
-        // 2. Polling del nuevo jobid (hasta 1.5 minutos)
         let intentos = 0;
         let finalData = null;
-        while (intentos < 18) {
-            await new Promise(r => setTimeout(r, 10000));
+        while (intentos < 20) {
+            await new Promise(r => setTimeout(r, 5000));
             const statusRes = await axios.get(`${baseUrl}/results/${newJobid}`, { headers });
             if (statusRes.data.estado === 'finalizado') {
                 finalData = statusRes.data;
@@ -782,90 +902,66 @@ app.post('/api/v1/solicitudes/:id/tusdatos/retry', async (req, res) => {
 
         if (!finalData) throw new Error("Timeout esperando respuesta de TusDatos Retry");
 
-        let fuentes_caidas = false;
-        if (finalData.error === true) {
-            fuentes_caidas = true;
-            newFormulario.error_fuentes_tusdatos = true;
-        }
-        
-        newFormulario.reporte_id_tusdatos = finalData.id;
+        let newFormulario = { ...solicitud.datos_formulario };
+        if (!newFormulario.estudios_tusdatos) newFormulario.estudios_tusdatos = {};
 
-        // 3. Sincronizar con el estado real del reporte para evitar falsos positivos
-        const syncRes = await axios.get(`${baseUrl}/report_json/${finalData.id}`, { headers });
-        const realData = syncRes.data;
-        const errores_retry = realData.errores || [];
+        const fuentes_viejas = (targetKey === 'principal' 
+            ? solicitud.datos_formulario?.monitor_fuentes?.fuentes_detalladas 
+            : solicitud.datos_formulario?.estudios_tusdatos?.[targetKey]?.fuentes_detalladas) || {};
+        const fuentes_mergeadas = { ...fuentes_viejas, ...(finalData.results || {}) };
 
-        const fuentes_viejas = solicitud.datos_formulario?.monitor_fuentes?.fuentes_detalladas || {};
-        const fuentes_mergeadas = { ...fuentes_viejas };
-        
-        Object.keys(fuentes_mergeadas).forEach(fuente => {
-            if (fuentes_mergeadas[fuente] === 'Error' || fuentes_mergeadas[fuente] === 'Página no disponible') {
-                const normFuente = fuente.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
-                let sigueCaida = false;
-                
-                for (let errSlug of errores_retry) {
-                    const normSlug = errSlug.toLowerCase().replace(/[^a-z0-9]/g, "");
-                    if (
-                        (normSlug === 'rut' && normFuente.includes('rut')) ||
-                        (normSlug === 'rucom' && normFuente.includes('rucom')) ||
-                        (normSlug === 'europol' && normFuente.includes('europol')) ||
-                        (normSlug === 'colpsic' && normFuente.includes('psicologos')) ||
-                        (normSlug === 'cpqcol' && normFuente.includes('quimica')) ||
-                        (normSlug === 'cpbiol' && normFuente.includes('biologia')) ||
-                        (normSlug === 'anec' && normFuente.includes('enfermeras')) ||
-                        (normSlug === 'registraduria' && normFuente.includes('registraduria') && !normFuente.includes('defunciones')) ||
-                        (normSlug === 'defuncionesregistraduria' && normFuente.includes('defunciones')) ||
-                        (normFuente.includes(normSlug)) || 
-                        (normSlug.includes(normFuente))
-                    ) {
-                        sigueCaida = true;
-                        break;
-                    }
-                }
-                
-                if (!sigueCaida) {
-                    fuentes_mergeadas[fuente] = false; // Se arregló
-                }
-            }
-        });
+        const tieneAlertaListas = finalData.hallazgos || (finalData.dict_hallazgos?.altos || []).length > 0;
+        const tieneAntecedentes = (finalData.dict_hallazgos?.medios || []).length > 0;
 
-        const remainingErrors = Object.values(fuentes_mergeadas).filter(v => v === 'Error' || v === 'Página no disponible').length;
-        fuentes_caidas = remainingErrors > 0;
-        const estadoGeneral = fuentes_caidas ? "FUENTES_INCOMPLETAS" : "APROBADO_LIMPIO"; // Simplificado para prueba
-
-        const monitorFuentesRetry = {
-            estado_fuentes: fuentes_caidas ? 'FUENTES_CAIDAS' : 'OK',
+        const resumenEstudio = {
+            key: targetKey,
+            doc: targetDoc,
+            typedoc: tipoIdentificacion,
+            nombre: targetNombre,
+            rol: v?.rol || targetKey,
+            jobid: newJobid,
+            reporte_id: finalData.id || reporteId,
+            fecha_consulta: new Date().toISOString(),
+            estado: finalData.error ? 'fuentes_caidas' : 'finalizado',
+            fuentes_caidas: finalData.error === true,
+            hallazgo: finalData.hallazgo === true || tieneAlertaListas || tieneAntecedentes,
+            listas_restrictivas: tieneAlertaListas ? 'ALERTA' : 'OK',
+            antecedentes_judiciales: tieneAntecedentes ? 'ALERTA' : 'OK',
+            policia: fuentes_mergeadas.policia === true ? 'ALERTA' : 'OK',
+            procuraduria: fuentes_mergeadas.procuraduria === true ? 'ALERTA' : 'OK',
+            contraloria: fuentes_mergeadas.contraloria === true ? 'ALERTA' : 'OK',
+            dian: fuentes_mergeadas.rut === true ? 'ALERTA' : 'OK',
             fuentes_detalladas: fuentes_mergeadas,
-            dict_hallazgos: realData.dict_hallazgos || solicitud.datos_formulario?.monitor_fuentes?.dict_hallazgos,
-            raw_tusdatos: 'Resultados (Retry) procesados y sincronizados con Portal'
+            dict_hallazgos: finalData.dict_hallazgos || null,
+            pdf_url: (targetKey === 'principal' ? newFormulario.archivos_cargados?.reporte_tusdatos : newFormulario.archivos_cargados?.[ `reporte_tusdatos_${targetKey}` ]) || null
         };
-        
-        newFormulario.monitor_fuentes = monitorFuentesRetry;
 
-        try {
-            console.log("Generando PDF Nativo de Evidencias (Retry)...");
-            // Pasamos un objeto 'finalData' adaptado con los resultados mergeados para el PDF
-            const adaptedData = {
-                id: finalData.id,
-                hallazgo: finalData.hallazgo,
-                results: fuentes_mergeadas
+        newFormulario.estudios_tusdatos[targetKey] = resumenEstudio;
+
+        if (targetKey === 'principal') {
+            newFormulario.jobid_tusdatos = newJobid;
+            newFormulario.error_fuentes_tusdatos = finalData.error === true;
+            newFormulario.monitor_fuentes = {
+                ...resumenEstudio,
+                raw_tusdatos: 'Resultados (Retry) procesados exitosamente'
             };
-            const nit = solicitud.nit_cedula || solicitud.datos_formulario?.nit_cedula;
-            const pdfBuffer = await generarEvidenciaPDF(solicitud.datos_formulario, adaptedData, solicitud.datos_formulario.empresa_destino);
-            const pdfUrl = await uploadFileToR2(pdfBuffer, `TusDatos_${nit}_Retry.pdf`, `recepcion/${nit}`);
-            if (!newFormulario.archivos_cargados) newFormulario.archivos_cargados = {};
-            newFormulario.archivos_cargados.reporte_tusdatos = pdfUrl;
-            console.log("PDF de Evidencias Nativo (Retry) guardado en:", pdfUrl);
-        } catch (pdfErr) {
-            console.error("No se pudo generar el PDF Nativo de Evidencias en Retry:", pdfErr.message);
         }
+
+        const todosEstudios = Object.values(newFormulario.estudios_tusdatos || {});
+        const hayAlertaListas = todosEstudios.some(e => e.listas_restrictivas === 'ALERTA');
+        const hayFuentesCaidas = todosEstudios.some(e => e.fuentes_caidas === true);
 
         const resultadoRiesgo = await calcularRiesgoConsolidado(newFormulario);
-        const scoreFinal = resultadoRiesgo.puntaje_total;
+        let scoreFinal = resultadoRiesgo.puntaje_total;
+        if (hayAlertaListas) scoreFinal = 100;
         newFormulario.desglose_riesgo = resultadoRiesgo;
 
-        if (scoreFinal <= 3 && !finalData.hallazgo) estadoGeneral = "APROBADO_LIMPIO";
-        else if (scoreFinal <= 6 && !finalData.hallazgo) estadoGeneral = "REVISION_MANUAL";
+        let estadoGeneral = 'APROBADO_LIMPIO';
+        if (hayAlertaListas) estadoGeneral = "ALERTA_CRITICA";
+        else if (hayFuentesCaidas) estadoGeneral = "FUENTES_INCOMPLETAS";
+        else if (scoreFinal <= 3) estadoGeneral = "APROBADO_LIMPIO";
+        else if (scoreFinal <= 6) estadoGeneral = "REVISION_MANUAL";
+        else estadoGeneral = "ALERTA_CRITICA";
 
         await supabase.from('solicitudes_sagrilaft').update({
             estado_actual: estadoGeneral,
@@ -873,16 +969,21 @@ app.post('/api/v1/solicitudes/:id/tusdatos/retry', async (req, res) => {
             datos_formulario: newFormulario
         }).eq('id', id);
 
+        const { data: solActualizada } = await supabase.from('solicitudes_sagrilaft').select('*').eq('id', id).single();
+
         return res.status(200).json({ 
-            mensaje: "Recarga completada.", 
-            resultado: { estado: estadoGeneral, monitor: monitorFuentesRetry } 
+            mensaje: `Recarga de fuentes para ${targetNombre} completada.`, 
+            resultado: resumenEstudio,
+            solicitud: solActualizada
         });
 
     } catch (error) {
         console.error("Error en Retry TusDatos:", error);
         return res.status(500).json({ error: "Fallo al recargar TusDatos", detalle: error.message });
     }
-});// POST /api/v1/solicitudes/:id/tusdatos/sync - Sync with Portal
+});
+
+// POST /api/v1/solicitudes/:id/tusdatos/sync - Sync with Portal
 app.post('/api/v1/solicitudes/:id/tusdatos/sync', async (req, res) => {
     const { id } = req.params;
     try {
