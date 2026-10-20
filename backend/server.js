@@ -506,6 +506,31 @@ const getTipoDocTusDatos = (solicitud) => {
     return 'CC';
 };
 
+// Helper para evaluar hallazgos en listas restrictivas vinculantes (SAGRILAFT)
+const evaluarHallazgoListas = (finalData, dict) => {
+    if (dict?.altos && Array.isArray(dict.altos) && dict.altos.length > 0) return true;
+    if (finalData?.hallazgo === 'alto') return true;
+
+    const res = finalData?.results || {};
+    if (res['onu'] === true || res['ofac'] === true) return true;
+    if (res['Consejo de Seguridad de la Naciones Unidas (ONU)'] === true) return true;
+    if (res['Lista Clinton (OFAC), Busqueda por Nombre (Consulta en Línea)'] === true) return true;
+    if (res['Lista Clinton (OFAC), Busqueda por Documento (Consulta en Línea)'] === true) return true;
+    if (res['Listas y PEPs (Personas Expuestas Políticamente), Busqueda por Nombre'] === true) return true;
+    if (res['Listas y PEPs (Personas Expuestas Políticamente), Busqueda por Documento'] === true) return true;
+    if (res['Listado del Banco Mundial de empresas e individuos no elegibles'] === true) return true;
+    if (res['Empresas y Personas Sancionadas Banco Interamericano de Desarrollo (IADB)'] === true) return true;
+
+    return false;
+};
+
+const evaluarAntecedentesJudiciales = (finalData, dict) => {
+    if (dict?.medios && Array.isArray(dict.medios) && dict.medios.length > 0) return true;
+    const res = finalData?.results || {};
+    if (res['policia'] === true || res['procuraduria'] === true || res['contraloria'] === true) return true;
+    return false;
+};
+
 // Helper para listar todos los sujetos y vinculados a consultar en TusDatos
 const obtenerListaVinculados = (solicitud) => {
     const d = solicitud.datos_formulario || {};
@@ -690,8 +715,8 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
             console.error("No se pudo generar el PDF de Evidencias:", pdfErr.message);
         }
 
-        const tieneAlertaListas = finalData.hallazgos || (dict_hallazgos?.altos || []).length > 0;
-        const tieneAntecedentes = (dict_hallazgos?.medios || []).length > 0;
+        const tieneAlertaListas = evaluarHallazgoListas(finalData, dict_hallazgos);
+        const tieneAntecedentes = evaluarAntecedentesJudiciales(finalData, dict_hallazgos);
 
         const resumenEstudio = {
             key: targetKey,
@@ -926,8 +951,8 @@ app.post('/api/v1/solicitudes/:id/tusdatos/retry', async (req, res) => {
             : solicitud.datos_formulario?.estudios_tusdatos?.[targetKey]?.fuentes_detalladas) || {};
         const fuentes_mergeadas = { ...fuentes_viejas, ...(finalData.results || {}) };
 
-        const tieneAlertaListas = finalData.hallazgos || (finalData.dict_hallazgos?.altos || []).length > 0;
-        const tieneAntecedentes = (finalData.dict_hallazgos?.medios || []).length > 0;
+        const tieneAlertaListas = evaluarHallazgoListas(finalData, finalData.dict_hallazgos);
+        const tieneAntecedentes = evaluarAntecedentesJudiciales(finalData, finalData.dict_hallazgos);
 
         const resumenEstudio = {
             key: targetKey,

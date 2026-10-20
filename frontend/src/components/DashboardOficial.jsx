@@ -421,16 +421,19 @@ export default function DashboardOficial() {
     };
 
     const abrirDocumentoSeguro = async (e, urlOriginal) => {
-        e.preventDefault();
+        if (e && e.preventDefault) e.preventDefault();
+        if (e && e.stopPropagation) e.stopPropagation();
         try {
             const urlObj = new URL(urlOriginal);
             const key = decodeURIComponent(urlObj.pathname.substring(1));
             const res = await sagrilaftService.firmarArchivoUrl(key);
             if (res.url) {
                 window.open(res.url, '_blank');
+            } else {
+                showToast("No se pudo generar el enlace de acceso seguro.", "error");
             }
         } catch (err) {
-            alert('Error al generar el enlace de acceso seguro.');
+            showToast("Error al generar el enlace seguro: " + err.message, "error");
         }
     };
 
@@ -1728,10 +1731,10 @@ export default function DashboardOficial() {
                                                         <div style={{ 
                                                             display: 'flex', 
                                                             flexDirection: 'column', 
-                                                            gap: '0.65rem', 
-                                                            maxHeight: totalVinculados > 3 ? '520px' : 'none', 
+                                                            gap: '0.75rem', 
+                                                            maxHeight: totalVinculados > 3 ? '540px' : 'none', 
                                                             overflowY: totalVinculados > 3 ? 'auto' : 'visible',
-                                                            paddingRight: totalVinculados > 3 ? '0.35rem' : '0' 
+                                                            padding: '0.2rem 0.35rem 0.2rem 0.1rem' 
                                                         }}>
                                                             {vinculadosFiltrados.length === 0 ? (
                                                                 <div style={{ textAlign: 'center', padding: '2rem', background: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', color: '#64748b', fontSize: '0.85rem' }}>
@@ -1748,10 +1751,10 @@ export default function DashboardOficial() {
                                                                         <div 
                                                                             key={v.key}
                                                                             style={{
+                                                                                flexShrink: 0,
                                                                                 background: '#ffffff',
                                                                                 border: isExpanded ? '1.5px solid #3b82f6' : '1px solid #e2e8f0',
                                                                                 borderRadius: '10px',
-                                                                                overflow: 'hidden',
                                                                                 boxShadow: isExpanded ? '0 4px 14px rgba(59, 130, 246, 0.08)' : '0 1px 2px rgba(0,0,0,0.03)',
                                                                                 transition: 'all 0.2s ease'
                                                                             }}
@@ -1759,15 +1762,18 @@ export default function DashboardOficial() {
                                                                             {/* Cabecera / Barra Principal de la Tarjeta */}
                                                                             <div 
                                                                                 style={{
-                                                                                    padding: '0.9rem 1.15rem',
+                                                                                    padding: '1rem 1.25rem',
+                                                                                    minHeight: '68px',
+                                                                                    boxSizing: 'border-box',
                                                                                     display: 'flex',
                                                                                     alignItems: 'center',
                                                                                     justifyContent: 'space-between',
-                                                                                    gap: '0.85rem',
+                                                                                    gap: '1rem',
                                                                                     cursor: 'pointer',
                                                                                     background: v.esPrincipal ? 'linear-gradient(to right, #eff6ff, #ffffff)' : '#ffffff',
                                                                                     borderLeft: v.esPrincipal ? '4px solid #2563eb' : (est?.listas_restrictivas === 'ALERTA' ? '4px solid #ef4444' : est?.fuentes_caidas ? '4px solid #f59e0b' : est ? '4px solid #10b981' : '4px solid #cbd5e1'),
-                                                                                    userSelect: 'none'
+                                                                                    userSelect: 'none',
+                                                                                    borderRadius: isExpanded ? '10px 10px 0 0' : '10px'
                                                                                 }}
                                                                                 onClick={() => setSujetoExpandido(prev => prev === v.key ? null : v.key)}
                                                                             >
@@ -1921,10 +1927,7 @@ export default function DashboardOficial() {
                                                                                             {est.pdf_url && (
                                                                                                 <button 
                                                                                                     className="btn-outline"
-                                                                                                    onClick={(e) => {
-                                                                                                        e.stopPropagation();
-                                                                                                        window.open(est.pdf_url, '_blank');
-                                                                                                    }}
+                                                                                                    onClick={(e) => abrirDocumentoSeguro(e, est.pdf_url)}
                                                                                                     title="Descargar o ver reporte PDF oficial de evidencias"
                                                                                                     style={{ padding: '0.35rem 0.65rem', fontSize: '0.76rem', color: '#16a34a', borderColor: '#86efac' }}
                                                                                                 >
@@ -1997,10 +2000,7 @@ export default function DashboardOficial() {
                                                                                                     {est.pdf_url && (
                                                                                                         <button 
                                                                                                             className="btn-outline"
-                                                                                                            onClick={(e) => {
-                                                                                                                e.stopPropagation();
-                                                                                                                window.open(est.pdf_url, '_blank');
-                                                                                                            }}
+                                                                                                            onClick={(e) => abrirDocumentoSeguro(e, est.pdf_url)}
                                                                                                             style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem', color: '#16a34a', borderColor: '#86efac', background: '#f0fdf4' }}
                                                                                                         >
                                                                                                             📄 Descargar PDF Oficial
