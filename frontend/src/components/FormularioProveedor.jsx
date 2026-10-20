@@ -606,12 +606,31 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
             }
         }
         if (pasoActual === 9) {
-            const requiredDocs = isInternalRole ? ['identificacion'] : 
-                (d.tipo_persona === 'natural' ? ['rut', 'identificacion', 'certificado_naturales', 'formato_pep'] :
-                ['rut', 'cc_comercio', 'cedula_rep_legal', 'balance_empresa', 'composicion_accionaria']);
+            let requiredDocs = [];
+            if (isInternalRole) {
+                requiredDocs = ['identificacion'];
+            } else if (d.tipo_persona === 'natural') {
+                requiredDocs = ['rut', 'identificacion', 'certificado_naturales', 'formato_pep'];
+            } else {
+                requiredDocs = d.accionistas_confidencial 
+                    ? ['rut', 'cc_comercio', 'cedula_rep_legal', 'balance_empresa'] 
+                    : ['rut', 'cc_comercio', 'cedula_rep_legal', 'balance_empresa', 'composicion_accionaria'];
+                if (!d.accionistas_confidencial) {
+                    (d.accionistas || []).forEach((acc, i) => {
+                        if (acc.tipo_persona === 'juridica') {
+                            if (acc.confidencial) {
+                                requiredDocs.push(`cert_laft_accionista_${i}`);
+                            } else {
+                                requiredDocs.push(`composicion_accionaria_accionista_${i}`);
+                            }
+                        }
+                    });
+                }
+            }
             
             for (const doc of requiredDocs) {
-                if (!d.archivos_cargados || !d.archivos_cargados[doc]) {
+                const baseId = doc.replace('_frontal', '');
+                if (!d.archivos_cargados || (!d.archivos_cargados[doc] && !d.archivos_cargados[baseId] && !d.archivos_cargados[`${doc}_frontal`])) {
                     showToast(`El documento de soporte es obligatorio. Por favor suba todos los archivos antes de continuar.`);
                     return false;
                 }
@@ -678,7 +697,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
             setAuditHash(auditInfo.hash);
 
             // 2. Submit Form
-            const dataToSubmit = { ...formData, audit_info: auditInfo };
+            const dataToSubmit = { ...formData, fechas_documentos: fechasDocumentos, audit_info: auditInfo };
             
             const hayArchivos = Object.keys(archivosFisicos).length > 0;
             let payload = dataToSubmit;
@@ -1462,6 +1481,9 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                                         </div>
                                                     ) : (
                                                         <>
+                                                            <div style={{ padding: '0.5rem 0.6rem', background: '#f0fdf4', borderRadius: '4px', fontSize: '0.8rem', color: '#166534', marginBottom: '0.6rem', border: '1px solid #bbf7d0' }}>
+                                                                ℹ️ Ingrese a continuación los accionistas de <strong>{acc.nombre}</strong> (&gt;5%). En el paso de documentos deberá adjuntar el Certificado de Composición Accionaria correspondiente a esta empresa.
+                                                            </div>
                                                             <SubAccionistaInput 
                                                                 onAdd={(subAcc) => {
                                                                     const updated = [...formData.accionistas];
@@ -1883,13 +1905,23 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                         { id: 'balance_empresa', label: 'Estados Financieros', requiereFecha: true, tipoValidacion: 'corte_anterior', errorMsg: 'debe ser de Dic del año anterior' },
                                         ...(!formData.accionistas_confidencial ? [
                                             { id: 'composicion_accionaria', label: 'Composición Accionaria', requiereFecha: true, maxDays: 90, errorMsg: 'vencida (>3 meses)' },
-                                            ...(formData.accionistas || [])
-                                                .map((acc, i) => ({ acc, i }))
-                                                .filter(({ acc }) => acc.tipo_persona === 'juridica' && acc.confidencial)
-                                                .map(({ acc, i }) => ({
-                                                    id: `cert_laft_accionista_${i}`,
-                                                    label: `Certificación LA/FT (${acc.nombre || 'Accionista Jurídico ' + (i+1)})`
-                                                }))
+                                            ...(formData.accionistas || []).flatMap((acc, i) => {
+                                                if (acc.tipo_persona !== 'juridica') return [];
+                                                if (acc.confidencial) {
+                                                    return [{
+                                                        id: `cert_laft_accionista_${i}`,
+                                                        label: `Certificación LA/FT (${acc.nombre || 'Accionista Jurídico ' + (i+1)})`
+                                                    }];
+                                                } else {
+                                                    return [{
+                                                        id: `composicion_accionaria_accionista_${i}`,
+                                                        label: `Composición Accionaria (${acc.nombre || 'Accionista Jurídico ' + (i+1)})`,
+                                                        requiereFecha: true,
+                                                        maxDays: 90,
+                                                        errorMsg: 'vencida (>3 meses)'
+                                                    }];
+                                                }
+                                            })
                                         ] : [])
                                     ]).map(doc => {
                                         const isExteriorCC = doc.id === 'cc_comercio' && formData.exterior_tributario === 'si';
@@ -2002,13 +2034,17 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                             reqs = ['rut', 'identificacion_frontal', 'certificado_naturales', 'formato_pep'];
                                         } else {
                                             reqs = formData.accionistas_confidencial ? ['rut', 'cc_comercio', 'cedula_rep_legal_frontal', 'balance_empresa'] : ['rut', 'cc_comercio', 'cedula_rep_legal_frontal', 'balance_empresa', 'composicion_accionaria'];
-                                        if (!formData.accionistas_confidencial) {
-                                            (formData.accionistas || []).forEach((acc, i) => {
-                                                if (acc.tipo_persona === 'juridica' && acc.confidencial) {
-                                                    reqs.push(`cert_laft_accionista_${i}`);
-                                                }
-                                            });
-                                        }
+                                            if (!formData.accionistas_confidencial) {
+                                                (formData.accionistas || []).forEach((acc, i) => {
+                                                    if (acc.tipo_persona === 'juridica') {
+                                                        if (acc.confidencial) {
+                                                            reqs.push(`cert_laft_accionista_${i}`);
+                                                        } else {
+                                                            reqs.push(`composicion_accionaria_accionista_${i}`);
+                                                        }
+                                                    }
+                                                });
+                                            }
                                         }
                                         
                                         const faltantes = reqs.filter(r => {
@@ -2016,6 +2052,46 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                             return !formData.archivos_cargados[r] && !formData.archivos_cargados[baseId];
                                         });
                                         if (faltantes.length > 0) return showToast("Faltan documentos obligatorios por cargar.");
+
+                                        // Validar fechas de expedición de documentos con vigencia requerida
+                                        if (formData.tipo_persona === 'juridica') {
+                                            const docsConFecha = [
+                                                { id: 'cc_comercio', label: 'Cámara de Comercio', maxDays: 30, errorMsg: 'vencido (>30 días)', skip: formData.exterior_tributario === 'si' },
+                                                { id: 'balance_empresa', label: 'Estados Financieros', tipoValidacion: 'corte_anterior', errorMsg: 'debe ser de Dic del año anterior' },
+                                                ...(!formData.accionistas_confidencial ? [
+                                                    { id: 'composicion_accionaria', label: 'Composición Accionaria', maxDays: 90, errorMsg: 'vencida (>3 meses)' },
+                                                    ...(formData.accionistas || []).flatMap((acc, i) => 
+                                                        acc.tipo_persona === 'juridica' && !acc.confidencial 
+                                                            ? [{ id: `composicion_accionaria_accionista_${i}`, label: `Composición Accionaria (${acc.nombre || 'Accionista Jurídico ' + (i+1)})`, maxDays: 90, errorMsg: 'vencida (>3 meses)' }] 
+                                                            : []
+                                                    )
+                                                ] : [])
+                                            ];
+
+                                            for (const dcf of docsConFecha) {
+                                                if (dcf.skip) continue;
+                                                const needsCorr = camposACorregir[dcf.id] || camposACorregir[`archivo_${dcf.id}`];
+                                                if (esCorreccion && !needsCorr) continue;
+
+                                                const fechaVal = fechasDocumentos[dcf.id];
+                                                if (!fechaVal) {
+                                                    return showToast(`Por favor ingresa la fecha de expedición de ${dcf.label}.`);
+                                                }
+                                                const fechaDoc = new Date(fechaVal);
+                                                const ahora = new Date();
+                                                let isExp = false;
+                                                if (dcf.tipoValidacion === 'corte_anterior') {
+                                                    if (fechaDoc.getFullYear() >= ahora.getFullYear()) isExp = true;
+                                                } else if (dcf.maxDays) {
+                                                    const diasDiff = (ahora - fechaDoc) / (1000 * 60 * 60 * 24);
+                                                    if (diasDiff > dcf.maxDays) isExp = true;
+                                                }
+                                                if (isExp) {
+                                                    return showToast(`El documento ${dcf.label} es inválido: ${dcf.errorMsg || 'vencido'}.`);
+                                                }
+                                            }
+                                        }
+
                                         setPaso(10);
                                     }}>Continuar a Firma <ArrowRight size={18}/></button>
                                 </div>

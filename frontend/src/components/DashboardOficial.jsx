@@ -1211,9 +1211,19 @@ export default function DashboardOficial() {
                                             <div style={{ background: '#fef3c7', padding: '1rem', borderRadius: '4px', fontSize: '0.85rem', color: '#92400e' }}>
                                                 <strong style={{ display: 'block', marginBottom: '0.5rem' }}>El usuario debe corregir lo siguiente:</strong>
                                                 <ul style={{ margin: 0, paddingLeft: '1.5rem' }}>
-                                                    {Object.keys(solicitudSeleccionada.campos_a_corregir).map(campo => (
-                                                        <li key={campo}>{campo.replace('archivo_', 'Archivo: ').replace(/_/g, ' ').toUpperCase()}</li>
-                                                    ))}
+                                                    {Object.keys(solicitudSeleccionada.campos_a_corregir).map(campo => {
+                                                        let txt = campo.replace('archivo_', 'Archivo: ').replace(/_/g, ' ').toUpperCase();
+                                                        if (campo.includes('composicion_accionaria_accionista_')) {
+                                                            const idx = parseInt(campo.split('composicion_accionaria_accionista_')[1], 10);
+                                                            const nom = solicitudSeleccionada?.datos_formulario?.accionistas?.[idx]?.nombre;
+                                                            txt = `ARCHIVO: COMPOSICIÓN ACCIONARIA - ${nom || 'ACCIONISTA ' + (idx + 1)}`.toUpperCase();
+                                                        } else if (campo.includes('cert_laft_accionista_')) {
+                                                            const idx = parseInt(campo.split('cert_laft_accionista_')[1], 10);
+                                                            const nom = solicitudSeleccionada?.datos_formulario?.accionistas?.[idx]?.nombre;
+                                                            txt = `ARCHIVO: CERTIFICACIÓN LA/FT - ${nom || 'ACCIONISTA ' + (idx + 1)}`.toUpperCase();
+                                                        }
+                                                        return <li key={campo}>{txt}</li>;
+                                                    })}
                                                 </ul>
                                             </div>
                                         )}
@@ -1289,8 +1299,19 @@ export default function DashboardOficial() {
                                                                     <div key={idx} style={{ padding: '0.75rem', borderLeft: '3px solid var(--primary)', marginBottom: '1rem', background: 'var(--surface)', fontSize: '0.85rem' }}>
                                                                         {typeof item === 'object' && item !== null ? (
                                                                             Object.entries(item).map(([k, v]) => (
-                                                                                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', padding: '0.25rem 0' }}>
-                                                                                    <b>{formatKey(k)}:</b> <span>{String(v)}</span>
+                                                                                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', padding: '0.25rem 0', alignItems: 'flex-start' }}>
+                                                                                    <b>{formatKey(k)}:</b> 
+                                                                                    {k === 'sub_accionistas' && Array.isArray(v) ? (
+                                                                                        <div style={{ textAlign: 'right' }}>
+                                                                                            {v.length === 0 ? <span style={{ color: 'var(--text-muted)' }}>Ninguno</span> : v.map((sub, sIdx) => (
+                                                                                                <div key={sIdx} style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                                                                                                    • {sub.nombre} ({sub.tipo_persona?.toUpperCase()}, ID: {sub.identificacion}) - {sub.porcentaje}%
+                                                                                                </div>
+                                                                                            ))}
+                                                                                        </div>
+                                                                                    ) : (
+                                                                                        <span>{String(v)}</span>
+                                                                                    )}
                                                                                 </div>
                                                                             ))
                                                                         ) : (
@@ -1322,7 +1343,17 @@ export default function DashboardOficial() {
                                                                 </div>
                                                             );
                                                         }
-                                                        return renderCampoRevisable(`Documento: ${k.replace(/_/g, ' ').toUpperCase()}`, urlLink, `archivo_${k}`);
+                                                        let labelDoc = `Documento: ${k.replace(/_/g, ' ').toUpperCase()}`;
+                                                        if (k.startsWith('composicion_accionaria_accionista_')) {
+                                                            const accIdx = parseInt(k.replace('composicion_accionaria_accionista_', ''), 10);
+                                                            const accNom = solicitudSeleccionada.datos_formulario.accionistas?.[accIdx]?.nombre;
+                                                            labelDoc = `Documento: COMPOSICIÓN ACCIONARIA - ${accNom || 'ACCIONISTA ' + (accIdx + 1)}`.toUpperCase();
+                                                        } else if (k.startsWith('cert_laft_accionista_')) {
+                                                            const accIdx = parseInt(k.replace('cert_laft_accionista_', ''), 10);
+                                                            const accNom = solicitudSeleccionada.datos_formulario.accionistas?.[accIdx]?.nombre;
+                                                            labelDoc = `Documento: CERTIFICACIÓN LA/FT - ${accNom || 'ACCIONISTA ' + (accIdx + 1)}`.toUpperCase();
+                                                        }
+                                                        return renderCampoRevisable(labelDoc, urlLink, `archivo_${k}`);
                                                     })}
                                                 </div>
                                             )}
