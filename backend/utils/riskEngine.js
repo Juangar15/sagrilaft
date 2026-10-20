@@ -54,7 +54,7 @@ async function calcularRiesgoConsolidado(datos_formulario, alertas_manuales = []
     let puntos_totales = 0;
     let desglose = [];
 
-    // 1. TUS DATOS (si existe) - NO SUMA PUNTOS
+    // 1. TUS DATOS (si existe) - NO SUMA PUNTOS (TusDatos no influye en el puntaje de riesgo)
     const dict_hallazgos = datos_formulario.monitor_fuentes?.dict_hallazgos || {};
     const tdResult = calcularTusDatosScore(dict_hallazgos);
     const desgloseCero = tdResult.desglose.map(d => ({...d, puntos: 0}));
@@ -83,13 +83,16 @@ async function calcularRiesgoConsolidado(datos_formulario, alertas_manuales = []
         }
     }
 
-    // 3. RIESGO POR CARGO (Max 3 puntos)
-    let cargo = (datos_formulario.cargo_asignado || datos_formulario.cargo || '').normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().trim();
-    cargo = cargo.replace(/\s+/g, ' '); // quitar multiples espacios
-    if (cargo && cargosData[cargo]) {
-        const infoCargo = cargosData[cargo];
-        puntos_totales += infoCargo.puntaje;
-        desglose.push({ categoria: 'Riesgo por Cargo', detalle: `Cargo: ${infoCargo.cargo} (Riesgo ${infoCargo.riesgo})`, puntos: infoCargo.puntaje, tipo: 'AUTOMATICO' });
+    // 3. RIESGO POR CARGO (Max 3 puntos - Solo aplica a empleados, en terceros/proveedores no aplica)
+    const esProveedor = (datos_formulario.tipo_vinculacion || '').toLowerCase() === 'proveedor';
+    if (!esProveedor) {
+        let cargo = (datos_formulario.cargo_asignado || datos_formulario.cargo || '').normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().trim();
+        cargo = cargo.replace(/\s+/g, ' '); // quitar multiples espacios
+        if (cargo && cargosData[cargo]) {
+            const infoCargo = cargosData[cargo];
+            puntos_totales += infoCargo.puntaje;
+            desglose.push({ categoria: 'Riesgo por Cargo', detalle: `Cargo: ${infoCargo.cargo} (Riesgo ${infoCargo.riesgo})`, puntos: infoCargo.puntaje, tipo: 'AUTOMATICO' });
+        }
     }
 
     // 4. CALIFICACIÓN DEL OFICIAL (Max 4 puntos)

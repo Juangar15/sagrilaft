@@ -787,11 +787,11 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
         const hayAlertaListas = todosEstudios.some(e => e.listas_restrictivas === 'ALERTA');
         const hayFuentesCaidas = todosEstudios.some(e => e.fuentes_caidas === true);
 
-        const resultadoRiesgo = await calcularRiesgoConsolidado(newFormulario);
-        let scoreFinal = resultadoRiesgo.puntaje_total;
-        if (hayAlertaListas) {
-            scoreFinal = 100;
-        }
+        newFormulario.tipo_vinculacion = newFormulario.tipo_vinculacion || solicitud.tipo_vinculacion;
+        const calificacionOficialActual = newFormulario.calificacion_oficial || solicitud.calificacion_oficial || 'Bajo';
+        const alertasManualesActual = newFormulario.alertas_manuales || solicitud.alertas_manuales || [];
+        const resultadoRiesgo = await calcularRiesgoConsolidado(newFormulario, alertasManualesActual, calificacionOficialActual);
+        const scoreFinal = resultadoRiesgo.puntaje_total;
         newFormulario.desglose_riesgo = resultadoRiesgo;
 
         let estadoGeneral = 'APROBADO_LIMPIO';
@@ -998,9 +998,11 @@ app.post('/api/v1/solicitudes/:id/tusdatos/retry', async (req, res) => {
         const hayAlertaListas = todosEstudios.some(e => e.listas_restrictivas === 'ALERTA');
         const hayFuentesCaidas = todosEstudios.some(e => e.fuentes_caidas === true);
 
-        const resultadoRiesgo = await calcularRiesgoConsolidado(newFormulario);
-        let scoreFinal = resultadoRiesgo.puntaje_total;
-        if (hayAlertaListas) scoreFinal = 100;
+        newFormulario.tipo_vinculacion = newFormulario.tipo_vinculacion || solicitud.tipo_vinculacion;
+        const calificacionOficialActual = newFormulario.calificacion_oficial || solicitud.calificacion_oficial || 'Bajo';
+        const alertasManualesActual = newFormulario.alertas_manuales || solicitud.alertas_manuales || [];
+        const resultadoRiesgo = await calcularRiesgoConsolidado(newFormulario, alertasManualesActual, calificacionOficialActual);
+        const scoreFinal = resultadoRiesgo.puntaje_total;
         newFormulario.desglose_riesgo = resultadoRiesgo;
 
         let estadoGeneral = 'APROBADO_LIMPIO';
@@ -1108,7 +1110,10 @@ app.post('/api/v1/solicitudes/:id/tusdatos/sync', async (req, res) => {
             raw_tusdatos: 'Resultados sincronizados con TusDatos'
         };
 
-        const resultadoRiesgo = await calcularRiesgoConsolidado(newFormulario);
+        newFormulario.tipo_vinculacion = newFormulario.tipo_vinculacion || solicitud.tipo_vinculacion;
+        const calificacionOficialActual = newFormulario.calificacion_oficial || solicitud.calificacion_oficial || 'Bajo';
+        const alertasManualesActual = newFormulario.alertas_manuales || solicitud.alertas_manuales || [];
+        const resultadoRiesgo = await calcularRiesgoConsolidado(newFormulario, alertasManualesActual, calificacionOficialActual);
         const scoreFinal = resultadoRiesgo.puntaje_total;
         newFormulario.desglose_riesgo = resultadoRiesgo;
 
