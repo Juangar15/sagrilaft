@@ -789,8 +789,9 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
 
         newFormulario.tipo_vinculacion = newFormulario.tipo_vinculacion || solicitud.tipo_vinculacion;
         const calificacionOficialActual = newFormulario.calificacion_oficial || solicitud.calificacion_oficial || 'Bajo';
+        const calificacionesPartesActual = newFormulario.calificaciones_partes || solicitud.datos_formulario?.calificaciones_partes || null;
         const alertasManualesActual = newFormulario.alertas_manuales || solicitud.alertas_manuales || [];
-        const resultadoRiesgo = await calcularRiesgoConsolidado(newFormulario, alertasManualesActual, calificacionOficialActual);
+        const resultadoRiesgo = await calcularRiesgoConsolidado(newFormulario, alertasManualesActual, calificacionOficialActual, calificacionesPartesActual);
         const scoreFinal = resultadoRiesgo.puntaje_total;
         newFormulario.desglose_riesgo = resultadoRiesgo;
 
@@ -1000,8 +1001,9 @@ app.post('/api/v1/solicitudes/:id/tusdatos/retry', async (req, res) => {
 
         newFormulario.tipo_vinculacion = newFormulario.tipo_vinculacion || solicitud.tipo_vinculacion;
         const calificacionOficialActual = newFormulario.calificacion_oficial || solicitud.calificacion_oficial || 'Bajo';
+        const calificacionesPartesActual = newFormulario.calificaciones_partes || solicitud.datos_formulario?.calificaciones_partes || null;
         const alertasManualesActual = newFormulario.alertas_manuales || solicitud.alertas_manuales || [];
-        const resultadoRiesgo = await calcularRiesgoConsolidado(newFormulario, alertasManualesActual, calificacionOficialActual);
+        const resultadoRiesgo = await calcularRiesgoConsolidado(newFormulario, alertasManualesActual, calificacionOficialActual, calificacionesPartesActual);
         const scoreFinal = resultadoRiesgo.puntaje_total;
         newFormulario.desglose_riesgo = resultadoRiesgo;
 
@@ -1112,8 +1114,9 @@ app.post('/api/v1/solicitudes/:id/tusdatos/sync', async (req, res) => {
 
         newFormulario.tipo_vinculacion = newFormulario.tipo_vinculacion || solicitud.tipo_vinculacion;
         const calificacionOficialActual = newFormulario.calificacion_oficial || solicitud.calificacion_oficial || 'Bajo';
+        const calificacionesPartesActual = newFormulario.calificaciones_partes || solicitud.datos_formulario?.calificaciones_partes || null;
         const alertasManualesActual = newFormulario.alertas_manuales || solicitud.alertas_manuales || [];
-        const resultadoRiesgo = await calcularRiesgoConsolidado(newFormulario, alertasManualesActual, calificacionOficialActual);
+        const resultadoRiesgo = await calcularRiesgoConsolidado(newFormulario, alertasManualesActual, calificacionOficialActual, calificacionesPartesActual);
         const scoreFinal = resultadoRiesgo.puntaje_total;
         newFormulario.desglose_riesgo = resultadoRiesgo;
 
@@ -1223,22 +1226,26 @@ app.post('/api/v1/otp/verify', (req, res) => {
 app.post('/api/v1/solicitudes/:id/calcular-riesgo', async (req, res) => {
     try {
         const { id } = req.params;
-        const { alertas_manuales, calificacion_oficial } = req.body;
+        const { alertas_manuales, calificacion_oficial, calificaciones_partes } = req.body;
 
         // 1. Obtener la solicitud
         const { data: sol, error } = await supabase
             .from('solicitudes_sagrilaft')
-            .select('datos_formulario')
+            .select('datos_formulario, tipo_vinculacion')
             .eq('id', id)
             .single();
 
         if (error || !sol) return res.status(404).json({ error: "Solicitud no encontrada" });
 
+        const d = sol.datos_formulario || {};
+        d.tipo_vinculacion = d.tipo_vinculacion || sol.tipo_vinculacion;
+
         // 2. Ejecutar motor de riesgos
         const resultado = await calcularRiesgoConsolidado(
-            sol.datos_formulario, 
+            d, 
             alertas_manuales || [], 
-            calificacion_oficial || 'Bajo'
+            calificacion_oficial || 'Bajo',
+            calificaciones_partes || d.calificaciones_partes || null
         );
 
         res.json(resultado);
@@ -1271,25 +1278,29 @@ app.post('/api/v1/solicitudes/:id/guardar-riesgo', async (req, res) => {
             nuevoEstado = resultadoRiesgo.nivel_riesgo_final === 'ALTO' ? 'RECHAZADO' : 'APROBADO_LIMPIO';
         }
 
+        const califConsolidada = resultadoRiesgo.calificacion_oficial_consolidada || formOficial?.calificacion_oficial || 'Bajo';
+
         // Todo va dentro de datos_formulario — no existen columnas sueltas para analisis_oficial, etc.
         const datosActualizados = {
             ...(sol.datos_formulario || {}),
             analisis_oficial: formOficial,
-            calificacion_oficial: formOficial?.calificacion_oficial || 'Bajo',
+            calificacion_oficial: califConsolidada,
+            calificaciones_partes: formOficial?.calificaciones_partes || sol.datos_formulario?.calificaciones_partes || {},
             alertas_manuales: formOficial?.alertas_manuales || [],
             desglose_riesgo: resultadoRiesgo
         };
 
         const { error: errUpd } = await supabase.from('solicitudes_sagrilaft').update({
             datos_formulario: datosActualizados,
+            calificacion_oficial: califConsolidada,
             score_riesgo: resultadoRiesgo.puntaje_total,
             estado_actual: nuevoEstado
         }).eq('id', id);
 
         if (errUpd) throw errUpd;
 
-        console.log(`✅ Score guardado para ${id}: ${resultadoRiesgo.puntaje_total} (${resultadoRiesgo.nivel_riesgo_final})`);
-        res.json({ ok: true, estado_actual: nuevoEstado, score_riesgo: resultadoRiesgo.puntaje_total });
+        console.log(`✅ Score guardado para ${id}: ${resultadoRiesgo.puntaje_total} (${resultadoRiesgo.nivel_riesgo_final}) - Calif: ${califConsolidada}`);
+        res.json({ ok: true, estado_actual: nuevoEstado, score_riesgo: resultadoRiesgo.puntaje_total, calificacion_oficial: califConsolidada });
     } catch (error) {
         console.error("Error guardando riesgo:", error);
         res.status(500).json({ error: "Error guardando riesgo: " + error.message });
@@ -1641,8 +1652,9 @@ app.post('/api/v1/solicitudes/:id/aprobar_definitivo', async (req, res) => {
         
         // Recalcular score en el momento de la aprobación usando la calificación oficial guardada
         const calificacionOficial = sol.datos_formulario?.calificacion_oficial || formAprobacion.calificacion_oficial || 'Bajo';
+        const calificacionesPartes = sol.datos_formulario?.calificaciones_partes || formAprobacion.calificaciones_partes || null;
         const alertasManuales = sol.datos_formulario?.alertas_manuales || formAprobacion.alertas_manuales || [];
-        const scoreRecalculado = await calcularRiesgoConsolidado(sol.datos_formulario, alertasManuales, calificacionOficial);
+        const scoreRecalculado = await calcularRiesgoConsolidado(sol.datos_formulario, alertasManuales, calificacionOficial, calificacionesPartes);
         const score = scoreRecalculado.puntaje_total;
         
         let colorSemaforo = 'verde';

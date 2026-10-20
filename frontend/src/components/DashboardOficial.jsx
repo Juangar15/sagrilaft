@@ -72,6 +72,7 @@ export default function DashboardOficial() {
         oficial_cumplimiento: 'no',
         observaciones: '',
         calificacion_oficial: 'Bajo',
+        calificaciones_partes: {},
         alertas_manuales: [],
         nombre_oficial: 'Oficial Demo'
     });
@@ -333,6 +334,7 @@ export default function DashboardOficial() {
             const url = `${import.meta.env.VITE_API_URL}/api/v1/solicitudes/${solicitudSeleccionada.id}/calcular-riesgo`;
             const payload = {
                 calificacion_oficial: formOficial.calificacion_oficial,
+                calificaciones_partes: formOficial.calificaciones_partes,
                 alertas_manuales: formOficial.alertas_manuales
             };
             const response = await fetch(url, {
@@ -343,6 +345,12 @@ export default function DashboardOficial() {
             if(!response.ok) throw new Error('Error en simulación');
             const data = await response.json();
             setResultadoRiesgo(data);
+            if (data.calificacion_oficial_consolidada) {
+                setFormOficial(prev => ({
+                    ...prev,
+                    calificacion_oficial: data.calificacion_oficial_consolidada
+                }));
+            }
             showToast("Simulación de riesgo completada", "success");
         } catch (error) {
             console.error(error);
@@ -379,10 +387,12 @@ export default function DashboardOficial() {
             setSolicitudes(data || []);
 
             // Actualizar el estado local del modal inmediatamente
+            const califConsolidada = resultadoRiesgo.calificacion_oficial_consolidada || formOficial.calificacion_oficial;
             setSolicitudSeleccionada(prev => ({
                 ...prev,
                 analisis_oficial: formOficial,
-                calificacion_oficial: formOficial.calificacion_oficial,
+                calificacion_oficial: califConsolidada,
+                calificaciones_partes: formOficial.calificaciones_partes,
                 alertas_manuales: formOficial.alertas_manuales,
                 desglose_riesgo: resultadoRiesgo,
                 score_riesgo: resultadoRiesgo.puntaje_total,
@@ -586,6 +596,52 @@ export default function DashboardOficial() {
         }
 
         return null;
+    };
+
+    const calcularPromedioPartes = (vinculados, calificaciones) => {
+        if (!vinculados || vinculados.length === 0) return { promedio: 0, nivel: 'BAJO', puntosRedondeados: 0 };
+        const valorPuntos = { bajo: 0, medio: 2, alto: 4 };
+        let suma = 0;
+        vinculados.forEach(v => {
+            const cal = (calificaciones?.[v.key] || 'Bajo').toLowerCase();
+            suma += valorPuntos[cal] !== undefined ? valorPuntos[cal] : 0;
+        });
+        const prom = suma / vinculados.length;
+        let nivel = 'BAJO';
+        if (prom >= 3) nivel = 'ALTO';
+        else if (prom >= 1.5) nivel = 'MEDIO';
+        return {
+            promedio: prom,
+            nivel: nivel,
+            puntosRedondeados: Math.round(prom)
+        };
+    };
+
+    const handleCambiarCalificacionParte = (parteKey, nuevoNivel) => {
+        const nuevasPartes = {
+            ...(formOficial.calificaciones_partes || {}),
+            [parteKey]: nuevoNivel
+        };
+        const vinculados = obtenerListaVinculados(solicitudSeleccionada);
+        const { nivel } = calcularPromedioPartes(vinculados, nuevasPartes);
+        setFormOficial(prev => ({
+            ...prev,
+            calificaciones_partes: nuevasPartes,
+            calificacion_oficial: nivel
+        }));
+    };
+
+    const handleMarcarTodasPartes = (nivel) => {
+        const vinculados = obtenerListaVinculados(solicitudSeleccionada);
+        const nuevasPartes = {};
+        vinculados.forEach(v => {
+            nuevasPartes[v.key] = nivel;
+        });
+        setFormOficial(prev => ({
+            ...prev,
+            calificaciones_partes: nuevasPartes,
+            calificacion_oficial: nivel
+        }));
     };
 
     const handleTusDatos = async (e, solicitud, sujetoKey = 'principal') => {
@@ -988,10 +1044,13 @@ export default function DashboardOficial() {
                     setSolicitudSeleccionada(sol);
                     setResultadoRiesgo(null);
                     setFormAsignacion({ area: sol.datos_formulario?.area_asignada || '', cargo: sol.datos_formulario?.cargo_asignado || '', estado_vinculacion: sol.datos_formulario?.estado_vinculacion || 'vinculados' });
+                    const dForm = sol.datos_formulario || {};
+                    const partesInit = dForm.calificaciones_partes || dForm.analisis_oficial?.calificaciones_partes || {};
                     setFormOficial({
-                        observaciones: sol.datos_formulario?.analisis_oficial?.observaciones || '',
-                        calificacion_oficial: sol.datos_formulario?.calificacion_oficial || 'Bajo',
-                        alertas_manuales: sol.datos_formulario?.alertas_manuales || [],
+                        observaciones: dForm.analisis_oficial?.observaciones || '',
+                        calificacion_oficial: dForm.calificacion_oficial || sol.calificacion_oficial || 'Bajo',
+                        calificaciones_partes: partesInit,
+                        alertas_manuales: dForm.alertas_manuales || sol.alertas_manuales || [],
                         nombre_oficial: 'Oficial Demo'
                     });
                 }}
@@ -2375,27 +2434,141 @@ export default function DashboardOficial() {
 {/* NUEVO PANEL DE RIESGO CUALITATIVO */}
                                 <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid #e2e8f0', marginBottom: '1.5rem' }}>
                                     <h4 style={{ margin: '0 0 1rem 0', color: '#0f172a' }}>1. Evaluación Cualitativa (Oficial)</h4>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                                        <div>
-                                            <label className="label">Calificación Inicial del Oficial</label>
-                                            <select className="input-field" value={formOficial.calificacion_oficial} onChange={e => setFormOficial({...formOficial, calificacion_oficial: e.target.value})}>
-                                                <option value="Bajo">BAJO</option>
-                                                <option value="Medio">MEDIO</option>
-                                                <option value="Alto">ALTO</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="label">Señales de Alerta Manuales Observadas</label>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '150px', overflowY: 'auto', background: '#fff', padding: '0.5rem', border: '1px solid #e2e8f0', borderRadius: '4px' }}>
-                                                {['Renuencia a entregar información', 'Información incongruente', 'Documentos ilegibles o alterados', 'Desconoce riesgo LA/FT', 'Renuencia a actualizar datos'].map(alerta => (
-                                                    <label key={alerta} style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                                                        <input type="checkbox" checked={formOficial.alertas_manuales.includes(alerta)} onChange={() => toggleAlertaManual(alerta)} />
-                                                        {alerta}
-                                                    </label>
-                                                ))}
+                                    {(() => {
+                                        const isProveedor = (solicitudSeleccionada.tipo_vinculacion || '').toLowerCase() === 'proveedor';
+                                        const listaPartes = isProveedor ? obtenerListaVinculados(solicitudSeleccionada) : [];
+
+                                        return (
+                                            <div style={{ display: 'grid', gridTemplateColumns: isProveedor ? '1fr' : '1fr 1fr', gap: '1.25rem', marginBottom: '1rem' }}>
+                                                {!isProveedor ? (
+                                                    <div>
+                                                        <label className="label">Calificación Inicial del Oficial</label>
+                                                        <select className="input-field" value={formOficial.calificacion_oficial} onChange={e => setFormOficial({...formOficial, calificacion_oficial: e.target.value})}>
+                                                            <option value="Bajo">BAJO</option>
+                                                            <option value="Medio">MEDIO</option>
+                                                            <option value="Alto">ALTO</option>
+                                                        </select>
+                                                    </div>
+                                                ) : (
+                                                    <div>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                                            <div>
+                                                                <label className="label" style={{ marginBottom: 0, fontWeight: '700', fontSize: '0.92rem', color: '#0f172a' }}>
+                                                                    👥 Calificación Individual por Parte Vinculada ({listaPartes.length} partes)
+                                                                </label>
+                                                                <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                                                                    Asigne Bajo (0 pts), Medio (2 pts) o Alto (4 pts) a cada entidad y persona. El puntaje del oficial es el promedio de todas las partes.
+                                                                </div>
+                                                            </div>
+                                                            <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                                                                <span style={{ fontSize: '0.78rem', color: '#64748b', marginRight: '0.2rem' }}>Asignar a todos:</span>
+                                                                <button type="button" onClick={() => handleMarcarTodasPartes('Bajo')} className="btn-outline" style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem', borderColor: '#86efac', color: '#16a34a', background: '#f0fdf4' }}>
+                                                                    🟢 Todos Bajo
+                                                                </button>
+                                                                <button type="button" onClick={() => handleMarcarTodasPartes('Medio')} className="btn-outline" style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem', borderColor: '#fde047', color: '#ca8a04', background: '#fefce8' }}>
+                                                                    🟡 Todos Medio
+                                                                </button>
+                                                                <button type="button" onClick={() => handleMarcarTodasPartes('Alto')} className="btn-outline" style={{ padding: '0.25rem 0.55rem', fontSize: '0.75rem', borderColor: '#fca5a5', color: '#dc2626', background: '#fef2f2' }}>
+                                                                    🔴 Todos Alto
+                                                                </button>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Resumen del promedio en vivo */}
+                                                        {(() => {
+                                                            const { promedio, nivel, puntosRedondeados } = calcularPromedioPartes(listaPartes, formOficial.calificaciones_partes);
+                                                            const colorNivel = nivel === 'ALTO' ? '#ef4444' : nivel === 'MEDIO' ? '#f59e0b' : '#10b981';
+                                                            const bgNivel = nivel === 'ALTO' ? '#fef2f2' : nivel === 'MEDIO' ? '#fffbeb' : '#f0fdf4';
+                                                            return (
+                                                                <div style={{ padding: '0.75rem 1rem', background: bgNivel, border: `1px solid ${colorNivel}40`, borderRadius: '8px', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                                                        <span style={{ fontSize: '0.85rem', color: '#334155' }}>
+                                                                            <strong>Promedio Ponderado:</strong> {promedio.toFixed(2)} / 4.0 pts (Aporta <strong>+{puntosRedondeados} pts</strong> al score)
+                                                                        </span>
+                                                                    </div>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Calificación Oficial Resultante:</span>
+                                                                        <span style={{ fontWeight: '800', fontSize: '0.85rem', padding: '0.2rem 0.65rem', borderRadius: '12px', background: colorNivel, color: '#fff' }}>
+                                                                            {nivel}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })()}
+
+                                                        {/* Lista de Partes con Selectores */}
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '340px', overflowY: 'auto', paddingRight: '0.3rem', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.6rem', background: '#fff' }}>
+                                                            {listaPartes.map(p => {
+                                                                const calActual = formOficial.calificaciones_partes?.[p.key] || 'Bajo';
+                                                                return (
+                                                                    <div key={p.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.55rem 0.75rem', background: p.esPrincipal ? '#f8fafc' : '#ffffff', border: '1px solid #f1f5f9', borderRadius: '6px', gap: '0.75rem' }}>
+                                                                        <div style={{ minWidth: 0, flex: 1 }}>
+                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.15rem' }}>
+                                                                                <span style={{ fontWeight: '700', fontSize: '0.84rem', color: '#1e293b' }}>
+                                                                                    {p.nombre}
+                                                                                </span>
+                                                                                <span style={{ fontSize: '0.72rem', padding: '0.15rem 0.45rem', borderRadius: '4px', background: p.esPrincipal ? '#dbeafe' : '#f1f5f9', color: p.esPrincipal ? '#1d4ed8' : '#475569', fontWeight: '600' }}>
+                                                                                    {p.rol} {p.porcentaje ? `(${p.porcentaje})` : ''}
+                                                                                </span>
+                                                                            </div>
+                                                                            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                                                                {p.typedoc}: {p.doc}
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {/* Botones de Selección Bajo / Medio / Alto */}
+                                                                        <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0 }}>
+                                                                            {['Bajo', 'Medio', 'Alto'].map(opcion => {
+                                                                                const isSelected = calActual.toLowerCase() === opcion.toLowerCase();
+                                                                                const colorMap = {
+                                                                                    Bajo: { activeBg: '#16a34a' },
+                                                                                    Medio: { activeBg: '#ca8a04' },
+                                                                                    Alto: { activeBg: '#dc2626' }
+                                                                                };
+                                                                                const styleConfig = colorMap[opcion];
+                                                                                return (
+                                                                                    <button
+                                                                                        key={opcion}
+                                                                                        type="button"
+                                                                                        onClick={() => handleCambiarCalificacionParte(p.key, opcion)}
+                                                                                        style={{
+                                                                                            padding: '0.28rem 0.6rem',
+                                                                                            fontSize: '0.75rem',
+                                                                                            fontWeight: isSelected ? '700' : '500',
+                                                                                            borderRadius: '5px',
+                                                                                            border: `1px solid ${isSelected ? styleConfig.activeBg : '#e2e8f0'}`,
+                                                                                            background: isSelected ? styleConfig.activeBg : '#f8fafc',
+                                                                                            color: isSelected ? '#ffffff' : '#475569',
+                                                                                            cursor: 'pointer',
+                                                                                            transition: 'all 0.15s ease'
+                                                                                        }}
+                                                                                    >
+                                                                                        {opcion.toUpperCase()}
+                                                                                    </button>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                <div>
+                                                    <label className="label">Señales de Alerta Manuales Observadas</label>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: isProveedor ? '120px' : '150px', overflowY: 'auto', background: '#fff', padding: '0.5rem', border: '1px solid #e2e8f0', borderRadius: '4px' }}>
+                                                        {['Renuencia a entregar información', 'Información incongruente', 'Documentos ilegibles o alterados', 'Desconoce riesgo LA/FT', 'Renuencia a actualizar datos'].map(alerta => (
+                                                            <label key={alerta} style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                                                <input type="checkbox" checked={formOficial.alertas_manuales.includes(alerta)} onChange={() => toggleAlertaManual(alerta)} />
+                                                                {alerta}
+                                                            </label>
+                                                        ))}
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </div>
+                                        );
+                                    })()}
                                     
                                     <div style={{ marginBottom: '1rem' }}>
                                         <label className="label">Observaciones y Justificación (Opcional)</label>
