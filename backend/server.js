@@ -490,6 +490,22 @@ app.post('/api/v1/onboarding', upload.any(), async (req, res) => {
     }
 });
 
+// Helper para determinar el tipo de documento adecuado para la API de TusDatos (NIT, CC, CE, PP, PPT)
+const getTipoDocTusDatos = (solicitud) => {
+    const d = solicitud.datos_formulario || {};
+    const tipoPersona = d.tipo_persona || (solicitud.tipo_vinculacion?.includes('juridico') ? 'juridica' : 'natural');
+    const rawTipoId = (d.tipo_identificacion || '').toUpperCase();
+
+    if (tipoPersona === 'juridica' || rawTipoId === 'NIT' || solicitud.tipo_vinculacion === 'proveedor_juridico' || solicitud.tipo_vinculacion === 'tercero_juridico') {
+        return 'NIT';
+    }
+    if (rawTipoId === 'CE') return 'CE';
+    if (rawTipoId === 'PASAPORTE' || rawTipoId === 'PA' || rawTipoId === 'PP') return 'PP';
+    if (rawTipoId === 'PPT') return 'PPT';
+    if (rawTipoId === 'PEP') return 'PEP';
+    return 'CC';
+};
+
 // Endpoint para disparar Manualmente el Estudio de TusDatos
 app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
     const { id } = req.params;
@@ -501,7 +517,7 @@ app.post('/api/v1/solicitudes/:id/tusdatos', async (req, res) => {
 
         const isTestEnv = process.env.TUSDATOS_TEST_ENV !== 'false';
         const nit = solicitud.nit_cedula;
-        const tipoIdentificacion = solicitud.datos_formulario?.tipo_identificacion === 'NIT' ? 'NIT' : 'CC';
+        const tipoIdentificacion = getTipoDocTusDatos(solicitud);
 
         let coincidencia_api = false;
         let monitorFuentes = {};
@@ -719,7 +735,7 @@ app.post('/api/v1/solicitudes/:id/tusdatos/retry', async (req, res) => {
         if (errSol || !solicitud) return res.status(404).json({ error: "Solicitud no encontrada" });
 
         const isTestEnv = process.env.TUSDATOS_TEST_ENV !== 'false';
-        const tipoIdentificacion = solicitud.datos_formulario?.tipo_identificacion === 'NIT' ? 'NIT' : 'CC';
+        const tipoIdentificacion = getTipoDocTusDatos(solicitud);
         let jobid = solicitud.datos_formulario?.jobid_tusdatos;
         let reporteId = solicitud.datos_formulario?.reporte_id_tusdatos || jobid; // Fallback for backwards compatibility if possible, though TusDatos strictly needs report ID
 

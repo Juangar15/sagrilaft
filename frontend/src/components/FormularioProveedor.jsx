@@ -365,6 +365,14 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
             const next = { ...prev, [name]: value };
             if (name === 'clase_vinculacion' && ['empleado', 'prestacion_servicios', 'contratista', 'accionista'].includes(value)) {
                 next.tipo_persona = 'natural';
+                next.tipo_identificacion = next.tipo_identificacion || 'cc';
+            }
+            if (name === 'tipo_persona') {
+                if (value === 'juridica') {
+                    next.tipo_identificacion = 'NIT';
+                } else if (value === 'natural') {
+                    next.tipo_identificacion = next.tipo_identificacion === 'NIT' ? 'cc' : (next.tipo_identificacion || 'cc');
+                }
             }
             return next;
         });
@@ -697,6 +705,9 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
             setAuditHash(auditInfo.hash);
 
             // 2. Submit Form
+            if (formData.tipo_persona === 'juridica') {
+                formData.tipo_identificacion = 'NIT';
+            }
             const dataToSubmit = { ...formData, fechas_documentos: fechasDocumentos, audit_info: auditInfo };
             
             const hayArchivos = Object.keys(archivosFisicos).length > 0;
