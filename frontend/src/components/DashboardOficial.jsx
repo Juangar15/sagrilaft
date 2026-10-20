@@ -685,13 +685,198 @@ export default function DashboardOficial() {
         );
     };
 
+    const ETIQUETAS_CAMPOS = {
+        tipo_solicitud: 'Tipo de Solicitud',
+        clase_vinculacion: 'Clase de Vinculación',
+        tipo_proveeduria: 'Tipo de Proveeduría',
+        tipo_persona: 'Tipo de Persona',
+        razon_social: 'Razón Social',
+        nit: 'NIT',
+        numero_identificacion: 'Número de Identificación / NIT',
+        nit_digito: 'Dígito de Verificación (DV)',
+        tipo_sociedad: 'Tipo de Sociedad',
+        tipo_empresa: 'Tipo de Empresa',
+        fecha_constitucion: 'Fecha de Constitución',
+        departamento_juridica: 'Departamento',
+        ciudad_juridica: 'Ciudad / Municipio',
+        direccion_oficina_principal: 'Dirección Oficina Principal',
+        telefono_juridica: 'Teléfono Sede Principal',
+        telefono_corporativo_juridica: 'Teléfono Corporativo',
+        celular_corporativo_juridica: 'Celular Corporativo',
+        correo_corporativo_juridica: 'Correo Electrónico Corporativo',
+        actividad_economica_principal_juridica: 'Actividad Económica Principal',
+        actividad_economica_principal: 'Actividad Económica Principal',
+        codigo_ciiu_juridica: 'Código CIIU',
+        codigo_ciiu: 'Código CIIU',
+        ciiu_principal: 'Código CIIU',
+        sector_juridica: 'Sector Económico',
+        sector_otro_juridica: 'Detalle Otro Sector',
+        ambito_operacion: 'Ámbito de Operación',
+        tiene_sucursales: '¿Tiene Sucursales?',
+        sucursales_info: 'Detalle de Sucursales',
+        
+        // Representante Legal
+        rep_legal_nombres: 'Nombres del Representante Legal',
+        rep_legal_primer_apellido: 'Primer Apellido Rep. Legal',
+        rep_legal_segundo_apellido: 'Segundo Apellido Rep. Legal',
+        rep_legal_tipo_id: 'Tipo de Documento Rep. Legal',
+        rep_legal_numero_id: 'Número de Documento Rep. Legal',
+        rep_legal_fecha_expedicion: 'Fecha de Expedición Rep. Legal',
+        rep_legal_lugar_expedicion: 'Lugar de Expedición Rep. Legal',
+        rep_legal_fecha_nacimiento: 'Fecha de Nacimiento Rep. Legal',
+        rep_legal_lugar_nacimiento: 'Lugar de Nacimiento Rep. Legal',
+        rep_legal_nacionalidad: 'Nacionalidad Rep. Legal',
+        rep_legal_direccion: 'Dirección / Correo Rep. Legal',
+        rep_legal_telefono: 'Teléfono Rep. Legal',
+
+        // Persona Natural
+        nombres: 'Nombres',
+        primer_apellido: 'Primer Apellido',
+        segundo_apellido: 'Segundo Apellido',
+        tipo_identificacion: 'Tipo de Identificación',
+        fecha_expedicion: 'Fecha de Expedición',
+        lugar_expedicion: 'Lugar de Expedición',
+        fecha_nacimiento: 'Fecha de Nacimiento',
+        lugar_nacimiento: 'Lugar de Nacimiento',
+        nacionalidad: 'Nacionalidad',
+        estado_civil: 'Estado Civil',
+        ocupacion_profesion: 'Ocupación / Profesión',
+        departamento: 'Departamento',
+        ciudad: 'Ciudad / Municipio',
+        direccion_residencial: 'Dirección Residencial',
+        telefono_celular: 'Teléfono Celular',
+        correo_electronico: 'Correo Electrónico',
+
+        // Información Tributaria
+        gran_contribuyente: 'Gran Contribuyente',
+        autoretenedor_renta: 'Autorretenedor en Renta',
+        autoretenedor_iva: 'Autorretenedor de IVA',
+        autoretenedor_ica: 'Autorretenedor de ICA',
+        responsable_iva: 'Responsable de IVA',
+        declara_renta: 'Declarante de Renta',
+        regimen_simple: 'Régimen Simple de Tributación',
+
+        // Información Financiera
+        ingresos_mensuales: 'Ingresos Mensuales',
+        egresos_mensuales: 'Egresos Mensuales',
+        activos: 'Total Activos',
+        pasivos: 'Total Pasivos',
+        patrimonio: 'Patrimonio Total',
+        otros_ingresos_mensuales: 'Otros Ingresos Mensuales',
+        concepto_otros_ingresos: 'Concepto Otros Ingresos',
+        origen_fondos: 'Origen de Fondos y Recursos',
+
+        // Ética y PEPs
+        declara_ser_pep: '¿Declara ser Persona Expuesta Políticamente (PEP)?',
+        vinculo_familiar_pep: '¿Vínculo con Persona Expuesta Políticamente (PEP)?',
+        es_funcionario_publico: '¿Es Funcionario Público?',
+        ejerce_poder_publico: '¿Ejerce Poder Público?',
+        goza_reconocimiento_publico: '¿Goza de Reconocimiento Público?',
+        maneja_recursos_publicos: '¿Maneja Recursos Públicos?',
+        pep_detalles: 'Detalle Condición PEP',
+        tiene_oficial_cumplimiento: '¿Tiene Oficial de Cumplimiento?',
+        nombre_oficial_cumplimiento: 'Nombre del Oficial de Cumplimiento',
+        politica_corrupcion: '¿Cuenta con Política Anticorrupción?',
+        codigo_etica_conducta: '¿Cuenta con Código de Ética y Conducta?',
+        tiene_comite_etica: '¿Cuenta con Comité de Ética?',
+        canales_denuncia: '¿Tiene Canales de Denuncia?',
+        acusada_corrupcion: '¿Ha sido acusada o investigada por corrupción?',
+        detalles_etica: 'Detalles de Ética / Anticorrupción',
+
+        // Conflicto de Interés
+        tiene_conflicto_interes: '¿Declara Conflicto de Interés?',
+
+        // Operaciones Internacionales
+        realiza_operaciones_internacionales: '¿Realiza Operaciones Internacionales?',
+        posee_productos_exterior: '¿Posee Productos o Cuentas en el Exterior?',
+        activos_virtuales: '¿Maneja Activos Virtuales / Criptoactivos?',
+        cuales_activos_virtuales: '¿Cuáles Activos Virtuales?',
+
+        // ESG
+        esg_materias_sostenibles: 'Uso de Materias Primas Sostenibles',
+        esg_evalua_proveedores: '¿Evalúa a sus Proveedores en Criterios ESG?',
+        esg_evalua_cuales: 'Criterios ESG Evaluados',
+        esg_sancionada: '¿Ha sido sancionada ambiental o laboralmente?',
+        esg_sancionada_motivo: 'Motivo de la Sanción',
+        esg_practicas_ambientales_otros: 'Otras Prácticas Ambientales',
+        esg_legislacion_laboral: 'Cumplimiento Legislación Laboral',
+        esg_sgsst: 'Sistema de Gestión SG-SST',
+        esg_derechos_humanos: 'Política de Derechos Humanos',
+        esg_prohibe_trabajo_infantil: 'Prohibición Trabajo Infantil / Forzoso',
+        esg_entorno_libre_discriminacion: 'Entorno Libre de Discriminación',
+
+        // Certificaciones
+        cert_pep_aceptado: 'Aceptó Declaración y Certificación PEP',
+        cert_laft_aceptado: 'Aceptó Declaración y Certificación LA/FT',
+        cert_laft_razon: 'Razón Certificación LA/FT',
+        accionistas_confidencial: 'Composición Accionaria Confidencial',
+        fecha_diligenciamiento: 'Fecha de Diligenciamiento',
+
+        // Array Items
+        nombre: 'Nombre / Razón Social',
+        identificacion: 'Número de Identificación',
+        porcentaje: 'Participación Accionaria',
+        sub_accionistas: 'Sub-Accionistas (Cascada)',
+        confidencial: 'Confidencial por Políticas',
+        administra_recursos: '¿Administra Recursos Públicos?',
+        goza_reconocimiento: '¿Goza de Reconocimiento Público?',
+        banco: 'Entidad Bancaria',
+        cuenta: 'Número de Cuenta',
+        referencia: 'Empresa / Razón Social',
+        contacto: 'Nombre de Contacto',
+        direccion: 'Dirección'
+    };
+
     const categoriasCampos = {
-        'Información Básica': ['tipo_solicitud', 'clase_vinculacion', 'tipo_persona', 'nombres', 'primer_apellido', 'segundo_apellido', 'tipo_identificacion', 'numero_identificacion', 'fecha_expedicion', 'lugar_expedicion', 'fecha_nacimiento', 'lugar_nacimiento', 'nacionalidad', 'razon_social', 'nit', 'tipo_sociedad', 'fecha_constitucion', 'departamento', 'ciudad', 'direccion_residencial', 'telefono_celular', 'correo_electronico', 'correo_corporativo_juridica', 'telefono_juridica', 'ciudad_juridica', 'direccion_oficina_principal', 'actividad_economica_principal', 'actividad_economica_principal_juridica', 'ciiu_principal', 'sector_juridica', 'tipo_empresa'],
-        'Información Financiera': ['ingresos_mensuales', 'egresos_mensuales', 'activos', 'pasivos', 'patrimonio', 'origen_fondos', 'responsable_iva', 'declara_renta', 'regimen_simple'],
-        'Ética, Cumplimiento y PEPs': ['declara_ser_pep', 'vinculo_familiar_pep', 'maneja_recursos_publicos', 'goza_reconocimiento', 'administra_recursos', 'politica_corrupcion', 'codigo_etica_conducta', 'tiene_comite_etica', 'canales_denuncia', 'acusada_corrupcion', 'tiene_oficial_cumplimiento', 'nombre_oficial_cumplimiento', 'pep_detalles', 'es_funcionario_publico', 'ejerce_poder_publico', 'goza_reconocimiento_publico'],
-        'Conflicto de Interés': ['tiene_conflicto_interes'],
-        'Operaciones Internacionales y Activos Virtuales': ['realiza_operaciones_internacionales', 'posee_productos_exterior', 'activos_virtuales', 'cuales_activos_virtuales'],
-        'Sostenibilidad (ESG)': ['esg_materias_sostenibles', 'esg_evalua_proveedores', 'esg_evalua_cuales', 'esg_sancionada', 'esg_sancionada_motivo', 'esg_practicas_ambientales_otros', 'esg_legislacion_laboral', 'esg_sgsst', 'esg_derechos_humanos', 'esg_prohibe_trabajo_infantil', 'esg_entorno_libre_discriminacion']
+        'Información General de la Entidad': [
+            'tipo_solicitud', 'clase_vinculacion', 'tipo_proveeduria', 'tipo_persona',
+            'razon_social', 'nit', 'numero_identificacion', 'nit_digito', 'tipo_sociedad', 'tipo_empresa', 'fecha_constitucion',
+            'nombres', 'primer_apellido', 'segundo_apellido', 'tipo_identificacion', 'fecha_expedicion', 'lugar_expedicion',
+            'fecha_nacimiento', 'lugar_nacimiento', 'nacionalidad', 'estado_civil', 'ocupacion_profesion',
+            'departamento_juridica', 'ciudad_juridica', 'direccion_oficina_principal',
+            'departamento', 'ciudad', 'direccion_residencial', 'telefono_celular', 'correo_electronico',
+            'correo_corporativo_juridica', 'telefono_juridica', 'telefono_corporativo_juridica', 'celular_corporativo_juridica',
+            'actividad_economica_principal_juridica', 'actividad_economica_principal',
+            'codigo_ciiu_juridica', 'ciiu_principal', 'codigo_ciiu', 'sector_juridica', 'sector_otro_juridica',
+            'ambito_operacion', 'tiene_sucursales', 'sucursales_info'
+        ],
+        'Representante Legal': [
+            'rep_legal_nombres', 'rep_legal_primer_apellido', 'rep_legal_segundo_apellido',
+            'rep_legal_tipo_id', 'rep_legal_numero_id', 'rep_legal_fecha_expedicion', 'rep_legal_lugar_expedicion',
+            'rep_legal_fecha_nacimiento', 'rep_legal_lugar_nacimiento', 'rep_legal_nacionalidad',
+            'rep_legal_direccion', 'rep_legal_telefono'
+        ],
+        'Información Tributaria y Fiscal': [
+            'gran_contribuyente', 'autoretenedor_renta', 'autoretenedor_iva', 'autoretenedor_ica',
+            'responsable_iva', 'declara_renta', 'regimen_simple'
+        ],
+        'Información Financiera': [
+            'ingresos_mensuales', 'egresos_mensuales', 'activos', 'pasivos', 'patrimonio',
+            'otros_ingresos_mensuales', 'concepto_otros_ingresos', 'origen_fondos'
+        ],
+        'Ética, Cumplimiento y PEPs': [
+            'declara_ser_pep', 'vinculo_familiar_pep', 'es_funcionario_publico', 'ejerce_poder_publico',
+            'goza_reconocimiento_publico', 'maneja_recursos_publicos', 'pep_detalles',
+            'tiene_oficial_cumplimiento', 'nombre_oficial_cumplimiento', 'politica_corrupcion',
+            'codigo_etica_conducta', 'tiene_comite_etica', 'canales_denuncia', 'acusada_corrupcion', 'detalles_etica'
+        ],
+        'Conflicto de Interés': [
+            'tiene_conflicto_interes'
+        ],
+        'Operaciones Internacionales y Activos Virtuales': [
+            'realiza_operaciones_internacionales', 'posee_productos_exterior',
+            'activos_virtuales', 'cuales_activos_virtuales'
+        ],
+        'Sostenibilidad (ESG)': [
+            'esg_materias_sostenibles', 'esg_evalua_proveedores', 'esg_evalua_cuales',
+            'esg_sancionada', 'esg_sancionada_motivo', 'esg_practicas_ambientales_otros',
+            'esg_legislacion_laboral', 'esg_sgsst', 'esg_derechos_humanos',
+            'esg_prohibe_trabajo_infantil', 'esg_entorno_libre_discriminacion'
+        ],
+        'Certificaciones y Declaraciones': [
+            'cert_pep_aceptado', 'cert_laft_aceptado', 'cert_laft_razon',
+            'accionistas_confidencial', 'fecha_diligenciamiento'
+        ]
     };
 
     const generarCertificadoPDF = async () => {
@@ -1440,85 +1625,161 @@ export default function DashboardOficial() {
                                             
                                             {/* Volcado Dinámico Categorizado */}
                                             {(() => {
-                                                const datos = solicitudSeleccionada.datos_formulario;
-                                                const ignoreKeys = ['archivos_cargados', 'token', 'paso', 'audit_hash'];
-                                                const formatKey = (k) => k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                                                const datos = solicitudSeleccionada.datos_formulario || {};
+                                                const ignoreKeys = [
+                                                    'archivos_cargados', 'token', 'paso', 'audit_hash', 'audit_info',
+                                                    'jobid_tusdatos', 'reporte_id_tusdatos', 'error_fuentes_tusdatos',
+                                                    'monitor_fuentes', 'estudios_tusdatos', 'desglose_riesgo',
+                                                    'historial_firmas', 'fechas_documentos', 'empresa_destino',
+                                                    'area', 'cargo', 'pais'
+                                                ];
+
+                                                const formatLabel = (k) => ETIQUETAS_CAMPOS[k] || k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+                                                const formatValor = (k, v) => {
+                                                    if (v === undefined || v === null) return 'N/A';
+                                                    const s = String(v).trim();
+                                                    if (s === '') return 'N/A';
+                                                    const lower = s.toLowerCase();
+                                                    if (lower === 'true' || lower === 'si') return 'Sí';
+                                                    if (lower === 'false' || lower === 'no') return 'No';
+                                                    if (lower === 'cc') return 'Cédula de Ciudadanía (CC)';
+                                                    if (lower === 'nit') return 'NIT';
+                                                    if (lower === 'ce') return 'Cédula de Extranjería (CE)';
+                                                    if (lower === 'pasaporte') return 'Pasaporte';
+                                                    if (['ingresos_mensuales', 'egresos_mensuales', 'activos', 'pasivos', 'patrimonio', 'otros_ingresos_mensuales'].includes(k) && !isNaN(s)) {
+                                                        return `$${Number(s).toLocaleString('es-CO')}`;
+                                                    }
+                                                    return s;
+                                                };
                                                 
                                                 const renderGroup = (keys, title) => {
-                                                    let validKeys = keys.filter(k => datos[k] !== undefined && datos[k] !== null && datos[k] !== '' && !Array.isArray(datos[k]) && typeof datos[k] !== 'object');
+                                                    let validKeys = keys.filter(k => datos[k] !== undefined && datos[k] !== null && String(datos[k]).trim() !== '' && !Array.isArray(datos[k]) && typeof datos[k] !== 'object');
                                                     
                                                     // Filtrado inteligente basado en tipo_persona y vinculacion
                                                     if (datos.tipo_persona === 'natural') {
                                                         validKeys = validKeys.filter(k => !k.includes('juridica') && !k.includes('rep_legal') && !k.includes('socios') && !k.includes('sucursal') && k !== 'razon_social' && k !== 'nit' && k !== 'tipo_sociedad' && k !== 'fecha_constitucion' && k !== 'tipo_empresa' && k !== 'sector');
                                                     } else if (datos.tipo_persona === 'juridica') {
-                                                        validKeys = validKeys.filter(k => !['nombres', 'primer_apellido', 'segundo_apellido', 'fecha_nacimiento', 'lugar_nacimiento', 'nacionalidad'].includes(k));
+                                                        validKeys = validKeys.filter(k => !['nombres', 'primer_apellido', 'segundo_apellido', 'fecha_nacimiento', 'lugar_nacimiento', 'nacionalidad', 'estado_civil', 'ocupacion_profesion', 'direccion_residencial', 'telefono_celular', 'correo_electronico', 'departamento', 'ciudad'].includes(k));
                                                     }
 
                                                     if (['empleado', 'prestacion_servicios', 'contratista', 'accionista'].includes(datos.clase_vinculacion)) {
-                                                        // Empleados y asociados no tienen datos bancarios, comerciales, ESG ni anticorrupción corporativa
                                                         validKeys = validKeys.filter(k => 
                                                             !k.includes('banco') && !k.includes('cuenta') && !k.includes('referencia') && !k.includes('comercial') &&
                                                             !k.includes('esg_') && !['politica_corrupcion', 'codigo_etica_conducta', 'tiene_comite_etica', 'canales_denuncia', 'acusada_corrupcion', 'tiene_oficial_cumplimiento', 'nombre_oficial_cumplimiento', 'regimen_simple'].includes(k)
                                                         );
                                                     }
                                                     
-                                                    // No mostrar "Otros Datos" que sean puramente internos
-                                                    validKeys = validKeys.filter(k => !['area', 'pais', 'cargo', 'exterior_tributario', 'exterior_cuentas'].includes(k));
+                                                    validKeys = validKeys.filter(k => !ignoreKeys.includes(k));
 
                                                     if (validKeys.length === 0) return null;
                                                     return (
                                                         <div key={title} style={{ marginBottom: '1.5rem' }}>
                                                             <h5 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-main)', borderBottom: '2px solid var(--border)', paddingBottom: '0.25rem' }}>{title}</h5>
-                                                            {validKeys.map(k => {
-                                                                let val = String(datos[k]);
-                                                                if (['ingresos_mensuales', 'egresos_mensuales', 'activos', 'pasivos', 'patrimonio'].includes(k) && !isNaN(val)) {
-                                                                    val = `$${Number(val).toLocaleString()}`;
-                                                                }
-                                                                return renderCampoRevisable(formatKey(k), val, k);
-                                                            })}
+                                                            {validKeys.map(k => renderCampoRevisable(formatLabel(k), formatValor(k, datos[k]), k))}
                                                         </div>
                                                     );
                                                 };
 
+                                                const ETIQUETAS_ARRAYS = {
+                                                    accionistas: 'Accionistas y Beneficiarios Finales (>5%)',
+                                                    referencias_bancarias: 'Referencias Bancarias',
+                                                    referencias_comerciales: 'Referencias Comerciales',
+                                                    operaciones_internacionales: 'Detalle de Operaciones Internacionales',
+                                                    productos_exterior: 'Productos / Cuentas en el Exterior',
+                                                    familiares_conflicto: 'Familiares con Potencial Conflicto de Interés',
+                                                    pep_familiares_extendido: 'Familiares o Vínculos PEP',
+                                                    esg_politicas: 'Políticas ESG Implementadas',
+                                                    esg_practicas_ambientales: 'Prácticas Ambientales',
+                                                    esg_gestiona_riesgos: 'Gestión de Riesgos ESG'
+                                                };
+
+                                                const ordenArrays = [
+                                                    'accionistas',
+                                                    'referencias_bancarias',
+                                                    'referencias_comerciales',
+                                                    'operaciones_internacionales',
+                                                    'productos_exterior',
+                                                    'familiares_conflicto',
+                                                    'pep_familiares_extendido',
+                                                    'esg_politicas',
+                                                    'esg_practicas_ambientales',
+                                                    'esg_gestiona_riesgos'
+                                                ];
+
+                                                const arrayKeys = ordenArrays.filter(k => Array.isArray(datos[k]) && datos[k].length > 0 && !ignoreKeys.includes(k));
                                                 const usedKeys = new Set(Object.values(categoriasCampos).flat());
                                                 const otherKeys = Object.keys(datos).filter(k => !usedKeys.has(k) && !ignoreKeys.includes(k) && !Array.isArray(datos[k]) && typeof datos[k] !== 'object');
-                                                
-                                                const arrayKeys = Object.keys(datos).filter(k => Array.isArray(datos[k]) && datos[k].length > 0 && !ignoreKeys.includes(k));
 
                                                 return (
                                                     <div>
                                                         {Object.entries(categoriasCampos).map(([titulo, llaves]) => renderGroup(llaves, titulo))}
+                                                        
                                                         {arrayKeys.map(key => (
                                                             <div key={key} style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(59, 130, 246, 0.05)', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--border)' }}>
-                                                                <h6 style={{ margin: '0 0 1rem 0', color: 'var(--primary)' }}>📋 {formatKey(key)} ({datos[key].length})</h6>
-                                                                {datos[key].map((item, idx) => (
-                                                                    <div key={idx} style={{ padding: '0.75rem', borderLeft: '3px solid var(--primary)', marginBottom: '1rem', background: 'var(--surface)', fontSize: '0.85rem' }}>
-                                                                        {typeof item === 'object' && item !== null ? (
-                                                                            Object.entries(item).map(([k, v]) => (
-                                                                                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', padding: '0.25rem 0', alignItems: 'flex-start' }}>
-                                                                                    <b>{formatKey(k)}:</b> 
-                                                                                    {k === 'sub_accionistas' && Array.isArray(v) ? (
-                                                                                        <div style={{ textAlign: 'right' }}>
-                                                                                            {v.length === 0 ? <span style={{ color: 'var(--text-muted)' }}>Ninguno</span> : v.map((sub, sIdx) => (
-                                                                                                <div key={sIdx} style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
-                                                                                                    • {sub.nombre} ({sub.tipo_persona?.toUpperCase()}, ID: {sub.identificacion}) - {sub.porcentaje}%
-                                                                                                </div>
-                                                                                            ))}
-                                                                                        </div>
-                                                                                    ) : (
-                                                                                        <span>{String(v)}</span>
-                                                                                    )}
-                                                                                </div>
-                                                                            ))
-                                                                        ) : (
-                                                                            <div>🔹 {String(item)}</div>
-                                                                        )}
-                                                                    </div>
-                                                                ))}
+                                                                <h6 style={{ margin: '0 0 1rem 0', color: 'var(--primary)' }}>📋 {ETIQUETAS_ARRAYS[key] || formatLabel(key)} ({datos[key].length})</h6>
+                                                                {datos[key].map((item, idx) => {
+                                                                    if (typeof item !== 'object' || item === null) {
+                                                                        return (
+                                                                            <div key={idx} style={{ padding: '0.5rem 0.75rem', marginBottom: '0.5rem', background: 'var(--surface)', fontSize: '0.85rem', borderRadius: '4px' }}>
+                                                                                🔹 {formatValor('', item)}
+                                                                            </div>
+                                                                        );
+                                                                    }
+                                                                    
+                                                                    const ordenAccionista = ['nombre', 'tipo_persona', 'tipo_id', 'identificacion', 'porcentaje', 'administra_recursos', 'goza_reconocimiento', 'sub_accionistas', 'confidencial'];
+                                                                    const ordenBancaria = ['banco', 'tipo', 'cuenta', 'ciudad', 'telefono'];
+                                                                    const ordenComercial = ['referencia', 'contacto', 'direccion', 'ciudad', 'telefono'];
+                                                                    
+                                                                    let itemKeys = Object.keys(item);
+                                                                    if (key === 'accionistas') {
+                                                                        itemKeys.sort((a, b) => {
+                                                                            const idxA = ordenAccionista.indexOf(a);
+                                                                            const idxB = ordenAccionista.indexOf(b);
+                                                                            return (idxA !== -1 ? idxA : 99) - (idxB !== -1 ? idxB : 99);
+                                                                        });
+                                                                    } else if (key === 'referencias_bancarias') {
+                                                                        itemKeys.sort((a, b) => {
+                                                                            const idxA = ordenBancaria.indexOf(a);
+                                                                            const idxB = ordenBancaria.indexOf(b);
+                                                                            return (idxA !== -1 ? idxA : 99) - (idxB !== -1 ? idxB : 99);
+                                                                        });
+                                                                    } else if (key === 'referencias_comerciales') {
+                                                                        itemKeys.sort((a, b) => {
+                                                                            const idxA = ordenComercial.indexOf(a);
+                                                                            const idxB = ordenComercial.indexOf(b);
+                                                                            return (idxA !== -1 ? idxA : 99) - (idxB !== -1 ? idxB : 99);
+                                                                        });
+                                                                    }
+
+                                                                    return (
+                                                                        <div key={idx} style={{ padding: '0.75rem', borderLeft: '3px solid var(--primary)', marginBottom: '1rem', background: 'var(--surface)', fontSize: '0.85rem' }}>
+                                                                            {itemKeys.map(k => {
+                                                                                const v = item[k];
+                                                                                return (
+                                                                                    <div key={k} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', padding: '0.25rem 0', alignItems: 'flex-start' }}>
+                                                                                        <b>{formatLabel(k)}:</b> 
+                                                                                        {k === 'sub_accionistas' && Array.isArray(v) ? (
+                                                                                            <div style={{ textAlign: 'right' }}>
+                                                                                                {v.length === 0 ? <span style={{ color: 'var(--text-muted)' }}>Ninguno</span> : v.map((sub, sIdx) => (
+                                                                                                    <div key={sIdx} style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                                                                                                        • {sub.nombre} ({sub.tipo_persona?.toUpperCase()}, ID: {sub.identificacion}) - {sub.porcentaje}%
+                                                                                                    </div>
+                                                                                                ))}
+                                                                                            </div>
+                                                                                        ) : (
+                                                                                            <span>{k === 'porcentaje' ? `${v}%` : formatValor(k, v)}</span>
+                                                                                        )}
+                                                                                    </div>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    );
+                                                                })}
                                                             </div>
                                                         ))}
                                                         
-                                                        {renderGroup(otherKeys, 'Auditoría y Trazabilidad (Metadatos)')}
+                                                        {otherKeys.length > 0 && renderGroup(otherKeys, 'Otros Datos Declarados')}
                                                     </div>
                                                 );
                                             })()}
