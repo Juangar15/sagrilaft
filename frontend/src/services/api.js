@@ -112,6 +112,27 @@ export const sagrilaftService = {
     firmarArchivoUrl: async (key) => {
         const response = await api.post('/archivos/firmar', { key });
         return response.data;
+    },
+
+    // Gestión de Borradores (Guardar / Reanudar con OTP)
+    guardarBorrador: async (payload) => {
+        const response = await api.post('/borradores/guardar', payload);
+        return response.data;
+    },
+
+    solicitarOtpBorrador: async (payload) => {
+        const response = await api.post('/borradores/solicitar-codigo', payload);
+        return response.data;
+    },
+
+    recuperarBorrador: async (payload) => {
+        const response = await api.post('/borradores/recuperar', payload);
+        return response.data;
+    },
+
+    obtenerBorradorPorToken: async (token) => {
+        const response = await api.get(`/borradores/token/${token}`);
+        return response.data;
     }
 };
 

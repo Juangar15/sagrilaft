@@ -8,7 +8,8 @@ import autoTable from 'jspdf-autotable';
 import { 
   Building2, User, Briefcase, FileText, 
   ArrowRight, ArrowLeft, CheckCircle, AlertTriangle, 
-  UploadCloud, ShieldCheck, CreditCard, Lock, Smartphone, Download, Info, Globe
+  UploadCloud, ShieldCheck, CreditCard, Lock, Smartphone, Download, Info, Globe,
+  Save, FolderOpen, Mail, X
 } from 'lucide-react';
 import ciiuData from '../data/CIIU.json';
 
@@ -121,6 +122,14 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         setTimeout(() => setToast({ visible: false, message: '', type: 'error' }), 4000);
     };
 
+    // Estados para Borradores y Reanudar con OTP
+    const [modalBorrador, setModalBorrador] = useState({ open: false, email: '', code: '', step: 'input_email', cargando: false, error: '' });
+    const [modalEmailGuardar, setModalEmailGuardar] = useState(false);
+    const [emailParaGuardar, setEmailParaGuardar] = useState('');
+    const [guardandoBorrador, setGuardandoBorrador] = useState(false);
+    const [borradorDetectadoToken, setBorradorDetectadoToken] = useState(null);
+    const [localDraftDetectado, setLocalDraftDetectado] = useState(null);
+
     const [formData, setFormData] = useState({
         // 0. Metadata
         fecha_diligenciamiento: new Date().toISOString().split('T')[0],
@@ -128,6 +137,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         empresa_destino: '',
         area_solicitante: '',
         nombre_solicitante: '',
+        correo_solicitante: '',
         tipo_solicitud: '',
         clase_vinculacion: isGenericEmpleado ? 'empleado' : 'proveedor',
         tipo_proveeduria: '',
@@ -260,10 +270,20 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                             correo_corporativo_juridica: validacion.datos.correo || '',
                             area_solicitante: validacion.datos.area_solicitante || prev.area_solicitante || '',
                             nombre_solicitante: validacion.datos.nombre_solicitante || prev.nombre_solicitante || '',
+                            correo_solicitante: validacion.datos.correo_solicitante || prev.correo_solicitante || '',
                             empresa_destino: validacion.datos.empresa_destino || prev.empresa_destino || '',
+                            tipo_solicitud: validacion.datos.tipo_tramite || prev.tipo_solicitud || 'vinculacion',
                             // Si es empleado, forzar a natural
                             tipo_persona: ['empleado', 'contratista', 'accionista'].includes(validacion.datos.tipo_vinculacion?.toLowerCase()) ? 'natural' : prev.tipo_persona
                         }));
+
+                        // Comprobar si existe un borrador guardado en servidor para este token
+                        try {
+                            const draftRes = await sagrilaftService.obtenerBorradorPorToken(token);
+                            if (draftRes && draftRes.exists && draftRes.draft) {
+                                setBorradorDetectadoToken(draftRes);
+                            }
+                        } catch (e) {}
                     }
                 } catch (error) {
                     showToast("El enlace de invitación es inválido o ha expirado.");
@@ -273,6 +293,22 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         
         inicializarFormulario();
     }, [token]);
+
+    // Detectar borrador local en navegador si no hay token
+    useEffect(() => {
+        if (!token) {
+            try {
+                const storageKey = 'sagrilaft_draft_' + (isGenericEmpleado ? 'empleado' : 'proveedor');
+                const localDraft = localStorage.getItem(storageKey);
+                if (localDraft) {
+                    const parsed = JSON.parse(localDraft);
+                    if (parsed && parsed.formData && (parsed.formData.correo_electronico || parsed.formData.nombres || parsed.formData.razon_social)) {
+                        setLocalDraftDetectado(parsed);
+                    }
+                }
+            } catch (e) {}
+        }
+    }, [token, isGenericEmpleado]);
 
     // Estados temporales para listas dinámicas y fechas de documentos
     const [fechasDocumentos, setFechasDocumentos] = useState({});
@@ -681,6 +717,116 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         if (prevStep) setPaso(prevStep.id);
     };
 
+    // --- MÉTODOS DE GESTIÓN DE BORRADORES ---
+    const handleGuardarBorradorClick = async () => {
+        const emailExistente = formData.correo_electronico || formData.correo_corporativo_juridica;
+        if (!emailExistente || !emailExistente.includes('@')) {
+            setEmailParaGuardar('');
+            setModalEmailGuardar(true);
+            return;
+        }
+        await ejecutarGuardarBorrador(emailExistente);
+    };
+
+    const ejecutarGuardarBorrador = async (emailToSave) => {
+        setGuardandoBorrador(true);
+        try {
+            const datosConEmail = { ...formData };
+            if (emailToSave) {
+                if (formData.tipo_persona === 'juridica') {
+                    datosConEmail.correo_corporativo_juridica = emailToSave;
+                } else {
+                    datosConEmail.correo_electronico = emailToSave;
+                }
+            }
+            await sagrilaftService.guardarBorrador({
+                email: emailToSave,
+                token,
+                tipo_vinculacion: formData.clase_vinculacion,
+                paso_actual: paso,
+                datos_formulario: datosConEmail
+            });
+            try {
+                const storageKey = 'sagrilaft_draft_' + (isGenericEmpleado ? 'empleado' : 'proveedor');
+                localStorage.setItem(storageKey, JSON.stringify({ formData: datosConEmail, paso }));
+            } catch (e) {}
+
+            setModalEmailGuardar(false);
+            showToast("¡Progreso guardado exitosamente! Podrás reanudarlo en cualquier momento.", "success");
+        } catch (err) {
+            showToast(err.response?.data?.error || "Error guardando el borrador.", "error");
+        } finally {
+            setGuardandoBorrador(false);
+        }
+    };
+
+    const handleSolicitarOtpBorrador = async (e) => {
+        e?.preventDefault?.();
+        if (!modalBorrador.email || !modalBorrador.email.includes('@')) {
+            setModalBorrador(prev => ({ ...prev, error: 'Por favor ingrese un correo electrónico válido.' }));
+            return;
+        }
+        setModalBorrador(prev => ({ ...prev, cargando: true, error: '' }));
+        try {
+            await sagrilaftService.solicitarOtpBorrador({
+                email: modalBorrador.email,
+                empresa_destino: formData.empresa_destino
+            });
+            setModalBorrador(prev => ({ ...prev, cargando: false, step: 'input_code', error: '' }));
+            showToast("Código de acceso enviado a su correo.", "success");
+        } catch (err) {
+            setModalBorrador(prev => ({
+                ...prev,
+                cargando: false,
+                error: err.response?.data?.error || "Error enviando el código. Verifique que exista un formulario iniciado con este correo."
+            }));
+        }
+    };
+
+    const handleVerificarOtpBorrador = async (e) => {
+        e?.preventDefault?.();
+        if (!modalBorrador.code || modalBorrador.code.length < 5) {
+            setModalBorrador(prev => ({ ...prev, error: 'Ingrese el código de 6 dígitos que recibió en su correo.' }));
+            return;
+        }
+        setModalBorrador(prev => ({ ...prev, cargando: true, error: '' }));
+        try {
+            const res = await sagrilaftService.recuperarBorrador({
+                email: modalBorrador.email,
+                code: modalBorrador.code
+            });
+            if (res && res.draft) {
+                cargarBorradorDirecto(res.draft, res.paso_actual);
+                setModalBorrador({ open: false, email: '', code: '', step: 'input_email', cargando: false, error: '' });
+                showToast("¡Formulario en proceso recuperado exitosamente!", "success");
+            } else {
+                setModalBorrador(prev => ({ ...prev, cargando: false, error: 'No se encontró el borrador.' }));
+            }
+        } catch (err) {
+            setModalBorrador(prev => ({
+                ...prev,
+                cargando: false,
+                error: err.response?.data?.error || "Código inválido o expirado."
+            }));
+        }
+    };
+
+    const cargarBorradorDirecto = (draftData, stepNumber) => {
+        setFormData(prev => ({
+            ...prev,
+            ...draftData,
+            token: token || draftData.token || prev.token
+        }));
+        setTerminosAceptados(true);
+        if (stepNumber && stepNumber > 0 && stepNumber < 11) {
+            setPaso(stepNumber);
+        } else {
+            setPaso(1);
+        }
+        setBorradorDetectadoToken(null);
+        setLocalDraftDetectado(null);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (codigoOTP.length < 5) return showToast("Código OTP inválido.");
@@ -813,9 +959,32 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
             <div style={{ maxWidth: '800px', margin: '0 auto' }}>
             {/* Header / Barra de Progreso */}
             <div style={{ background: 'var(--surface)', padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '1rem', position: 'sticky', top: 0, zIndex: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <ShieldCheck size={28} color="var(--primary)" style={{ flexShrink: 0 }} />
-                    <h2 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.1rem', lineHeight: '1.3' }}>Portal de Vinculación Sistema de Autocontrol y Gestión del Riesgo LA/FT/FP y C/ST</h2>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <ShieldCheck size={28} color="var(--primary)" style={{ flexShrink: 0 }} />
+                        <h2 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.05rem', lineHeight: '1.3' }}>
+                            {formData.empresa_destino === 'ambas' 
+                                ? 'Portal SAGRILAFT - Cosechas & Selecta' 
+                                : formData.empresa_destino === 'selecta'
+                                ? 'Portal SAGRILAFT - Selecta'
+                                : 'Portal SAGRILAFT - Cosechas'}
+                        </h2>
+                    </div>
+
+                    {paso < 11 && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <button 
+                                type="button" 
+                                className="btn-outline" 
+                                style={{ padding: '0.45rem 0.85rem', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '0.4rem', borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                                onClick={handleGuardarBorradorClick}
+                                disabled={guardandoBorrador}
+                                title="Guarda tu progreso actual para retomarlo después"
+                            >
+                                <Save size={15} /> {guardandoBorrador ? 'Guardando...' : 'Guardar Progreso'}
+                            </button>
+                        </div>
+                    )}
                 </div>
                 <div style={{ display: 'flex', gap: '4px', width: '100%' }}>
                     {pasosDisponibles.map((p, i) => (
@@ -826,6 +995,68 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
 
             <div style={{ maxWidth: '900px', margin: '2rem auto', padding: '0 1rem' }}>
                 
+                {/* Banner de Borrador Detectado por Token */}
+                {borradorDetectadoToken && paso < 11 && (
+                    <motion.div initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} style={{ background: '#f0fdf4', padding: '1rem 1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid #bbf7d0', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <FolderOpen size={22} color="var(--success)" />
+                            <div>
+                                <h5 style={{ margin: '0 0 2px', color: 'var(--success-text)', fontSize: '0.95rem' }}>Progreso Previo Detectado</h5>
+                                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-main)' }}>Hemos encontrado un borrador guardado para esta invitación. ¿Deseas reanudarlo?</p>
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button type="button" className="btn-primary" style={{ padding: '0.45rem 1rem', fontSize: '0.85rem' }} onClick={() => cargarBorradorDirecto(borradorDetectadoToken.draft, borradorDetectadoToken.paso_actual)}>
+                                Reanudar Borrador
+                            </button>
+                            <button type="button" className="btn-outline" style={{ padding: '0.45rem 0.75rem', fontSize: '0.85rem' }} onClick={() => setBorradorDetectadoToken(null)}>
+                                Empezar Nuevo
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* Banner de Sesión Anterior Local en Navegador */}
+                {localDraftDetectado && !borradorDetectadoToken && paso === 1 && (
+                    <motion.div initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} style={{ background: '#eff6ff', padding: '1rem 1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid #bfdbfe', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <FolderOpen size={22} color="var(--primary)" />
+                            <div>
+                                <h5 style={{ margin: '0 0 2px', color: 'var(--primary)', fontSize: '0.95rem' }}>Sesión Detectada en este Navegador</h5>
+                                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-main)' }}>¿Deseas restaurar los datos que estabas completando?</p>
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button type="button" className="btn-primary" style={{ padding: '0.45rem 1rem', fontSize: '0.85rem' }} onClick={() => cargarBorradorDirecto(localDraftDetectado.formData, localDraftDetectado.paso)}>
+                                Restaurar Sesión
+                            </button>
+                            <button type="button" className="btn-outline" style={{ padding: '0.45rem 0.75rem', fontSize: '0.85rem' }} onClick={() => { localStorage.removeItem('sagrilaft_draft_' + (isGenericEmpleado ? 'empleado' : 'proveedor')); setLocalDraftDetectado(null); }}>
+                                Descartar
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* Banner de Inicio: "¿Ya habías empezado?" */}
+                {paso === 1 && !borradorDetectadoToken && !localDraftDetectado && (
+                    <div style={{ background: 'var(--surface-hover)', padding: '0.85rem 1.25rem', borderRadius: '8px', border: '1px dashed var(--border)', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                            <FolderOpen size={20} color="var(--primary)" />
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>
+                                ¿Ya habías iniciado este formulario y deseas continuar donde lo dejaste?
+                            </span>
+                        </div>
+                        <button 
+                            type="button" 
+                            className="btn-outline" 
+                            style={{ padding: '0.4rem 0.85rem', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                            onClick={() => setModalBorrador({ open: true, email: formData.correo_electronico || formData.correo_corporativo_juridica || '', code: '', step: 'input_email', cargando: false, error: '' })}
+                        >
+                            <FolderOpen size={14} /> Continuar Formulario en Proceso
+                        </button>
+                    </div>
+                )}
+
                 {esCorreccion && paso < 11 && (
                     <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} style={{ background: '#fffbeb', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid #fde68a', marginBottom: '2rem', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
                         <AlertTriangle size={24} color="#d97706" style={{ flexShrink: 0 }} />
@@ -851,7 +1082,7 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                                 <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
                                     {renderInput("Fecha Diligenciamiento", "fecha_diligenciamiento", "date", "1fr", true)}
                                     {!isInternalRole && renderSelect("Ámbito de Operación", "ambito_operacion", [{value: 'nacional', label: 'Nacional'}, {value: 'internacional', label: 'Internacional'}])}
-                                    {renderSelect("Empresa Destino", "empresa_destino", [{value: 'selecta', label: 'Selecta'}, {value: 'cosechas', label: 'Cosechas'}])}
+                                    {renderSelect("Empresa Destino", "empresa_destino", [{value: 'selecta', label: 'Selecta'}, {value: 'cosechas', label: 'Cosechas'}, {value: 'ambas', label: 'Ambas (Cosechas y Selecta)'}])}
                                 </div>
                                 <div className="form-grid form-grid-3" style={{ marginBottom: "1.5rem" }}>
                                     {renderSelect("Tipo de Solicitud", "tipo_solicitud", [{value: 'vinculacion', label: 'Vinculación Nueva'}, {value: 'actualizacion', label: 'Actualización de Datos'}])}
@@ -2230,6 +2461,165 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                 </div>
             </div>
             </div> {/* Cierra maxWidth: 800px */}
+
+            {/* MODAL PARA REANUDAR FORMULARIO CON OTP */}
+            {modalBorrador.open && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+                    <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="card glass-panel" style={{ width: '100%', maxWidth: '480px', padding: '2rem', background: 'var(--bg-color)', border: '1px solid var(--border)', position: 'relative' }}>
+                        <button 
+                            type="button" 
+                            onClick={() => setModalBorrador({ open: false, email: '', code: '', step: 'input_email', cargando: false, error: '' })}
+                            style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                        >
+                            <X size={20} />
+                        </button>
+
+                        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                            <div style={{ display: 'inline-flex', padding: '0.75rem', background: 'rgba(20, 80, 120, 0.1)', borderRadius: '50%', marginBottom: '0.75rem' }}>
+                                <FolderOpen size={32} color="var(--primary)" />
+                            </div>
+                            <h3 style={{ margin: '0 0 0.5rem', color: 'var(--primary)' }}>Continuar Formulario en Proceso</h3>
+                            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                {modalBorrador.step === 'input_email' 
+                                    ? 'Ingresa el correo electrónico con el que guardaste o iniciaste tu formulario para enviarte un código de seguridad.'
+                                    : `Ingresa el código de 6 dígitos que enviamos a ${modalBorrador.email}`}
+                            </p>
+                        </div>
+
+                        {modalBorrador.error && (
+                            <div style={{ padding: '0.75rem 1rem', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', color: '#b91c1c', fontSize: '0.85rem', marginBottom: '1rem', textAlign: 'center' }}>
+                                {modalBorrador.error}
+                            </div>
+                        )}
+
+                        {modalBorrador.step === 'input_email' ? (
+                            <form onSubmit={handleSolicitarOtpBorrador}>
+                                <div style={{ marginBottom: '1.25rem' }}>
+                                    <label className="label required">Correo Electrónico</label>
+                                    <div style={{ position: 'relative' }}>
+                                        <Mail size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                        <input 
+                                            required 
+                                            type="email" 
+                                            className="input-field" 
+                                            style={{ paddingLeft: '2.5rem' }} 
+                                            placeholder="tu-correo@empresa.com"
+                                            value={modalBorrador.email} 
+                                            onChange={e => setModalBorrador({...modalBorrador, email: e.target.value, error: ''})} 
+                                        />
+                                    </div>
+                                </div>
+                                <button 
+                                    type="submit" 
+                                    className="btn-primary" 
+                                    style={{ width: '100%', padding: '0.85rem' }}
+                                    disabled={modalBorrador.cargando}
+                                >
+                                    {modalBorrador.cargando ? 'Enviando código...' : 'Enviar Código de Seguridad'}
+                                </button>
+                            </form>
+                        ) : (
+                            <form onSubmit={handleVerificarOtpBorrador}>
+                                <div style={{ marginBottom: '1.25rem' }}>
+                                    <label className="label required">Código de Seguridad (6 Dígitos)</label>
+                                    <div style={{ position: 'relative' }}>
+                                        <Lock size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                        <input 
+                                            required 
+                                            type="text" 
+                                            maxLength={6}
+                                            className="input-field" 
+                                            style={{ paddingLeft: '2.5rem', letterSpacing: '4px', textAlign: 'center', fontSize: '1.2rem', fontWeight: 'bold' }} 
+                                            placeholder="123456"
+                                            value={modalBorrador.code} 
+                                            onChange={e => setModalBorrador({...modalBorrador, code: e.target.value.replace(/\D/g, ''), error: ''})} 
+                                        />
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                    <button 
+                                        type="submit" 
+                                        className="btn-primary" 
+                                        style={{ width: '100%', padding: '0.85rem' }}
+                                        disabled={modalBorrador.cargando}
+                                    >
+                                        {modalBorrador.cargando ? 'Verificando...' : 'Verificar y Cargar Formulario'}
+                                    </button>
+                                    <button 
+                                        type="button" 
+                                        className="btn-outline" 
+                                        style={{ width: '100%', padding: '0.65rem', fontSize: '0.85rem' }}
+                                        onClick={() => setModalBorrador({...modalBorrador, step: 'input_email', code: '', error: ''})}
+                                    >
+                                        Cambiar Correo
+                                    </button>
+                                </div>
+                            </form>
+                        )}
+                    </motion.div>
+                </div>
+            )}
+
+            {/* MODAL PARA SOLICITAR CORREO AL GUARDAR (EMPLEADOS QUE NO LO HAN ESCRITO) */}
+            {modalEmailGuardar && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+                    <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="card glass-panel" style={{ width: '100%', maxWidth: '440px', padding: '2rem', background: 'var(--bg-color)', border: '1px solid var(--border)', position: 'relative' }}>
+                        <button 
+                            type="button" 
+                            onClick={() => setModalEmailGuardar(false)}
+                            style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                        >
+                            <X size={20} />
+                        </button>
+
+                        <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
+                            <div style={{ display: 'inline-flex', padding: '0.75rem', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '50%', marginBottom: '0.75rem' }}>
+                                <Save size={28} color="var(--success)" />
+                            </div>
+                            <h3 style={{ margin: '0 0 0.5rem', color: 'var(--primary)' }}>Guardar tu Avance</h3>
+                            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                Para que puedas retomar tu formulario más tarde con un código OTP, ingresa tu correo electrónico:
+                            </p>
+                        </div>
+
+                        <form onSubmit={(e) => { e.preventDefault(); if (emailParaGuardar) ejecutarGuardarBorrador(emailParaGuardar); }}>
+                            <div style={{ marginBottom: '1.25rem' }}>
+                                <label className="label required">Tu Correo Electrónico</label>
+                                <div style={{ position: 'relative' }}>
+                                    <Mail size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                    <input 
+                                        required 
+                                        type="email" 
+                                        className="input-field" 
+                                        style={{ paddingLeft: '2.5rem' }} 
+                                        placeholder="tu-correo@empresa.com"
+                                        value={emailParaGuardar} 
+                                        onChange={e => setEmailParaGuardar(e.target.value)} 
+                                    />
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                <button 
+                                    type="submit" 
+                                    className="btn-primary" 
+                                    style={{ flex: 1, padding: '0.75rem' }}
+                                    disabled={guardandoBorrador}
+                                >
+                                    {guardandoBorrador ? 'Guardando...' : 'Confirmar y Guardar'}
+                                </button>
+                                <button 
+                                    type="button" 
+                                    className="btn-outline" 
+                                    style={{ padding: '0.75rem' }}
+                                    onClick={() => setModalEmailGuardar(false)}
+                                >
+                                    Cancelar
+                                </button>
+                            </div>
+                        </form>
+                    </motion.div>
+                </div>
+            )}
 
             <datalist id="ciiu-list">
                 {ciiuList.map(item => <option key={item} value={item} />)}

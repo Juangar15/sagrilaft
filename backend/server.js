@@ -93,13 +93,29 @@ if (process.env.SMTP_SERVER) {
 
 // Endpoint para generar invitaciones (Gatekeeper)
 app.post('/api/v1/invitaciones', async (req, res) => {
-    const { razon_social, correo, tipo_vinculacion, area_solicitante, empresa_destino, nombre_solicitante } = req.body;
+    const { razon_social, correo, tipo_vinculacion, area_solicitante, empresa_destino, nombre_solicitante, correo_solicitante, tipo_tramite } = req.body;
     if (!razon_social || !correo || !tipo_vinculacion || !area_solicitante) {
         return res.status(400).json({ error: "Faltan datos obligatorios" });
     }
 
-    const nombreEmpresaFull = empresa_destino === 'selecta' ? 'SELECTA COMPAÑÍA DE CEREALES S.A.S.' : 'COSECHAS BEBIDAS NATURALES S.A.S.';
-    const aliasEmpresa = empresa_destino === 'selecta' ? 'Selecta Compliance' : 'Cosechas Compliance';
+    let nombreEmpresaFull = 'COSECHAS BEBIDAS NATURALES S.A.S.';
+    let aliasEmpresa = 'Cosechas Compliance';
+
+    if (empresa_destino === 'selecta') {
+        nombreEmpresaFull = 'SELECTA COMPAÑÍA DE CEREALES S.A.S.';
+        aliasEmpresa = 'Selecta Compliance';
+    } else if (empresa_destino === 'ambas') {
+        nombreEmpresaFull = 'COSECHAS BEBIDAS NATURALES S.A.S. y SELECTA COMPAÑÍA DE CEREALES S.A.S.';
+        aliasEmpresa = 'Cosechas y Selecta Compliance';
+    }
+
+    const esActualizacion = tipo_tramite === 'actualizacion';
+    const tituloProceso = esActualizacion ? 'Actualización de Datos y Debida Diligencia' : 'Proceso de Vinculación y Debida Diligencia';
+    const accionTexto = esActualizacion ? 'la actualización periódica de sus datos' : 'su vinculación';
+    const btnTexto = esActualizacion ? 'Actualizar Formulario SAGRILAFT' : 'Completar Formulario SAGRILAFT';
+    const subjectTexto = esActualizacion 
+        ? `Invitación a Actualización de Datos - SAGRILAFT ${nombreEmpresaFull}`
+        : `Invitación a Registro de Contrapartes - SAGRILAFT ${nombreEmpresaFull}`;
 
     try {
         // Generar token JWT válido por 7 días
@@ -109,7 +125,9 @@ app.post('/api/v1/invitaciones', async (req, res) => {
             razon_social, 
             empresa_destino,
             area_solicitante,
-            nombre_solicitante: (nombre_solicitante || '').trim()
+            nombre_solicitante: (nombre_solicitante || '').trim(),
+            correo_solicitante: (correo_solicitante || '').trim(),
+            tipo_tramite: tipo_tramite || 'vinculacion'
         }, JWT_SECRET, { expiresIn: '7d' });
 
         const nuevaInvitacion = {
@@ -120,7 +138,9 @@ app.post('/api/v1/invitaciones', async (req, res) => {
             tipo_vinculacion,
             area_solicitante,
             nombre_solicitante: (nombre_solicitante || '').trim(),
+            correo_solicitante: (correo_solicitante || '').trim(),
             empresa_destino,
+            tipo_tramite: tipo_tramite || 'vinculacion',
             fecha_expiracion: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
             usado: false,
             fecha_creacion: new Date().toISOString()
@@ -155,15 +175,15 @@ app.post('/api/v1/invitaciones', async (req, res) => {
         const mailOptions = {
             from: `"${aliasEmpresa}" <${process.env.SMTP_USER || 'no-reply@cosechasexpress.com'}>`,
             to: correo,
-            subject: `Invitación a Registro de Contrapartes - SAGRILAFT ${nombreEmpresaFull}`,
+            subject: subjectTexto,
             html: `
                 <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; border: 1px solid #ddd; border-radius: 10px;">
-                    <h2 style="color: #1a4f78;">Proceso de Vinculación y Debida Diligencia</h2>
+                    <h2 style="color: #1a4f78;">${tituloProceso}</h2>
                     <p>Estimado(a) <strong>${razon_social}</strong>,</p>
-                    <p>El área de <strong>${area_solicitante}</strong>${nombre_solicitante ? ` (solicitado por <strong>${nombre_solicitante}</strong>)` : ''} ha solicitado su vinculación como <strong>${tipo_vinculacion}</strong>.</p>
+                    <p>El área de <strong>${area_solicitante}</strong>${nombre_solicitante ? ` (solicitado por <strong>${nombre_solicitante}</strong>)` : ''} ha solicitado ${accionTexto} como <strong>${tipo_vinculacion}</strong> ante <strong>${nombreEmpresaFull}</strong>.</p>
                     <p>Por favor, ingrese al siguiente enlace seguro para completar su registro. Este enlace es único e intransferible, y expira en 7 días.</p>
                     <div style="text-align: center; margin: 30px 0;">
-                        <a href="${linkAcceso}" style="background-color: #1a4f78; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Completar Formulario SAGRILAFT</a>
+                        <a href="${linkAcceso}" style="background-color: #1a4f78; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">${btnTexto}</a>
                     </div>
                     <p style="font-size: 0.85em; color: #666;">Si tiene algún inconveniente, responda a este correo.<br><br>Atentamente,<br>Oficialía de Cumplimiento.</p>
                 </div>
@@ -215,7 +235,9 @@ app.post('/api/v1/invitaciones/validar', async (req, res) => {
                 ...decoded, 
                 area_solicitante: invitacion?.area_solicitante || decoded.area_solicitante || '',
                 nombre_solicitante: invitacion?.nombre_solicitante || decoded.nombre_solicitante || '',
-                empresa_destino: invitacion?.empresa_destino || decoded.empresa_destino || ''
+                correo_solicitante: invitacion?.correo_solicitante || decoded.correo_solicitante || '',
+                tipo_tramite: invitacion?.tipo_tramite || decoded.tipo_tramite || 'vinculacion',
+                empresa_destino: invitacion?.empresa_destino || decoded.empresa_destino || 'cosechas'
             } 
         });
     } catch (error) {
@@ -261,12 +283,13 @@ app.post('/api/v1/matriz-riesgos', async (req, res) => {
     }
 });
 
-// Obtener todas las solicitudes para el Dashboard (Kanban)
+// Obtener todas las solicitudes para el Dashboard (Kanban) - excluye borradores no enviados
 app.get('/api/v1/solicitudes', async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('solicitudes_sagrilaft')
             .select('*')
+            .neq('estado_actual', 'BORRADOR')
             .order('fecha_creacion', { ascending: false });
 
         if (error) throw error;
@@ -381,10 +404,16 @@ app.post('/api/v1/onboarding', upload.any(), async (req, res) => {
                 }
             } catch (e) {}
 
-            // Si vino del token JWT / Invitación, asegurar que nombre_solicitante y area_solicitante se preserven
+            // Si vino del token JWT / Invitación, asegurar que nombre_solicitante, correo_solicitante, tipo_tramite y area_solicitante se preserven
             if (invitacion) {
                 if (!formData.nombre_solicitante && invitacion.nombre_solicitante) {
                     formData.nombre_solicitante = invitacion.nombre_solicitante;
+                }
+                if (!formData.correo_solicitante && invitacion.correo_solicitante) {
+                    formData.correo_solicitante = invitacion.correo_solicitante;
+                }
+                if (!formData.tipo_tramite && invitacion.tipo_tramite) {
+                    formData.tipo_tramite = invitacion.tipo_tramite;
                 }
                 if (!formData.area_solicitante && invitacion.area_solicitante) {
                     formData.area_solicitante = invitacion.area_solicitante;
@@ -399,6 +428,12 @@ app.post('/api/v1/onboarding', upload.any(), async (req, res) => {
                     if (!formData.nombre_solicitante && decoded.nombre_solicitante) {
                         formData.nombre_solicitante = decoded.nombre_solicitante;
                     }
+                    if (!formData.correo_solicitante && decoded.correo_solicitante) {
+                        formData.correo_solicitante = decoded.correo_solicitante;
+                    }
+                    if (!formData.tipo_tramite && decoded.tipo_tramite) {
+                        formData.tipo_tramite = decoded.tipo_tramite;
+                    }
                     if (!formData.area_solicitante && decoded.area_solicitante) {
                         formData.area_solicitante = decoded.area_solicitante;
                     }
@@ -409,15 +444,24 @@ app.post('/api/v1/onboarding', upload.any(), async (req, res) => {
             } catch (e) {}
         }
 
-        // 1. Verificar si la solicitud ya existe (Ping-Pong) usando el token
+        // 1. Verificar si la solicitud ya existe (Ping-Pong o Borrador previo)
         let solicitudExistente = null;
         if (token) {
             const { data } = await supabase
                 .from('solicitudes_sagrilaft')
                 .select('id, estado_actual, datos_formulario')
                 .eq('token_asociado', token)
-                .single();
+                .maybeSingle();
             solicitudExistente = data;
+        }
+        if (!solicitudExistente && nit) {
+            const { data } = await supabase
+                .from('solicitudes_sagrilaft')
+                .select('id, estado_actual, datos_formulario')
+                .eq('nit_cedula', nit)
+                .eq('estado_actual', 'BORRADOR')
+                .maybeSingle();
+            if (data) solicitudExistente = data;
         }
 
         // Subir archivos a R2 (o local)
@@ -1270,6 +1314,279 @@ app.post('/api/v1/otp/verify', (req, res) => {
     return res.status(200).json({ success: true, audit: auditInfo });
 });
 
+// ==================== GESTIÓN DE BORRADORES (GUARDAR Y REANUDAR CON OTP) ====================
+const borradoresPath = path.join(os.tmpdir(), 'sagrilaft_borradores.json');
+if (!fs.existsSync(borradoresPath)) fs.writeFileSync(borradoresPath, JSON.stringify([]));
+
+// 1. Guardar Borrador
+app.post('/api/v1/borradores/guardar', async (req, res) => {
+    try {
+        const { email, token, tipo_vinculacion, paso_actual, datos_formulario } = req.body;
+        if (!datos_formulario) {
+            return res.status(400).json({ error: "No se proporcionaron datos del formulario." });
+        }
+
+        const correoIdentificador = (email || datos_formulario.correo_electronico || datos_formulario.correo_corporativo_juridica || '').trim().toLowerCase();
+        const nit = datos_formulario.numero_identificacion || 'BORRADOR';
+        const razonSocial = datos_formulario.tipo_persona === 'juridica' 
+            ? (datos_formulario.razon_social || 'Borrador Empresa')
+            : (`${datos_formulario.nombres || ''} ${datos_formulario.primer_apellido || ''}`.trim() || 'Borrador Persona');
+
+        const vinculacion = tipo_vinculacion || datos_formulario.clase_vinculacion || 'proveedor';
+        const payloadForm = {
+            ...datos_formulario,
+            correo_electronico: datos_formulario.correo_electronico || correoIdentificador,
+            paso_actual: paso_actual || 1,
+            ultima_modificacion: new Date().toISOString()
+        };
+
+        let borradorGuardado = null;
+
+        // Intentar actualizar o insertar en Supabase
+        try {
+            let query = supabase.from('solicitudes_sagrilaft').select('id, token_asociado, nit_cedula').eq('estado_actual', 'BORRADOR');
+            if (token) {
+                query = query.eq('token_asociado', token);
+            } else if (nit && nit !== 'BORRADOR') {
+                query = query.eq('nit_cedula', nit);
+            }
+
+            const { data: existente } = await query.maybeSingle();
+
+            if (existente) {
+                const { data: updated, error: errUpd } = await supabase
+                    .from('solicitudes_sagrilaft')
+                    .update({
+                        nit_cedula: nit,
+                        razon_social: razonSocial,
+                        tipo_vinculacion: vinculacion,
+                        token_asociado: token || existente.token_asociado,
+                        datos_formulario: payloadForm
+                    })
+                    .eq('id', existente.id)
+                    .select()
+                    .single();
+                if (!errUpd && updated) borradorGuardado = updated;
+            } else {
+                const { data: inserted, error: errIns } = await supabase
+                    .from('solicitudes_sagrilaft')
+                    .insert([{
+                        nit_cedula: nit,
+                        razon_social: razonSocial,
+                        tipo_vinculacion: vinculacion,
+                        estado_actual: 'BORRADOR',
+                        token_asociado: token || null,
+                        datos_formulario: payloadForm
+                    }])
+                    .select()
+                    .single();
+                if (!errIns && inserted) borradorGuardado = inserted;
+            }
+        } catch (supaErr) {
+            console.error("Error guardando borrador en Supabase:", supaErr.message);
+        }
+
+        // Respaldo en JSON local
+        try {
+            let borradores = JSON.parse(fs.readFileSync(borradoresPath));
+            const idx = borradores.findIndex(b => (token && b.token === token) || (correoIdentificador && b.email === correoIdentificador) || (nit !== 'BORRADOR' && b.nit === nit));
+            const nuevoObj = {
+                id: borradorGuardado ? borradorGuardado.id : Date.now().toString(),
+                email: correoIdentificador,
+                token: token || null,
+                nit,
+                razonSocial,
+                vinculacion,
+                paso_actual: paso_actual || 1,
+                datos_formulario: payloadForm,
+                updatedAt: new Date().toISOString()
+            };
+            if (idx >= 0) {
+                borradores[idx] = nuevoObj;
+            } else {
+                borradores.push(nuevoObj);
+            }
+            fs.writeFileSync(borradoresPath, JSON.stringify(borradores, null, 2));
+        } catch (jsonErr) {
+            console.error("Error guardando borrador en JSON:", jsonErr.message);
+        }
+
+        return res.status(200).json({ success: true, mensaje: "Progreso guardado exitosamente." });
+    } catch (err) {
+        console.error("Error en /borradores/guardar:", err);
+        return res.status(500).json({ error: "Error al guardar borrador", detalle: err.message });
+    }
+});
+
+// 2. Solicitar OTP para reanudar borrador
+app.post('/api/v1/borradores/solicitar-codigo', async (req, res) => {
+    let { email, empresa_destino } = req.body;
+    if (!email || typeof email !== 'string') {
+        return res.status(400).json({ error: "Debe ingresar un correo electrónico válido." });
+    }
+    email = email.trim().toLowerCase();
+
+    try {
+        let existeBorrador = false;
+        try {
+            const { data } = await supabase
+                .from('solicitudes_sagrilaft')
+                .select('id, datos_formulario')
+                .eq('estado_actual', 'BORRADOR');
+            if (data && data.some(d => {
+                const mail1 = d.datos_formulario?.correo_electronico?.trim()?.toLowerCase();
+                const mail2 = d.datos_formulario?.correo_corporativo_juridica?.trim()?.toLowerCase();
+                return mail1 === email || mail2 === email;
+            })) {
+                existeBorrador = true;
+            }
+        } catch (e) {}
+
+        if (!existeBorrador) {
+            try {
+                const borradores = JSON.parse(fs.readFileSync(borradoresPath));
+                if (borradores.some(b => b.email === email || b.datos_formulario?.correo_electronico?.trim()?.toLowerCase() === email)) {
+                    existeBorrador = true;
+                }
+            } catch (e) {}
+        }
+
+        if (!existeBorrador) {
+            return res.status(404).json({ error: "No se encontró ningún formulario en proceso registrado con este correo electrónico." });
+        }
+
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        otpCache.set('draft_' + email, { code, expiresAt: Date.now() + 15 * 60 * 1000 });
+
+        const nombreEmpresaFull = empresa_destino === 'selecta' 
+            ? 'SELECTA COMPAÑÍA DE CEREALES S.A.S.' 
+            : empresa_destino === 'ambas' 
+            ? 'COSECHAS BEBIDAS NATURALES S.A.S. y SELECTA COMPAÑÍA DE CEREALES S.A.S.' 
+            : 'COSECHAS BEBIDAS NATURALES S.A.S.';
+        const aliasEmpresa = empresa_destino === 'selecta' ? 'Selecta Compliance' : empresa_destino === 'ambas' ? 'Cosechas y Selecta Compliance' : 'Cosechas Compliance';
+
+        if (transporter) {
+            await transporter.sendMail({
+                from: `"${aliasEmpresa}" <${process.env.SMTP_USER || 'no-reply@cosechasexpress.com'}>`,
+                to: email,
+                subject: `Código de Seguridad para reanudar formulario SAGRILAFT - ${nombreEmpresaFull}`,
+                html: `
+                    <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 500px;">
+                        <h2 style="color: #0f172a;">Reanudar Formulario SAGRILAFT</h2>
+                        <p>Hemos recibido una solicitud para continuar el diligenciamiento de su formulario en <strong>${nombreEmpresaFull}</strong>.</p>
+                        <p>Su código de acceso temporal (OTP) es:</p>
+                        <h1 style="background: #f1f5f9; padding: 15px; text-align: center; letter-spacing: 5px; color: #3b82f6; border-radius: 5px;">${code}</h1>
+                        <p style="font-size: 0.85rem; color: #64748b;">Este código expira en 15 minutos. Si no solicitó reanudar ningún formulario, puede ignorar este mensaje.</p>
+                    </div>
+                `
+            });
+        }
+
+        return res.status(200).json({ success: true, mensaje: "Código de acceso enviado a su correo." });
+    } catch (err) {
+        console.error("Error solicitando OTP de borrador:", err);
+        return res.status(500).json({ error: "Error enviando el código de acceso", detalle: err.message });
+    }
+});
+
+// 3. Validar OTP y recuperar borrador
+app.post('/api/v1/borradores/recuperar', async (req, res) => {
+    let { email, code } = req.body;
+    if (!email || !code) {
+        return res.status(400).json({ error: "Correo y código son requeridos." });
+    }
+    email = email.trim().toLowerCase();
+    const record = otpCache.get('draft_' + email);
+
+    if (!record || record.code !== code.trim() || Date.now() > record.expiresAt) {
+        return res.status(400).json({ error: "El código es inválido o ha expirado. Por favor solicite uno nuevo." });
+    }
+
+    otpCache.delete('draft_' + email);
+
+    try {
+        let borrador = null;
+
+        // Buscar en Supabase
+        try {
+            const { data } = await supabase
+                .from('solicitudes_sagrilaft')
+                .select('*')
+                .eq('estado_actual', 'BORRADOR')
+                .order('fecha_creacion', { ascending: false });
+            if (data) {
+                borrador = data.find(d => {
+                    const mail1 = d.datos_formulario?.correo_electronico?.trim()?.toLowerCase();
+                    const mail2 = d.datos_formulario?.correo_corporativo_juridica?.trim()?.toLowerCase();
+                    return mail1 === email || mail2 === email;
+                });
+            }
+        } catch (e) {}
+
+        // Fallback a JSON local
+        if (!borrador) {
+            try {
+                const borradores = JSON.parse(fs.readFileSync(borradoresPath));
+                const match = borradores.find(b => b.email === email || b.datos_formulario?.correo_electronico?.trim()?.toLowerCase() === email);
+                if (match) borrador = match;
+            } catch (e) {}
+        }
+
+        if (!borrador) {
+            return res.status(404).json({ error: "No se encontró el borrador solicitado." });
+        }
+
+        return res.status(200).json({
+            success: true,
+            draft: borrador.datos_formulario,
+            paso_actual: borrador.datos_formulario?.paso_actual || 1,
+            token: borrador.token_asociado || borrador.token
+        });
+    } catch (err) {
+        console.error("Error recuperando borrador:", err);
+        return res.status(500).json({ error: "Error recuperando el borrador", detalle: err.message });
+    }
+});
+
+// 4. Obtener borrador por Token (para proveedores con link)
+app.get('/api/v1/borradores/token/:token', async (req, res) => {
+    const { token } = req.params;
+    if (!token) return res.status(400).json({ error: "Token no proporcionado" });
+
+    try {
+        let borrador = null;
+        try {
+            const { data } = await supabase
+                .from('solicitudes_sagrilaft')
+                .select('*')
+                .eq('token_asociado', token)
+                .eq('estado_actual', 'BORRADOR')
+                .maybeSingle();
+            if (data) borrador = data;
+        } catch (e) {}
+
+        if (!borrador) {
+            try {
+                const borradores = JSON.parse(fs.readFileSync(borradoresPath));
+                const match = borradores.find(b => b.token === token);
+                if (match) borrador = match;
+            } catch (e) {}
+        }
+
+        if (borrador) {
+            return res.status(200).json({
+                exists: true,
+                draft: borrador.datos_formulario,
+                paso_actual: borrador.datos_formulario?.paso_actual || 1
+            });
+        }
+
+        return res.status(200).json({ exists: false });
+    } catch (err) {
+        return res.status(500).json({ error: "Error consultando borrador por token" });
+    }
+});
+
 // Arrancar el servidor
 // Importar motor de riesgos
 // POST /api/v1/solicitudes/:id/calcular-riesgo - Simular Riesgo
@@ -1757,6 +2074,48 @@ app.post('/api/v1/solicitudes/:id/aprobar_definitivo', async (req, res) => {
         }).eq('id', id);
         
         if (error) throw error;
+
+        // Notificar a la persona del área que solicitó la vinculación/actualización
+        const correoSolicitante = sol.datos_formulario?.correo_solicitante;
+        if (transporter && correoSolicitante) {
+            try {
+                const nombreSolicitante = sol.datos_formulario?.nombre_solicitante || 'Compañero(a)';
+                const areaSolicitante = sol.datos_formulario?.area_solicitante || '';
+                const empresaDest = sol.datos_formulario?.empresa_destino;
+                const nombreEmpresaFull = empresaDest === 'selecta' 
+                    ? 'SELECTA COMPAÑÍA DE CEREALES S.A.S.' 
+                    : empresaDest === 'ambas' 
+                    ? 'COSECHAS BEBIDAS NATURALES S.A.S. y SELECTA COMPAÑÍA DE CEREALES S.A.S.' 
+                    : 'COSECHAS BEBIDAS NATURALES S.A.S.';
+                const aliasEmpresa = empresaDest === 'selecta' ? 'Selecta Compliance' : empresaDest === 'ambas' ? 'Cosechas y Selecta Compliance' : 'Cosechas Compliance';
+                const decisionTexto = estadoFinal === 'APROBADO_LIMPIO' ? 'APROBADA' : 'RECHAZADA';
+                const colorBadge = estadoFinal === 'APROBADO_LIMPIO' ? '#10b981' : '#ef4444';
+
+                await transporter.sendMail({
+                    from: `"${aliasEmpresa}" <${process.env.SMTP_USER || 'no-reply@cosechasexpress.com'}>`,
+                    to: correoSolicitante,
+                    subject: `Notificación SAGRILAFT: Solicitud de ${sol.razon_social} ha sido ${decisionTexto}`,
+                    html: `
+                        <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+                            <h2 style="color: #1e293b;">Notificación de Estado de Solicitud</h2>
+                            <p>Estimado(a) <strong>${nombreSolicitante}</strong>,</p>
+                            <p>Le informamos que el proceso de debida diligencia SAGRILAFT para la siguiente contraparte, solicitado desde el área de <strong>${areaSolicitante}</strong> ante <strong>${nombreEmpresaFull}</strong>, ha sido completado por la Oficialía de Cumplimiento:</p>
+                            <div style="background: #f8fafc; padding: 15px 20px; border-radius: 6px; border-left: 4px solid ${colorBadge}; margin: 15px 0;">
+                                <p style="margin: 0 0 6px;"><strong>Razón Social / Nombre:</strong> ${sol.razon_social}</p>
+                                <p style="margin: 0 0 6px;"><strong>NIT / Cédula:</strong> ${sol.nit_cedula}</p>
+                                <p style="margin: 0 0 6px;"><strong>Tipo de Vinculación:</strong> ${sol.tipo_vinculacion}</p>
+                                <p style="margin: 0;"><strong>Decisión Oficial:</strong> <span style="color: ${colorBadge}; font-weight: bold;">${decisionTexto}</span></p>
+                            </div>
+                            ${formAprobacion.observaciones ? `<p><strong>Observaciones registradas:</strong> ${formAprobacion.observaciones}</p>` : ''}
+                            <p style="font-size: 0.85em; color: #64748b; margin-top: 20px;">Este es un mensaje automático de notificación interna.</p>
+                        </div>
+                    `
+                });
+            } catch (mailSolErr) {
+                console.error("Error notificando al solicitante sobre decisión final:", mailSolErr.message);
+            }
+        }
+
         res.json({ 
             mensaje: 'Expediente empaquetado y decisión final registrada correctamente.',
             url_formulario: pdfUrl,
@@ -1823,30 +2182,50 @@ app.post('/api/v1/solicitudes/:id/devolver', async (req, res) => {
             try {
                 const correoProveedor = solicitud.datos_formulario.correo_electronico;
                 const empresaDestino = solicitud.datos_formulario.empresa_destino;
-                const nombreEmpresaFull = empresaDestino === 'selecta' ? 'SELECTA COMPAÑÍA DE CEREALES S.A.S.' : 'COSECHAS BEBIDAS NATURALES S.A.S.';
-                const aliasEmpresa = empresaDestino === 'selecta' ? 'Selecta Compliance' : 'Cosechas Compliance';
+                let nombreEmpresaFull = 'COSECHAS BEBIDAS NATURALES S.A.S.';
+                let aliasEmpresa = 'Cosechas Compliance';
+
+                if (empresaDestino === 'selecta') {
+                    nombreEmpresaFull = 'SELECTA COMPAÑÍA DE CEREALES S.A.S.';
+                    aliasEmpresa = 'Selecta Compliance';
+                } else if (empresaDestino === 'ambas') {
+                    nombreEmpresaFull = 'COSECHAS BEBIDAS NATURALES S.A.S. y SELECTA COMPAÑÍA DE CEREALES S.A.S.';
+                    aliasEmpresa = 'Cosechas y Selecta Compliance';
+                }
+
+                const tieneCampos = campos_a_corregir && typeof campos_a_corregir === 'object' && Object.keys(campos_a_corregir).length > 0;
+                const asuntoCorreo = tieneCampos 
+                    ? `Acción Requerida: Corrección en su proceso SAGRILAFT - ${nombreEmpresaFull}`
+                    : `Acción Requerida: Solicitud de Aclaración SAGRILAFT - ${nombreEmpresaFull}`;
 
                 await transporter.sendMail({
                     from: `"${aliasEmpresa}" <${process.env.SMTP_USER || 'no-reply@cosechasexpress.com'}>`,
                     to: correoProveedor,
-                    subject: `Acción Requerida: Corrección en su proceso SAGRILAFT - ${nombreEmpresaFull}`,
+                    subject: asuntoCorreo,
                     html: `
                         <div style="font-family: Arial, sans-serif; padding: 20px;">
                             <h2>Estimado/a ${solicitud.razon_social || 'Usuario'},</h2>
-                            <p>El equipo de Cumplimiento de ${nombreEmpresaFull} ha revisado su formulario y se requiere corregir o adjuntar la siguiente información:</p>
-                            <ul style="color: #d97706; background: #fffbeb; padding: 15px; border-radius: 5px;">
-                                ${Object.entries(campos_a_corregir).map(([campo, msg]) => `<li><b>${campo.replace(/_/g, ' ').toUpperCase()}:</b> ${msg}</li>`).join('')}
-                            </ul>
-                            <p><b>Nota del Oficial:</b> ${observaciones || 'Favor realizar las correcciones indicadas para continuar con su proceso.'}</p>
-                            <p>Por favor, utilice el siguiente enlace seguro para acceder a su formulario y subsanar estos datos:</p>
-                            <p><a href="${correctionLink}" style="background: #3b82f6; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; display: inline-block;">Corregir Formulario</a></p>
+                            ${tieneCampos ? `
+                                <p>El equipo de Cumplimiento de ${nombreEmpresaFull} ha revisado su formulario y se requiere corregir o adjuntar la siguiente información:</p>
+                                <ul style="color: #d97706; background: #fffbeb; padding: 15px; border-radius: 5px;">
+                                    ${Object.entries(campos_a_corregir).map(([campo, msg]) => `<li><b>${campo.replace(/_/g, ' ').toUpperCase()}:</b> ${msg}</li>`).join('')}
+                                </ul>
+                                <p><b>Nota del Oficial:</b> ${observaciones || 'Favor realizar las correcciones indicadas para continuar con su proceso.'}</p>
+                            ` : `
+                                <p>El equipo de Cumplimiento de ${nombreEmpresaFull} solicita formalmente una aclaración o documentación soporte respecto a su proceso de debida diligencia SAGRILAFT:</p>
+                                <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 5px; color: #92400e; margin: 15px 0;">
+                                    <p style="margin: 0; font-size: 1rem;"><strong>Requerimiento de la Oficialía de Cumplimiento:</strong><br>${observaciones || 'Favor ingresar al enlace y responder a la aclaración o adjuntar soportes solicitados.'}</p>
+                                </div>
+                            `}
+                            <p>Por favor, utilice el siguiente enlace seguro para acceder a su formulario y gestionar este requerimiento:</p>
+                            <p><a href="${correctionLink}" style="background: #3b82f6; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; display: inline-block;">${tieneCampos ? 'Corregir Formulario' : 'Ingresar y Responder Requerimiento'}</a></p>
                             <p>O copie y pegue esta URL: <br> <small>${correctionLink}</small></p>
-                            <p>Atentamente,<br>Oficial de Cumplimiento SAGRILAFT</p>
+                            <p>Atentamente,<br>Oficialía de Cumplimiento SAGRILAFT</p>
                         </div>
                     `
                 });
             } catch (mailErr) {
-                console.error("Error enviando correo de Ping-Pong:", mailErr);
+                console.error("Error enviando correo de Ping-Pong/Aclaración:", mailErr);
                 // No retornamos error, permitimos que el flujo continúe para devolver el enlace en pantalla
             }
         }

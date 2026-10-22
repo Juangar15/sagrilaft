@@ -8,9 +8,11 @@ export default function PortalInterno() {
     const [formData, setFormData] = useState({
         razon_social: '',
         correo: '',
+        tipo_tramite: 'vinculacion',
         tipo_vinculacion: 'proveedor',
         area_solicitante: '',
         nombre_solicitante: '',
+        correo_solicitante: '',
         empresa_destino: 'cosechas'
     });
     
@@ -38,13 +40,15 @@ export default function PortalInterno() {
                 error: '' 
             });
             
-            // Limpiar formulario manteniendo empresa por defecto
+            // Limpiar formulario manteniendo empresa y datos del solicitante por defecto
             setFormData({ 
                 razon_social: '', 
                 correo: '', 
+                tipo_tramite: 'vinculacion',
                 tipo_vinculacion: 'proveedor', 
-                area_solicitante: '', 
-                nombre_solicitante: '',
+                area_solicitante: formData.area_solicitante || '', 
+                nombre_solicitante: formData.nombre_solicitante || '',
+                correo_solicitante: formData.correo_solicitante || '',
                 empresa_destino: formData.empresa_destino || 'cosechas' 
             });
         } catch (error) {
@@ -184,7 +188,7 @@ export default function PortalInterno() {
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
                                     <div>
                                         <label className="label">Empresa Destino</label>
                                         <select 
@@ -194,6 +198,18 @@ export default function PortalInterno() {
                                         >
                                             <option value="cosechas">Cosechas</option>
                                             <option value="selecta">Selecta</option>
+                                            <option value="ambas">Ambas (Cosechas y Selecta)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="label">Tipo de Trámite</label>
+                                        <select 
+                                            className="input-field"
+                                            value={formData.tipo_tramite}
+                                            onChange={e => setFormData({...formData, tipo_tramite: e.target.value})}
+                                        >
+                                            <option value="vinculacion">Vinculación Inicial</option>
+                                            <option value="actualizacion">Actualización de Datos</option>
                                         </select>
                                     </div>
                                     <div>
@@ -214,44 +230,68 @@ export default function PortalInterno() {
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                                    <div>
-                                        <label className="label">Área Solicitante</label>
-                                        <div style={{ position: 'relative' }}>
-                                            <Building size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                                            <input 
-                                                required 
-                                                type="text" 
-                                                list="lista-areas-solicitantes"
-                                                className="input-field" 
-                                                style={{ paddingLeft: '2.5rem' }}
-                                                placeholder="Ej. Compras, Sistemas..."
-                                                value={formData.area_solicitante}
-                                                onChange={e => setFormData({...formData, area_solicitante: e.target.value})}
-                                            />
-                                            <datalist id="lista-areas-solicitantes">
-                                                {listaAreas.map(area => (
-                                                    <option key={area} value={area} />
-                                                ))}
-                                            </datalist>
+                                <div style={{ background: 'var(--surface-hover)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                                    <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '0.9rem', color: 'var(--primary)', fontWeight: '600' }}>
+                                        👤 Datos de la Persona del Área que Solicita
+                                    </h4>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+                                        <div>
+                                            <label className="label">Área Solicitante</label>
+                                            <div style={{ position: 'relative' }}>
+                                                <Building size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                                <input 
+                                                    required 
+                                                    type="text" 
+                                                    list="lista-areas-solicitantes"
+                                                    className="input-field" 
+                                                    style={{ paddingLeft: '2.3rem' }}
+                                                    placeholder="Ej. Compras, Sistemas..."
+                                                    value={formData.area_solicitante}
+                                                    onChange={e => setFormData({...formData, area_solicitante: e.target.value})}
+                                                />
+                                                <datalist id="lista-areas-solicitantes">
+                                                    {listaAreas.map(area => (
+                                                        <option key={area} value={area} />
+                                                    ))}
+                                                </datalist>
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <div>
-                                        <label className="label">Nombre de la Persona Solicitante</label>
-                                        <div style={{ position: 'relative' }}>
-                                            <User size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                                            <input 
-                                                required 
-                                                type="text" 
-                                                className="input-field" 
-                                                style={{ paddingLeft: '2.5rem' }}
-                                                placeholder="Ej. Carlos Gómez"
-                                                value={formData.nombre_solicitante}
-                                                onChange={e => setFormData({...formData, nombre_solicitante: e.target.value})}
-                                            />
+                                        <div>
+                                            <label className="label">Nombre del Solicitante</label>
+                                            <div style={{ position: 'relative' }}>
+                                                <User size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                                <input 
+                                                    required 
+                                                    type="text" 
+                                                    className="input-field" 
+                                                    style={{ paddingLeft: '2.3rem' }}
+                                                    placeholder="Ej. Carlos Gómez"
+                                                    value={formData.nombre_solicitante}
+                                                    onChange={e => setFormData({...formData, nombre_solicitante: e.target.value})}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="label">Correo del Solicitante (Notificaciones)</label>
+                                            <div style={{ position: 'relative' }}>
+                                                <Mail size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                                <input 
+                                                    required 
+                                                    type="email" 
+                                                    className="input-field" 
+                                                    style={{ paddingLeft: '2.3rem' }}
+                                                    placeholder="carlos@empresa.com"
+                                                    value={formData.correo_solicitante}
+                                                    onChange={e => setFormData({...formData, correo_solicitante: e.target.value})}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
+                                    <p style={{ margin: '0.5rem 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                        🔔 Se enviará una notificación a este correo cuando la Oficial de Cumplimiento apruebe o rechace la solicitud.
+                                    </p>
                                 </div>
 
                                 <button 

@@ -293,7 +293,9 @@ export default function DashboardOficial() {
 
     const handlePingPongSubmit = async () => {
         const seleccionados = Object.keys(camposPingPong).filter(k => camposPingPong[k]);
-        if (seleccionados.length === 0) return showToast("Debe seleccionar al menos un campo para devolver.", "error");
+        if (seleccionados.length === 0 && (!observacionPingPong || observacionPingPong.trim().length < 5)) {
+            return showToast("Debe marcar al menos un campo o redactar una nota detallada de aclaración para el proveedor.", "error");
+        }
         
         const payload = {};
         seleccionados.forEach(k => payload[k] = "Información ilegible, incompleta o vencida. Favor actualizar.");
@@ -308,12 +310,12 @@ export default function DashboardOficial() {
             if (res && res.enlace_correccion) {
                 setModalAlert({
                     visible: true,
-                    title: '¡Formulario Devuelto con Éxito!',
-                    message: 'Si el tercero no recibe o no tiene correo electrónico, puede enviarle directamente el siguiente enlace seguro por WhatsApp o cualquier otro medio para que pueda acceder y corregir:',
+                    title: seleccionados.length > 0 ? '¡Formulario Devuelto para Corrección!' : '¡Solicitud de Aclaración Enviada!',
+                    message: 'Se ha enviado un correo con las instrucciones al tercero. También puede compartirle directamente este enlace de acceso seguro:',
                     link: res.enlace_correccion
                 });
             } else {
-                showToast("Formulario devuelto con éxito.");
+                showToast("Requerimiento enviado con éxito.");
             }
         } catch (error) {
             showToast("Error devolviendo solicitud: " + (error.response?.data?.detalle || error.response?.data?.error || error.message), "error");
@@ -746,7 +748,9 @@ export default function DashboardOficial() {
 
     const ETIQUETAS_CAMPOS = {
         nombre_solicitante: 'Nombre de la Persona Solicitante',
+        correo_solicitante: 'Correo de la Persona Solicitante',
         area_solicitante: 'Área Solicitante',
+        tipo_tramite: 'Tipo de Trámite',
         tipo_solicitud: 'Tipo de Solicitud',
         clase_vinculacion: 'Clase de Vinculación',
         tipo_proveeduria: 'Tipo de Proveeduría',
@@ -890,7 +894,7 @@ export default function DashboardOficial() {
 
     const categoriasCampos = {
         'Información General de la Entidad': [
-            'nombre_solicitante', 'area_solicitante',
+            'nombre_solicitante', 'correo_solicitante', 'area_solicitante', 'tipo_tramite',
             'tipo_solicitud', 'clase_vinculacion', 'tipo_proveeduria', 'tipo_persona',
             'razon_social', 'nit', 'numero_identificacion', 'nit_digito', 'tipo_sociedad', 'tipo_empresa', 'fecha_constitucion',
             'nombres', 'primer_apellido', 'segundo_apellido', 'tipo_identificacion', 'fecha_expedicion', 'lugar_expedicion',
@@ -1091,6 +1095,7 @@ export default function DashboardOficial() {
                         <span>
                             Solicitado por: <strong style={{ color: 'var(--text-main)' }}>{sol.datos_formulario.nombre_solicitante || 'Sin especificar'}</strong>
                             {sol.datos_formulario.area_solicitante ? ` (${sol.datos_formulario.area_solicitante})` : ''}
+                            {sol.datos_formulario.correo_solicitante ? ` • ${sol.datos_formulario.correo_solicitante}` : ''}
                         </span>
                     </div>
                 )}
@@ -1608,6 +1613,7 @@ export default function DashboardOficial() {
                                             <span>
                                                 Solicitado por: <strong style={{ color: 'var(--text-main)' }}>{solicitudSeleccionada.datos_formulario.nombre_solicitante || 'Sin especificar'}</strong>
                                                 {solicitudSeleccionada.datos_formulario.area_solicitante ? ` (${solicitudSeleccionada.datos_formulario.area_solicitante})` : ''}
+                                                {solicitudSeleccionada.datos_formulario.correo_solicitante ? ` • ${solicitudSeleccionada.datos_formulario.correo_solicitante}` : ''}
                                             </span>
                                         </p>
                                     )}
@@ -2745,11 +2751,9 @@ export default function DashboardOficial() {
                                                             {cargandoTusDatos ? 'Recargando...' : '♻️ Recargar API'}
                                                         </button>
                                                     )}
-                                                    {Object.values(camposPingPong).some(v => v) && (
                                                     <button className="btn-outline" style={{ padding: '0.75rem', fontSize: '0.85rem', color: '#f59e0b', borderColor: '#f59e0b' }} onClick={() => setMostrarPingPong(true)}>
-                                                        ↩️ Devolver (Ping-Pong)
+                                                        ↩️ Devolver / Solicitar Aclaración {Object.values(camposPingPong).some(v => v) ? `(${Object.values(camposPingPong).filter(Boolean).length})` : ''}
                                                     </button>
-                                                    )}
                                                     {userRole !== 'auxiliar_sagrilaft' && (<button className="btn-outline" style={{ padding: '0.75rem', fontSize: '0.85rem', color: '#8b5cf6', borderColor: '#8b5cf6' }} onClick={() => handleCambiarEstado('ESPERA_EXTENDIDO')}>
                                                         🌍 Análisis Extendido
                                                     </button>)}
@@ -2759,23 +2763,26 @@ export default function DashboardOficial() {
                                                 </div>
                                             ) : (
                                                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} style={{ background: '#fffbeb', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid #fde68a', textAlign: 'left', marginTop: '1rem' }}>
-                                                    <h5 style={{ margin: '0 0 1rem 0', color: '#d97706' }}>Subsanación de Expediente (Ping-Pong)</h5>
-                                                    <p style={{ fontSize: '0.9rem', marginBottom: '1rem', fontWeight: 'bold', color: 'var(--text-main)' }}>
+                                                    <h5 style={{ margin: '0 0 0.5rem 0', color: '#d97706', fontSize: '1rem' }}>
+                                                        ↩️ Devolución de Formulario / Solicitud de Aclaración de Hallazgos
+                                                    </h5>
+                                                    <p style={{ fontSize: '0.85rem', color: '#92400e', marginBottom: '0.75rem' }}>
                                                         {Object.values(camposPingPong).some(val => val) 
-                                                            ? `Campos marcados para corrección: ${Object.keys(camposPingPong).filter(k => camposPingPong[k]).join(', ')}`
-                                                            : "⚠️ Por favor, marca las casillas de los campos erróneos en el expediente arriba."}
+                                                            ? `Campos marcados para corregir: ${Object.keys(camposPingPong).filter(k => camposPingPong[k]).join(', ')}`
+                                                            : "ℹ️ No has marcado casillas individuales: Se enviará una solicitud de aclaración con la nota que redactes abajo (ideal para requerir explicaciones o soportes sobre hallazgos de TusDatos)."}
                                                     </p>
 
+                                                    <label className="label" style={{ fontWeight: '600', color: 'var(--text-main)' }}>Nota / Requerimiento para el Tercero:</label>
                                                     <textarea 
-                                                        className="input-field" rows="2" 
-                                                        placeholder="Nota adicional para el proveedor (Ej: El RUT adjunto está borroso)..." 
+                                                        className="input-field" rows="3" 
+                                                        placeholder="Ej: Se evidencia proceso judicial en TusDatos. Favor anexar paz y salvo o carta de aclaración formal para continuar con el estudio..." 
                                                         value={observacionPingPong} onChange={e => setObservacionPingPong(e.target.value)}
                                                         style={{ marginBottom: '1rem' }}
                                                     />
 
                                                     <div style={{ display: 'flex', gap: '1rem' }}>
                                                         <button className="btn-primary" style={{ flex: 1, background: '#d97706', borderColor: '#d97706' }} onClick={handlePingPongSubmit}>
-                                                            Confirmar Devolución
+                                                            Confirmar y Notificar al Correo
                                                         </button>
                                                         <button className="btn-outline" style={{ flex: 1 }} onClick={() => setMostrarPingPong(false)}>Cancelar</button>
                                                     </div>
