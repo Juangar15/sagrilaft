@@ -10,6 +10,7 @@ export default function PortalInterno() {
         correo: '',
         tipo_vinculacion: 'proveedor',
         area_solicitante: '',
+        nombre_solicitante: '',
         empresa_destino: 'cosechas'
     });
     
@@ -43,6 +44,7 @@ export default function PortalInterno() {
                 correo: '', 
                 tipo_vinculacion: 'proveedor', 
                 area_solicitante: '', 
+                nombre_solicitante: '',
                 empresa_destino: formData.empresa_destino || 'cosechas' 
             });
         } catch (error) {
@@ -182,7 +184,7 @@ export default function PortalInterno() {
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                                     <div>
                                         <label className="label">Empresa Destino</label>
                                         <select 
@@ -210,11 +212,13 @@ export default function PortalInterno() {
                                             <option value="accionista">Accionista</option>
                                         </select>
                                     </div>
-                                    
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                                     <div>
                                         <label className="label">Área Solicitante</label>
                                         <div style={{ position: 'relative' }}>
-                                            <User size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                            <Building size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                                             <input 
                                                 required 
                                                 type="text" 
@@ -230,6 +234,22 @@ export default function PortalInterno() {
                                                     <option key={area} value={area} />
                                                 ))}
                                             </datalist>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="label">Nombre de la Persona Solicitante</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <User size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                            <input 
+                                                required 
+                                                type="text" 
+                                                className="input-field" 
+                                                style={{ paddingLeft: '2.5rem' }}
+                                                placeholder="Ej. Carlos Gómez"
+                                                value={formData.nombre_solicitante}
+                                                onChange={e => setFormData({...formData, nombre_solicitante: e.target.value})}
+                                            />
                                         </div>
                                     </div>
                                 </div>

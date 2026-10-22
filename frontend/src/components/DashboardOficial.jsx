@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Search, Download, Filter, FileText, AlertTriangle, 
     CheckCircle, Clock, X, Building2, User, Globe, ShieldCheck, Edit3, LogOut, ChevronDown, ChevronUp, Briefcase,
-    Users, RefreshCw, ExternalLink
+    Users, RefreshCw, ExternalLink, UserCheck
 } from 'lucide-react';
 
 export default function DashboardOficial() {
@@ -145,8 +145,11 @@ export default function DashboardOficial() {
     };
 
     const solicitudesFiltradas = solicitudes.filter(sol => {
-        const matchesSearch = sol.razon_social?.toLowerCase().includes(busqueda.toLowerCase()) || 
-                              sol.nit_cedula?.includes(busqueda);
+        const busq = busqueda.toLowerCase();
+        const matchesSearch = sol.razon_social?.toLowerCase().includes(busq) || 
+                              sol.nit_cedula?.includes(busqueda) ||
+                              sol.datos_formulario?.nombre_solicitante?.toLowerCase().includes(busq) ||
+                              sol.datos_formulario?.area_solicitante?.toLowerCase().includes(busq);
         
         let matchesFiltro = true;
         if (filtroTipo === 'proveedores') {
@@ -742,6 +745,8 @@ export default function DashboardOficial() {
     };
 
     const ETIQUETAS_CAMPOS = {
+        nombre_solicitante: 'Nombre de la Persona Solicitante',
+        area_solicitante: 'Área Solicitante',
         tipo_solicitud: 'Tipo de Solicitud',
         clase_vinculacion: 'Clase de Vinculación',
         tipo_proveeduria: 'Tipo de Proveeduría',
@@ -885,6 +890,7 @@ export default function DashboardOficial() {
 
     const categoriasCampos = {
         'Información General de la Entidad': [
+            'nombre_solicitante', 'area_solicitante',
             'tipo_solicitud', 'clase_vinculacion', 'tipo_proveeduria', 'tipo_persona',
             'razon_social', 'nit', 'numero_identificacion', 'nit_digito', 'tipo_sociedad', 'tipo_empresa', 'fecha_constitucion',
             'nombres', 'primer_apellido', 'segundo_apellido', 'tipo_identificacion', 'fecha_expedicion', 'lugar_expedicion',
@@ -1079,6 +1085,15 @@ export default function DashboardOficial() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '0.25rem' }}>
                     <Building2 size={14} /> {sol.tipo_vinculacion}
                 </div>
+                {(sol.datos_formulario?.nombre_solicitante || sol.datos_formulario?.area_solicitante) && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '0.25rem' }}>
+                        <UserCheck size={14} color="var(--primary)" />
+                        <span>
+                            Solicitado por: <strong style={{ color: 'var(--text-main)' }}>{sol.datos_formulario.nombre_solicitante || 'Sin especificar'}</strong>
+                            {sol.datos_formulario.area_solicitante ? ` (${sol.datos_formulario.area_solicitante})` : ''}
+                        </span>
+                    </div>
+                )}
                 {sol.datos_formulario?.area_asignada && sol.datos_formulario?.cargo_asignado && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '0.25rem' }}>
                         <Briefcase size={14} /> {sol.datos_formulario.area_asignada} - {sol.datos_formulario.cargo_asignado}
@@ -1587,6 +1602,15 @@ export default function DashboardOficial() {
                                     <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                                         Entidad: {solicitudSeleccionada.razon_social} | NIT: {solicitudSeleccionada.nit_cedula}
                                     </p>
+                                    {(solicitudSeleccionada.datos_formulario?.nombre_solicitante || solicitudSeleccionada.datos_formulario?.area_solicitante) && (
+                                        <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                            <UserCheck size={14} color="var(--primary)" />
+                                            <span>
+                                                Solicitado por: <strong style={{ color: 'var(--text-main)' }}>{solicitudSeleccionada.datos_formulario.nombre_solicitante || 'Sin especificar'}</strong>
+                                                {solicitudSeleccionada.datos_formulario.area_solicitante ? ` (${solicitudSeleccionada.datos_formulario.area_solicitante})` : ''}
+                                            </span>
+                                        </p>
+                                    )}
                                     {solicitudSeleccionada.datos_formulario?.area_asignada && solicitudSeleccionada.datos_formulario?.cargo_asignado && (
                                         <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                                             <Briefcase size={14} /> {solicitudSeleccionada.datos_formulario.area_asignada} - {solicitudSeleccionada.datos_formulario.cargo_asignado}

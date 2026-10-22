@@ -93,7 +93,7 @@ if (process.env.SMTP_SERVER) {
 
 // Endpoint para generar invitaciones (Gatekeeper)
 app.post('/api/v1/invitaciones', async (req, res) => {
-    const { razon_social, correo, tipo_vinculacion, area_solicitante, empresa_destino } = req.body;
+    const { razon_social, correo, tipo_vinculacion, area_solicitante, empresa_destino, nombre_solicitante } = req.body;
     if (!razon_social || !correo || !tipo_vinculacion || !area_solicitante) {
         return res.status(400).json({ error: "Faltan datos obligatorios" });
     }
@@ -103,7 +103,14 @@ app.post('/api/v1/invitaciones', async (req, res) => {
 
     try {
         // Generar token JWT válido por 7 días
-        const token = jwt.sign({ correo, tipo_vinculacion, razon_social, empresa_destino }, JWT_SECRET, { expiresIn: '7d' });
+        const token = jwt.sign({ 
+            correo, 
+            tipo_vinculacion, 
+            razon_social, 
+            empresa_destino,
+            area_solicitante,
+            nombre_solicitante: (nombre_solicitante || '').trim()
+        }, JWT_SECRET, { expiresIn: '7d' });
 
         const nuevaInvitacion = {
             id: Date.now().toString(),
@@ -112,6 +119,7 @@ app.post('/api/v1/invitaciones', async (req, res) => {
             correo,
             tipo_vinculacion,
             area_solicitante,
+            nombre_solicitante: (nombre_solicitante || '').trim(),
             empresa_destino,
             fecha_expiracion: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
             usado: false,
@@ -152,7 +160,7 @@ app.post('/api/v1/invitaciones', async (req, res) => {
                 <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; border: 1px solid #ddd; border-radius: 10px;">
                     <h2 style="color: #1a4f78;">Proceso de Vinculación y Debida Diligencia</h2>
                     <p>Estimado(a) <strong>${razon_social}</strong>,</p>
-                    <p>El área de <strong>${area_solicitante}</strong> ha solicitado su vinculación como <strong>${tipo_vinculacion}</strong>.</p>
+                    <p>El área de <strong>${area_solicitante}</strong>${nombre_solicitante ? ` (solicitado por <strong>${nombre_solicitante}</strong>)` : ''} ha solicitado su vinculación como <strong>${tipo_vinculacion}</strong>.</p>
                     <p>Por favor, ingrese al siguiente enlace seguro para completar su registro. Este enlace es único e intransferible, y expira en 7 días.</p>
                     <div style="text-align: center; margin: 30px 0;">
                         <a href="${linkAcceso}" style="background-color: #1a4f78; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Completar Formulario SAGRILAFT</a>
@@ -201,7 +209,15 @@ app.post('/api/v1/invitaciones/validar', async (req, res) => {
         if (!invitacion) return res.status(404).json({ error: "Invitación no encontrada." });
         if (invitacion.usado) return res.status(403).json({ error: "Este enlace ya fue utilizado y el formulario ya fue enviado." });
 
-        return res.status(200).json({ valido: true, datos: decoded });
+        return res.status(200).json({ 
+            valido: true, 
+            datos: { 
+                ...decoded, 
+                area_solicitante: invitacion?.area_solicitante || decoded.area_solicitante || '',
+                nombre_solicitante: invitacion?.nombre_solicitante || decoded.nombre_solicitante || '',
+                empresa_destino: invitacion?.empresa_destino || decoded.empresa_destino || ''
+            } 
+        });
     } catch (error) {
         return res.status(401).json({ error: "El enlace es inválido o ha expirado.", detalle: error.message });
     }
@@ -344,19 +360,53 @@ app.post('/api/v1/onboarding', upload.any(), async (req, res) => {
     try {
         console.log(`[Onboarding] Iniciando proceso dinámico para NIT: ${nit}`);
 
-        // Si se envió un token, marcarlo como usado
+        // Si se envió un token, marcarlo como usado y recuperar metadata de invitación si hace falta
         if (token) {
+            let invitacion = null;
             // Intentar en Supabase
-            const { error: errToken } = await supabase.from('invitaciones_sagrilaft').update({ usado: true }).eq('token', token);
+            try {
+                const { data } = await supabase.from('invitaciones_sagrilaft').select('*').eq('token', token).single();
+                if (data) invitacion = data;
+                await supabase.from('invitaciones_sagrilaft').update({ usado: true }).eq('token', token);
+            } catch (e) {}
+
             // Fallback a JSON local
-            if (errToken || true) {
+            try {
                 const invitaciones = JSON.parse(fs.readFileSync(invitacionesPath));
                 const index = invitaciones.findIndex(i => i.token === token);
                 if (index !== -1) {
+                    if (!invitacion) invitacion = invitaciones[index];
                     invitaciones[index].usado = true;
                     fs.writeFileSync(invitacionesPath, JSON.stringify(invitaciones, null, 2));
                 }
+            } catch (e) {}
+
+            // Si vino del token JWT / Invitación, asegurar que nombre_solicitante y area_solicitante se preserven
+            if (invitacion) {
+                if (!formData.nombre_solicitante && invitacion.nombre_solicitante) {
+                    formData.nombre_solicitante = invitacion.nombre_solicitante;
+                }
+                if (!formData.area_solicitante && invitacion.area_solicitante) {
+                    formData.area_solicitante = invitacion.area_solicitante;
+                }
+                if (!formData.empresa_destino && invitacion.empresa_destino) {
+                    formData.empresa_destino = invitacion.empresa_destino;
+                }
             }
+            try {
+                const decoded = jwt.decode(token);
+                if (decoded) {
+                    if (!formData.nombre_solicitante && decoded.nombre_solicitante) {
+                        formData.nombre_solicitante = decoded.nombre_solicitante;
+                    }
+                    if (!formData.area_solicitante && decoded.area_solicitante) {
+                        formData.area_solicitante = decoded.area_solicitante;
+                    }
+                    if (!formData.empresa_destino && decoded.empresa_destino) {
+                        formData.empresa_destino = decoded.empresa_destino;
+                    }
+                }
+            } catch (e) {}
         }
 
         // 1. Verificar si la solicitud ya existe (Ping-Pong) usando el token

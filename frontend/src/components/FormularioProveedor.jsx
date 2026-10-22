@@ -126,6 +126,8 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
         fecha_diligenciamiento: new Date().toISOString().split('T')[0],
         ambito_operacion: '',
         empresa_destino: '',
+        area_solicitante: '',
+        nombre_solicitante: '',
         tipo_solicitud: '',
         clase_vinculacion: isGenericEmpleado ? 'empleado' : 'proveedor',
         tipo_proveeduria: '',
@@ -256,6 +258,9 @@ export default function FormularioProveedor({ isGenericEmpleado = false }) {
                             clase_vinculacion: validacion.datos.tipo_vinculacion?.toLowerCase() || '',
                             correo_electronico: validacion.datos.correo || '',
                             correo_corporativo_juridica: validacion.datos.correo || '',
+                            area_solicitante: validacion.datos.area_solicitante || prev.area_solicitante || '',
+                            nombre_solicitante: validacion.datos.nombre_solicitante || prev.nombre_solicitante || '',
+                            empresa_destino: validacion.datos.empresa_destino || prev.empresa_destino || '',
                             // Si es empleado, forzar a natural
                             tipo_persona: ['empleado', 'contratista', 'accionista'].includes(validacion.datos.tipo_vinculacion?.toLowerCase()) ? 'natural' : prev.tipo_persona
                         }));
