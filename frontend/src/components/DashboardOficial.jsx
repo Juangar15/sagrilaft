@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Search, Download, Filter, FileText, AlertTriangle, 
     CheckCircle, Clock, X, Building2, User, Globe, ShieldCheck, Edit3, LogOut, ChevronDown, ChevronUp, Briefcase,
-    Users, RefreshCw, ExternalLink, UserCheck
+    Users, RefreshCw, ExternalLink, UserCheck, Mail, UploadCloud, Trash2, FileCheck, FolderPlus
 } from 'lucide-react';
 
 export default function DashboardOficial() {
@@ -38,6 +38,12 @@ export default function DashboardOficial() {
     const [riesgoExpandido, setRiesgoExpandido] = useState(null);
     const [camposPingPong, setCamposPingPong] = useState({});
     const [observacionPingPong, setObservacionPingPong] = useState('');
+
+    // Estado para anexos y evidencias del oficial (EEFF y Correos .msg)
+    const [subiendoEEFF, setSubiendoEEFF] = useState(false);
+    const [subiendoCorreos, setSubiendoCorreos] = useState(false);
+    const [archivosCorreosSeleccionados, setArchivosCorreosSeleccionados] = useState([]);
+    const [notaCorreos, setNotaCorreos] = useState('');
     
     // Checklist de aprobación final
     const [showModalAprobacion, setShowModalAprobacion] = useState(false);
@@ -236,6 +242,85 @@ export default function DashboardOficial() {
             }
         } catch (error) {
             console.error(error);
+        }
+    };
+
+    const handleSubirAnalisisEEFF = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file || !solicitudSeleccionada) return;
+        try {
+            setSubiendoEEFF(true);
+            const formData = new FormData();
+            formData.append('tipo_adjunto', 'analisis_financiero');
+            formData.append('archivos', file);
+
+            const res = await sagrilaftService.subirAdjuntosOficial(solicitudSeleccionada.id, formData);
+            showToast(res.mensaje || "Análisis de Estados Financieros guardado exitosamente.");
+            if (res.solicitud) {
+                setSolicitudSeleccionada(res.solicitud);
+                setSolicitudes(prev => prev.map(s => s.id === res.solicitud.id ? res.solicitud : s));
+            }
+        } catch (err) {
+            showToast("Error al subir análisis: " + (err.response?.data?.error || err.message), "error");
+        } finally {
+            setSubiendoEEFF(false);
+            e.target.value = '';
+        }
+    };
+
+    const handleSubirCorreosEvidencia = async (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        if (!archivosCorreosSeleccionados || archivosCorreosSeleccionados.length === 0 || !solicitudSeleccionada) {
+            showToast("Seleccione al menos un archivo de correo (.msg, .eml, .pdf)", "error");
+            return;
+        }
+        try {
+            setSubiendoCorreos(true);
+            const formData = new FormData();
+            formData.append('tipo_adjunto', 'evidencia_correo');
+            if (notaCorreos.trim()) {
+                formData.append('descripcion', notaCorreos.trim());
+            }
+            for (let i = 0; i < archivosCorreosSeleccionados.length; i++) {
+                formData.append('archivos', archivosCorreosSeleccionados[i]);
+            }
+
+            const res = await sagrilaftService.subirAdjuntosOficial(solicitudSeleccionada.id, formData);
+            showToast(res.mensaje || `${archivosCorreosSeleccionados.length} archivo(s) de correo adjuntado(s) exitosamente.`);
+            if (res.solicitud) {
+                setSolicitudSeleccionada(res.solicitud);
+                setSolicitudes(prev => prev.map(s => s.id === res.solicitud.id ? res.solicitud : s));
+            }
+            setArchivosCorreosSeleccionados([]);
+            setNotaCorreos('');
+            const inputEl = document.getElementById('input-correos-oficial');
+            if (inputEl) inputEl.value = '';
+        } catch (err) {
+            showToast("Error al subir correos: " + (err.response?.data?.error || err.message), "error");
+        } finally {
+            setSubiendoCorreos(false);
+        }
+    };
+
+    const handleEliminarAdjuntoOficial = async (tipo, fileKey) => {
+        if (!solicitudSeleccionada) return;
+        const confirmacion = window.confirm("¿Está seguro de eliminar este archivo del expediente de oficialía?");
+        if (!confirmacion) return;
+        try {
+            setCargando(true);
+            const res = await sagrilaftService.eliminarAdjuntoOficial(solicitudSeleccionada.id, {
+                tipo_adjunto: tipo,
+                fileKey: fileKey
+            });
+            showToast(res.mensaje || "Archivo eliminado del expediente.");
+            if (res.solicitud) {
+                setSolicitudSeleccionada(res.solicitud);
+                setSolicitudes(prev => prev.map(s => s.id === res.solicitud.id ? res.solicitud : s));
+            }
+        } catch (err) {
+            showToast("Error al eliminar archivo: " + (err.response?.data?.error || err.message), "error");
+        } finally {
+            setCargando(false);
         }
     };
 
@@ -1873,11 +1958,13 @@ export default function DashboardOficial() {
                                                 );
                                             })()}
 
-                                            {/* Sección: Archivos */}
+                                            {/* Sección: Archivos de la Contraparte */}
                                             {solicitudSeleccionada.datos_formulario.archivos_cargados && Object.keys(solicitudSeleccionada.datos_formulario.archivos_cargados).length > 0 && (
                                                 <div style={{ marginTop: '1rem' }}>
-                                                    <h5 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-main)', borderBottom: '2px solid var(--border)', paddingBottom: '0.25rem' }}>Archivos Adjuntos (Cloudflare R2)</h5>
-                                                    {Object.entries(solicitudSeleccionada.datos_formulario.archivos_cargados).map(([k, v]) => {
+                                                    <h5 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-main)', borderBottom: '2px solid var(--border)', paddingBottom: '0.25rem' }}>Archivos Adjuntos de la Contraparte (Cloudflare R2)</h5>
+                                                    {Object.entries(solicitudSeleccionada.datos_formulario.archivos_cargados)
+                                                        .filter(([k]) => k !== 'analisis_estados_financieros' && !k.startsWith('evidencia_correo_') && k !== 'formulario_verificacion_oficial')
+                                                        .map(([k, v]) => {
                                                         const urlLink = <a href="#" onClick={(e) => abrirDocumentoSeguro(e, v)} style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 'bold' }}>Ver Documento 📄</a>;
                                                         if (k === 'reporte_tusdatos') {
                                                             return (
@@ -1907,6 +1994,312 @@ export default function DashboardOficial() {
                                         </div>
                                     </div>
                                 )}
+
+                                {/* Sección: Expediente y Evidencias de la Oficialía de Cumplimiento (EEFF y Correos .msg) */}
+                                {(() => {
+                                    const esEmpleado = ['empleado', 'prestacion_servicios', 'contratista'].includes((solicitudSeleccionada.tipo_vinculacion || '').toLowerCase());
+                                    const esTerceroOProveedor = !esEmpleado;
+
+                                    const anexosOficial = solicitudSeleccionada.datos_formulario?.anexos_oficial || {};
+                                    let analisisEEFF = anexosOficial.analisis_financiero;
+                                    if (!analisisEEFF && solicitudSeleccionada.datos_formulario?.archivos_cargados?.analisis_estados_financieros) {
+                                        const url = solicitudSeleccionada.datos_formulario.archivos_cargados.analisis_estados_financieros;
+                                        analisisEEFF = {
+                                            key: 'analisis_estados_financieros',
+                                            url,
+                                            nombre_archivo: decodeURIComponent(url.split('/').pop().replace(/^\d+-/, '')),
+                                            fecha_subida: null
+                                        };
+                                    }
+
+                                    let correosOficial = Array.isArray(anexosOficial.correos) ? [...anexosOficial.correos] : [];
+                                    if (solicitudSeleccionada.datos_formulario?.archivos_cargados) {
+                                        const existingKeys = new Set(correosOficial.map(c => c.key));
+                                        Object.entries(solicitudSeleccionada.datos_formulario.archivos_cargados).forEach(([k, url]) => {
+                                            if (k.startsWith('evidencia_correo_') && !existingKeys.has(k)) {
+                                                correosOficial.push({
+                                                    key: k,
+                                                    url,
+                                                    nombre_archivo: decodeURIComponent(url.split('/').pop().replace(/^\d+-/, '')),
+                                                    fecha_subida: null
+                                                });
+                                            }
+                                        });
+                                    }
+
+                                    return (
+                                        <div style={{ background: '#ffffff', padding: '1.5rem', borderRadius: 'var(--radius-md)', marginBottom: '2rem', border: '1px solid var(--border)', boxShadow: '0 2px 8px -2px rgba(0,0,0,0.05)' }}>
+                                            {/* Header de la Sección */}
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.85rem' }}>
+                                                <div>
+                                                    <h4 style={{ margin: 0, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.15rem' }}>
+                                                        <FolderPlus size={20} color="var(--primary)" /> Anexos y Evidencias de la Oficialía
+                                                    </h4>
+                                                    <p style={{ margin: '0.25rem 0 0 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                                        Soportes y análisis emitidos por Cumplimiento (análisis de estados financieros y correos .msg/.eml/pdf).
+                                                    </p>
+                                                </div>
+                                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                                    <span style={{ fontSize: '0.75rem', padding: '0.25rem 0.65rem', borderRadius: '12px', background: '#eff6ff', color: '#1d4ed8', fontWeight: 'bold' }}>
+                                                        {correosOficial.length} Correo(s) / Comunicación(es)
+                                                    </span>
+                                                    {esTerceroOProveedor && (
+                                                        <span style={{ fontSize: '0.75rem', padding: '0.25rem 0.65rem', borderRadius: '12px', background: analisisEEFF ? '#ecfdf5' : '#fffbeb', color: analisisEEFF ? '#047857' : '#b45309', fontWeight: 'bold' }}>
+                                                            {analisisEEFF ? 'Análisis EEFF Cargado ✓' : 'EEFF Pendiente de Análisis'}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Grid de contenido */}
+                                            <div style={{ display: 'grid', gridTemplateColumns: esTerceroOProveedor ? '1fr 1fr' : '1fr', gap: '1.5rem' }}>
+                                                
+                                                {/* BLOQUE A: Análisis de Estados Financieros (Terceros y Proveedores) */}
+                                                {esTerceroOProveedor && (
+                                                    <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                                                        <div>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                                                                <h5 style={{ margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.95rem' }}>
+                                                                    <FileText size={17} color="#059669" /> Análisis de Estados Financieros
+                                                                </h5>
+                                                                <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', background: '#e2e8f0', color: '#475569', padding: '0.15rem 0.45rem', borderRadius: '4px', fontWeight: 'bold' }}>
+                                                                    Terceros
+                                                                </span>
+                                                            </div>
+                                                            <p style={{ margin: '0 0 1rem 0', color: '#64748b', fontSize: '0.8rem', lineHeight: '1.3' }}>
+                                                                Evaluación financiera o dictamen analítico elaborado por la Oficialía sobre los balances aportados por el proveedor.
+                                                            </p>
+
+                                                            {analisisEEFF ? (
+                                                                <div style={{ background: '#ffffff', border: '1px solid #86efac', borderRadius: '6px', padding: '0.85rem', marginBottom: '0.75rem' }}>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.65rem' }}>
+                                                                        <FileCheck size={24} color="#16a34a" style={{ flexShrink: 0 }} />
+                                                                        <div style={{ minWidth: 0, flex: 1 }}>
+                                                                            <div style={{ fontWeight: '600', fontSize: '0.85rem', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={analisisEEFF.nombre_archivo}>
+                                                                                {analisisEEFF.nombre_archivo}
+                                                                            </div>
+                                                                            <div style={{ fontSize: '0.73rem', color: '#64748b' }}>
+                                                                                {analisisEEFF.tamano ? `${(analisisEEFF.tamano / 1024).toFixed(1)} KB • ` : ''}
+                                                                                {analisisEEFF.fecha_subida ? new Date(analisisEEFF.fecha_subida).toLocaleString('es-CO') : 'Almacenado en R2'}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', borderTop: '1px solid #f1f5f9', paddingTop: '0.5rem' }}>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={(e) => abrirDocumentoSeguro(e, analisisEEFF.url)}
+                                                                            className="btn-outline"
+                                                                            style={{ padding: '0.3rem 0.75rem', fontSize: '0.78rem', color: '#059669', borderColor: '#86efac', background: '#f0fdf4' }}
+                                                                            title="Ver o descargar análisis de estados financieros"
+                                                                        >
+                                                                            Ver Análisis 📄
+                                                                        </button>
+                                                                        <label
+                                                                            style={{
+                                                                                display: 'inline-flex',
+                                                                                alignItems: 'center',
+                                                                                padding: '0.3rem 0.65rem',
+                                                                                fontSize: '0.78rem',
+                                                                                color: '#475569',
+                                                                                border: '1px solid #cbd5e1',
+                                                                                borderRadius: '4px',
+                                                                                cursor: subiendoEEFF ? 'not-allowed' : 'pointer',
+                                                                                background: '#ffffff'
+                                                                            }}
+                                                                            title="Reemplazar archivo por una nueva versión"
+                                                                        >
+                                                                            {subiendoEEFF ? 'Cargando...' : 'Reemplazar'}
+                                                                            <input
+                                                                                type="file"
+                                                                                accept=".pdf,.xlsx,.xls,.docx,.doc,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/msword"
+                                                                                onChange={handleSubirAnalisisEEFF}
+                                                                                disabled={subiendoEEFF}
+                                                                                style={{ display: 'none' }}
+                                                                            />
+                                                                        </label>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => handleEliminarAdjuntoOficial('analisis_financiero', 'analisis_estados_financieros')}
+                                                                            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '0.3rem' }}
+                                                                            title="Eliminar este análisis del expediente"
+                                                                        >
+                                                                            <Trash2 size={16} />
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <div style={{ border: '2px dashed #cbd5e1', borderRadius: '6px', padding: '1.25rem 1rem', textAlign: 'center', background: '#ffffff', marginBottom: '0.75rem' }}>
+                                                                    <UploadCloud size={30} color="#94a3b8" style={{ margin: '0 auto 0.4rem auto', display: 'block' }} />
+                                                                    <div style={{ fontSize: '0.85rem', fontWeight: '500', color: '#334155', marginBottom: '0.2rem' }}>
+                                                                        Sin análisis de estados financieros
+                                                                    </div>
+                                                                    <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.85rem' }}>
+                                                                        Formatos: PDF, Excel, Word (Máx 50MB)
+                                                                    </div>
+                                                                    <label style={{
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '0.4rem',
+                                                                        padding: '0.45rem 1rem',
+                                                                        fontSize: '0.8rem',
+                                                                        fontWeight: '600',
+                                                                        color: 'white',
+                                                                        background: 'var(--primary)',
+                                                                        borderRadius: '4px',
+                                                                        cursor: subiendoEEFF ? 'not-allowed' : 'pointer',
+                                                                        opacity: subiendoEEFF ? 0.7 : 1
+                                                                    }}>
+                                                                        <UploadCloud size={14} />
+                                                                        {subiendoEEFF ? 'Subiendo análisis...' : 'Cargar Análisis EEFF'}
+                                                                        <input
+                                                                            type="file"
+                                                                            accept=".pdf,.xlsx,.xls,.docx,.doc,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/msword"
+                                                                            onChange={handleSubirAnalisisEEFF}
+                                                                            disabled={subiendoEEFF}
+                                                                            style={{ display: 'none' }}
+                                                                        />
+                                                                    </label>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* BLOQUE B: Comunicaciones y Correos de Soporte (.msg, .eml, .pdf) */}
+                                                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1.25rem', display: 'flex', flexDirection: 'column' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                                                        <h5 style={{ margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.95rem' }}>
+                                                            <Mail size={17} color="#2563eb" /> Comunicaciones y Correos (.msg, .eml, .pdf)
+                                                        </h5>
+                                                        <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', background: '#eff6ff', color: '#1d4ed8', padding: '0.15rem 0.45rem', borderRadius: '4px', fontWeight: 'bold' }}>
+                                                            {esEmpleado ? 'Empleados' : 'Proveedores / Terceros'}
+                                                        </span>
+                                                    </div>
+                                                    <p style={{ margin: '0 0 1rem 0', color: '#64748b', fontSize: '0.8rem', lineHeight: '1.3' }}>
+                                                        Evidencias probatorias de correos cruzados (.msg descargados de Outlook, .eml o PDF) con la contraparte para aclaraciones y debida diligencia.
+                                                    </p>
+
+                                                    {/* Formulario de Carga de Correos */}
+                                                    <div style={{ background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '0.85rem', marginBottom: '0.85rem' }}>
+                                                        <div style={{ marginBottom: '0.5rem' }}>
+                                                            <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '0.25rem' }}>
+                                                                Seleccionar correos o actas (uno o múltiples):
+                                                            </label>
+                                                            <input
+                                                                id="input-correos-oficial"
+                                                                type="file"
+                                                                multiple
+                                                                accept=".msg,.eml,.pdf,application/vnd.ms-outlook,message/rfc822,application/pdf"
+                                                                onChange={(e) => setArchivosCorreosSeleccionados(Array.from(e.target.files || []))}
+                                                                style={{ fontSize: '0.8rem', width: '100%' }}
+                                                            />
+                                                        </div>
+                                                        <div style={{ marginBottom: '0.5rem' }}>
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Nota o motivo (opcional, ej: Aclaración sobre origen de fondos)"
+                                                                value={notaCorreos}
+                                                                onChange={(e) => setNotaCorreos(e.target.value)}
+                                                                className="input-field"
+                                                                style={{ fontSize: '0.8rem', padding: '0.4rem 0.6rem' }}
+                                                            />
+                                                        </div>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                                                {archivosCorreosSeleccionados.length > 0 
+                                                                    ? `${archivosCorreosSeleccionados.length} archivo(s) listo(s)` 
+                                                                    : 'Soporta .msg de Outlook, .eml, .pdf'}
+                              </span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={handleSubirCorreosEvidencia}
+                                                                disabled={subiendoCorreos || archivosCorreosSeleccionados.length === 0}
+                                                                className="btn-primary"
+                                                                style={{
+                                                                    padding: '0.35rem 0.85rem',
+                                                                    fontSize: '0.78rem',
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '0.35rem',
+                                                                    cursor: (subiendoCorreos || archivosCorreosSeleccionados.length === 0) ? 'not-allowed' : 'pointer',
+                                                                    opacity: (subiendoCorreos || archivosCorreosSeleccionados.length === 0) ? 0.6 : 1
+                                                                }}
+                                                            >
+                                                                <UploadCloud size={14} />
+                                                                {subiendoCorreos ? 'Subiendo correos...' : 'Adjuntar al Expediente'}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Listado de Correos Subidos */}
+                                                    <div style={{ flex: 1, maxHeight: '220px', overflowY: 'auto' }}>
+                                                        {correosOficial.length > 0 ? (
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                                                                {correosOficial.map((correo, idx) => {
+                                                                    const isMsg = (correo.nombre_archivo || '').toLowerCase().endsWith('.msg');
+                                                                    const isEml = (correo.nombre_archivo || '').toLowerCase().endsWith('.eml');
+                                                                    const isPdf = (correo.nombre_archivo || '').toLowerCase().endsWith('.pdf');
+                                                                    const tagFormato = isMsg ? 'MSG (Outlook)' : isEml ? 'EML' : isPdf ? 'PDF' : 'DOC';
+
+                                                                    return (
+                                                                        <div key={correo.key || idx} style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '0.55rem 0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0, flex: 1 }}>
+                                                                                {isMsg || isEml ? (
+                                                                                    <Mail size={19} color="#2563eb" style={{ flexShrink: 0 }} />
+                                                                                ) : (
+                                                                                    <FileText size={19} color="#ef4444" style={{ flexShrink: 0 }} />
+                                                                                )}
+                                                                                <div style={{ minWidth: 0, flex: 1 }}>
+                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                                                        <span style={{ fontWeight: '600', fontSize: '0.82rem', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={correo.nombre_archivo}>
+                                                                                            {correo.nombre_archivo}
+                                                                                        </span>
+                                                                                        <span style={{ fontSize: '0.65rem', background: isMsg ? '#dbeafe' : '#fee2e2', color: isMsg ? '#1e40af' : '#991b1b', padding: '0.1rem 0.35rem', borderRadius: '3px', fontWeight: 'bold', flexShrink: 0 }}>
+                                                                                            {tagFormato}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                    <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                                                                                        {correo.descripcion ? <span style={{ fontStyle: 'italic', color: '#475569' }}>"{correo.descripcion}" • </span> : ''}
+                                                                                        {correo.tamano ? `${(correo.tamano / 1024).toFixed(1)} KB • ` : ''}
+                                                                                        {correo.fecha_subida ? new Date(correo.fecha_subida).toLocaleString('es-CO') : 'Almacenado en R2'}
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={(e) => abrirDocumentoSeguro(e, correo.url)}
+                                                                                    className="btn-outline"
+                                                                                    style={{ padding: '0.25rem 0.6rem', fontSize: '0.74rem', color: '#2563eb', borderColor: '#bfdbfe', background: '#eff6ff' }}
+                                                                                    title={isMsg ? "Descargar archivo .msg para abrir en Microsoft Outlook" : "Ver o descargar evidencia"}
+                                                                                >
+                                                                                    {isMsg ? 'Descargar .msg ✉' : 'Ver Evidencia 📄'}
+                                                                                </button>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => handleEliminarAdjuntoOficial('evidencia_correo', correo.key)}
+                                                                                    style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '0.25rem' }}
+                                                                                    title="Eliminar correo del expediente"
+                                                                                >
+                                                                                    <Trash2 size={15} />
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        ) : (
+                                                            <div style={{ textAlign: 'center', padding: '1.25rem 0.5rem', color: '#94a3b8', fontSize: '0.8rem', fontStyle: 'italic' }}>
+                                                                No hay correos adjuntos como evidencia en este expediente todavía.
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
 
                                 {solicitudSeleccionada.estado_actual !== 'DEVUELTO_CORRECCION' && (
                                 <>

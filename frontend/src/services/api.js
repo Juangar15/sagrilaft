@@ -114,6 +114,18 @@ export const sagrilaftService = {
         return response.data;
     },
 
+    subirAdjuntosOficial: async (id, formData) => {
+        const response = await api.post(`/solicitudes/${id}/adjuntos-oficial`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data;
+    },
+
+    eliminarAdjuntoOficial: async (id, payload) => {
+        const response = await api.delete(`/solicitudes/${id}/adjuntos-oficial`, { data: payload });
+        return response.data;
+    },
+
     // Gestión de Borradores (Guardar / Reanudar con OTP)
     guardarBorrador: async (payload) => {
         const response = await api.post('/borradores/guardar', payload);

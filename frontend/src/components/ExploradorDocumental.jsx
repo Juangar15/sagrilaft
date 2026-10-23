@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Folder, FileText, ChevronRight, CornerUpLeft, Loader, ExternalLink } from 'lucide-react';
+import { Folder, FileText, ChevronRight, CornerUpLeft, Loader, ExternalLink, Mail } from 'lucide-react';
 import { sagrilaftService } from '../services/api';
 
 export default function ExploradorDocumental() {
@@ -131,7 +131,11 @@ export default function ExploradorDocumental() {
                                 onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                             >
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <FileText size={20} color="var(--primary)" />
+                                    {file.key.toLowerCase().endsWith('.msg') || file.key.toLowerCase().endsWith('.eml') ? (
+                                        <Mail size={20} color="#2563eb" />
+                                    ) : (
+                                        <FileText size={20} color="var(--primary)" />
+                                    )}
                                     <span style={{ color: 'var(--text-main)' }}>{getFileName(file.key)}</span>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>

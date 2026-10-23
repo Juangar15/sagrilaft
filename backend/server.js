@@ -1886,16 +1886,28 @@ async function reubicarCarpetaR2(sol, puntajeNuevo, estadoNuevo) {
             score: oldScore
         };
         sol.datos_formulario.archivos_cargados = archivosActualizados;
+        if (sol.datos_formulario.anexos_oficial) {
+            if (sol.datos_formulario.anexos_oficial.analisis_financiero && archivosActualizados.analisis_estados_financieros) {
+                sol.datos_formulario.anexos_oficial.analisis_financiero.url = archivosActualizados.analisis_estados_financieros;
+            }
+            if (Array.isArray(sol.datos_formulario.anexos_oficial.correos)) {
+                sol.datos_formulario.anexos_oficial.correos = sol.datos_formulario.anexos_oficial.correos.map(item => ({
+                    ...item,
+                    url: archivosActualizados[item.key] || item.url
+                }));
+            }
+        }
     }
     return sol;
 }
 
-// Funci?n auxiliar para copiar en S3/R2
+// Función auxiliar para copiar en S3/R2
 async function copyFileInR2(sourceUrl, destinationFolder, filename) {
     if (!sourceUrl || !sourceUrl.includes(process.env.R2_PUBLIC_URL)) return sourceUrl;
     const urlObj = new URL(sourceUrl);
     const sourceKey = urlObj.pathname.substring(1);
     const destKey = `${destinationFolder}/${filename}`;
+    if (sourceKey === destKey) return sourceUrl;
     
     try {
         await s3Client.send(new CopyObjectCommand({
@@ -2066,6 +2078,18 @@ app.post('/api/v1/solicitudes/:id/aprobar_definitivo', async (req, res) => {
         datosFormularioActualizados.analisis_oficial = formAprobacion;
         datosFormularioActualizados.archivos_cargados = archivosActualizados;
         datosFormularioActualizados.desglose_riesgo = scoreRecalculado;
+
+        if (datosFormularioActualizados.anexos_oficial) {
+            if (datosFormularioActualizados.anexos_oficial.analisis_financiero && archivosActualizados.analisis_estados_financieros) {
+                datosFormularioActualizados.anexos_oficial.analisis_financiero.url = archivosActualizados.analisis_estados_financieros;
+            }
+            if (Array.isArray(datosFormularioActualizados.anexos_oficial.correos)) {
+                datosFormularioActualizados.anexos_oficial.correos = datosFormularioActualizados.anexos_oficial.correos.map(item => ({
+                    ...item,
+                    url: archivosActualizados[item.key] || item.url
+                }));
+            }
+        }
 
         const { error } = await supabase.from('solicitudes_sagrilaft').update({ 
             estado_actual: estadoFinal,
@@ -2264,18 +2288,171 @@ app.get('/api/v1/archivos/explorar', async (req, res) => {
     }
 });
 
+// Endpoint para subir anexos y evidencias del Oficial de Cumplimiento (Análisis EEFF y Correos .msg/.eml/pdf)
+app.post('/api/v1/solicitudes/:id/adjuntos-oficial', upload.array('archivos', 15), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { tipo_adjunto, descripcion } = req.body;
+        const files = req.files || [];
+
+        if (!files || files.length === 0) {
+            return res.status(400).json({ error: "No se enviaron archivos para adjuntar." });
+        }
+
+        const { data: sol, error: errSol } = await supabase.from('solicitudes_sagrilaft').select('*').eq('id', id).single();
+        if (errSol || !sol) return res.status(404).json({ error: "Solicitud no encontrada" });
+
+        const nit = sol.nit_cedula;
+        let folderR2 = `recepcion/${nit}/oficial`;
+
+        // Si el expediente ya fue aprobado o archivado en su carpeta permanente, subir directamente allí
+        const existingUrl = Object.values(sol.datos_formulario?.archivos_cargados || {}).find(u => typeof u === 'string' && u.includes('sagrilaft/'));
+        if (existingUrl) {
+            try {
+                const urlObj = new URL(existingUrl);
+                const parts = urlObj.pathname.substring(1).split('/');
+                parts.pop();
+                folderR2 = parts.join('/');
+            } catch (e) {
+                console.error("Error obteniendo carpeta existente:", e);
+            }
+        }
+
+        let datosFormulario = sol.datos_formulario || {};
+        if (!datosFormulario.archivos_cargados) datosFormulario.archivos_cargados = {};
+        if (!datosFormulario.anexos_oficial) {
+            datosFormulario.anexos_oficial = {
+                analisis_financiero: null,
+                correos: []
+            };
+        }
+        if (!Array.isArray(datosFormulario.anexos_oficial.correos)) {
+            datosFormulario.anexos_oficial.correos = [];
+        }
+
+        for (const file of files) {
+            let mimetype = file.mimetype || 'application/octet-stream';
+            const lowerName = file.originalname.toLowerCase();
+            if (lowerName.endsWith('.msg')) mimetype = 'application/vnd.ms-outlook';
+            else if (lowerName.endsWith('.eml')) mimetype = 'message/rfc822';
+            else if (lowerName.endsWith('.pdf')) mimetype = 'application/pdf';
+            else if (lowerName.endsWith('.xlsx')) mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+            else if (lowerName.endsWith('.docx')) mimetype = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+            const safeOriginalName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+            const url = await uploadFileToR2(file.buffer, safeOriginalName, folderR2, mimetype);
+
+            if (tipo_adjunto === 'analisis_financiero') {
+                const fileKey = 'analisis_estados_financieros';
+                datosFormulario.archivos_cargados[fileKey] = url;
+                datosFormulario.anexos_oficial.analisis_financiero = {
+                    key: fileKey,
+                    url,
+                    nombre_archivo: file.originalname,
+                    fecha_subida: new Date().toISOString(),
+                    tamano: file.size,
+                    mimetype
+                };
+            } else {
+                const timestamp = Date.now();
+                const fileKey = `evidencia_correo_${timestamp}_${safeOriginalName}`;
+                datosFormulario.archivos_cargados[fileKey] = url;
+                datosFormulario.anexos_oficial.correos.push({
+                    key: fileKey,
+                    url,
+                    nombre_archivo: file.originalname,
+                    fecha_subida: new Date().toISOString(),
+                    tamano: file.size,
+                    mimetype,
+                    descripcion: descripcion || ''
+                });
+            }
+        }
+
+        const { data: updated, error: errUpdate } = await supabase.from('solicitudes_sagrilaft').update({
+            datos_formulario: datosFormulario
+        }).eq('id', id).select().single();
+
+        if (errUpdate) throw errUpdate;
+
+        return res.json({
+            mensaje: "Archivos de oficialía guardados correctamente.",
+            anexos_oficial: datosFormulario.anexos_oficial,
+            archivos_cargados: datosFormulario.archivos_cargados,
+            solicitud: updated
+        });
+    } catch (err) {
+        console.error("Error al subir adjunto de oficial:", err);
+        return res.status(500).json({ error: err.message });
+    }
+});
+
+// Endpoint para eliminar un anexo de oficialía
+app.delete('/api/v1/solicitudes/:id/adjuntos-oficial', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { fileKey, tipo_adjunto } = req.body;
+        
+        const { data: sol, error: errSol } = await supabase.from('solicitudes_sagrilaft').select('*').eq('id', id).single();
+        if (errSol || !sol) return res.status(404).json({ error: "Solicitud no encontrada" });
+
+        let datosFormulario = sol.datos_formulario || {};
+        if (!datosFormulario.archivos_cargados) datosFormulario.archivos_cargados = {};
+        if (!datosFormulario.anexos_oficial) {
+            datosFormulario.anexos_oficial = { analisis_financiero: null, correos: [] };
+        }
+
+        if (tipo_adjunto === 'analisis_financiero' || fileKey === 'analisis_estados_financieros') {
+            delete datosFormulario.archivos_cargados.analisis_estados_financieros;
+            datosFormulario.anexos_oficial.analisis_financiero = null;
+        } else if (fileKey) {
+            delete datosFormulario.archivos_cargados[fileKey];
+            if (Array.isArray(datosFormulario.anexos_oficial.correos)) {
+                datosFormulario.anexos_oficial.correos = datosFormulario.anexos_oficial.correos.filter(c => c.key !== fileKey);
+            }
+        }
+
+        const { data: updated, error: errUpdate } = await supabase.from('solicitudes_sagrilaft').update({
+            datos_formulario: datosFormulario
+        }).eq('id', id).select().single();
+
+        if (errUpdate) throw errUpdate;
+
+        return res.json({
+            mensaje: "Adjunto eliminado del expediente.",
+            anexos_oficial: datosFormulario.anexos_oficial,
+            archivos_cargados: datosFormulario.archivos_cargados,
+            solicitud: updated
+        });
+    } catch (err) {
+        console.error("Error al eliminar adjunto oficial:", err);
+        return res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/v1/archivos/firmar', async (req, res) => {
     try {
         const { key } = req.body;
         if (!key) return res.status(400).json({ error: "Se requiere la key del archivo" });
         
-        const command = new GetObjectCommand({
+        const rawFilename = key.split('/').pop().replace(/^\d+-/, '');
+        const safeFilename = rawFilename.replace(/[^a-zA-Z0-9._-]/g, '_') || 'documento';
+        const isPdf = key.toLowerCase().endsWith('.pdf');
+
+        const commandParams = {
             Bucket: process.env.R2_BUCKET_NAME,
             Key: key
-        });
+        };
+
+        // Si no es PDF (ej: .msg de Outlook, .eml, .xlsx, .docx, .zip), forzar descarga directa con su nombre legible
+        if (!isPdf) {
+            commandParams.ResponseContentDisposition = `attachment; filename="${safeFilename}"; filename*=UTF-8''${encodeURIComponent(rawFilename)}`;
+        }
+
+        const command = new GetObjectCommand(commandParams);
         
-        // El enlace expira en 5 minutos (300 segundos)
-        const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 300 });
+        // El enlace expira en 15 minutos (900 segundos)
+        const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 900 });
         res.json({ url: signedUrl });
     } catch (err) {
         console.error("Error firmando URL:", err);
